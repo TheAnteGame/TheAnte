@@ -8,17 +8,21 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
-> **Phase:** Phases 0–11 COMPLETE and the Phase 12 SEASON TORTURE TEST IS GREEN
-> (18 weeks × 25 players on a real local stack — caught and fixed the
-> 1,000-row-truncation settlement bug before it could hit mid-season). Verified:
-> 64 unit tests, content-grep, typecheck, build. REMAINING TO LAUNCH (all quick):
-> (1) owner: Resend domain DNS + confirm key, (2) owner: mirror env vars to
-> Vercel project settings, (3) first commit + push on owner's go (deploys to
-> theantegame.com), (4) smoke the deployed site + cron 401s turn 200,
-> (5) recruit 8+ players, approve them, hit Activate season before Sep 8.
-> Local test stack: `supabase start && supabase db reset` then
-> `npx tsx --conditions=react-server scripts/season-torture.mts`.
-> Dev server: port 33333. (1) Clerk↔Supabase third-party
+> **🟢 LIVE IN PRODUCTION at https://theantegame.com (2026-08-18).** All 12
+> phases complete. Deployed from TheAnteGame/TheAnte@main (git identity:
+> TheAnteGame — the CLI's old rztoler login was replaced; both remain in gh
+> keyring, TheAnteGame active). Verified live: homepage 200, cron endpoints
+> 401/200 correctly, auth gates redirect, Resend domain VERIFIED (DKIM+SPF),
+> env vars in Vercel prod+preview. Launch-day fix: the Vercel project predated
+> the code, so framework preset was null — vercel.json now pins "nextjs"
+> (dynamic routes 404'd without it).
+> **What remains is human:** recruit 8+ players, approve them in /admin/players,
+> press Activate season (in /admin/settings) before the Week 1 slate opens
+> Tue Sep 8, 6:00am ET. Roster locks Thu Sep 10, noon ET.
+> Known small gap: /rules page not yet built (route is public in proxy; needs
+> the rulebook-markdown renderer) — post-launch item.
+> Torture test recipe: `supabase start && supabase db reset` then
+> `npx tsx --conditions=react-server scripts/season-torture.mts`. (1) Clerk↔Supabase third-party
 > integration in both dashboards, (2) owner signup at localhost:3000, then agent
 > runs commissioner bootstrap — these unlock end-to-end testing of everything
 > from Phase 5 on. Vercel env mirror + first push still pending (owner said:
