@@ -67,3 +67,20 @@ export async function saveProfile(formData: FormData): Promise<void> {
   const state = await getPlayerState();
   redirect(state ? routeFor(state) : "/");
 }
+
+/** The how-to-play tutorial's accept step — no fields to validate, just a commitment
+ *  timestamp (§how-to-play gate). Self-editable: not in the players self-update denylist. */
+export async function acceptHowToPlay(): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) redirect("/");
+
+  const db = createUserClient();
+  const { error } = await db
+    .from("players")
+    .update({ how_to_play_accepted_at: new Date().toISOString() })
+    .eq("clerk_user_id", userId);
+  if (error) redirect("/how-to-play?error=1");
+
+  const state = await getPlayerState();
+  redirect(state ? routeFor(state) : "/");
+}

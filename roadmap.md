@@ -8,6 +8,19 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-18 (later):** Added the how-to-play gate — an interactive, click-through
+> tutorial (`app/how-to-play`, `components/howtoplay/HowToPlayTutorial.tsx`) inserted
+> between profile completion and `/dashboard` for `approved` players (migration 0012:
+> `players.how_to_play_accepted_at`, applied live; `lib/playerRouting.ts` now holds the
+> pure `routeFor` table, unit-tested in `lib/player.test.ts`). All ~30 `howto.*` strings
+> are content-managed. Also recorded **D-007**: the stakes band, wager area, and
+> how-to-play are now a confirmed second "loud zone" (texture/glow/motion), amending
+> `ANTE-ART-DIRECTION.md` — dense surfaces (leaderboard/ledger/settlement/admin) are
+> unchanged. Typecheck/lint*/tests/content-grep/build all green (*lint has pre-existing,
+> unrelated repo-wide failures from a `react-hooks` rule bump — not introduced by this
+> work). Not yet run locally: the Supabase torture test (needs Docker, wasn't running).
+> Not yet pushed to `main` — confirm with the owner before deploying.
+
 > **🟢 LIVE IN PRODUCTION at https://theantegame.com (2026-08-18).** All 12
 > phases complete. Deployed from TheAnteGame/TheAnte@main (git identity:
 > TheAnteGame — the CLI's old rztoler login was replaced; both remain in gh

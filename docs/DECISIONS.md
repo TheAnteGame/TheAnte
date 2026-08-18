@@ -48,3 +48,14 @@ Direction per art direction §4: an angular, wide, heavy display face that rhyme
 chiseled wordmark — Chakra Petch and Archivo (expanded widths) are the named candidates;
 final pairing chosen during the design build. Body stays a neutral grotesque; all numerals
 tabular lining figures.
+
+## D-007 — A second "loud zone": stakes band, wager area, and how-to-play (2026-08-18)
+
+**Amendment to ANTE-ART-DIRECTION.md §2/§8/§10.** The art direction's original rule —
+motion and tier-color intensity confined to the reveal, everything else restrained — is
+confirmed amended by the owner. The stakes band, the wager/bet-slip area, and the new
+how-to-play tutorial (`app/how-to-play`) are now a second, deliberate "loud zone": richer
+chip/felt texture, glow, gold-accent motion, and playful micro-animation are in scope
+there. Every dense data surface — the leaderboard, the ledger, settlement tables, and all
+of `/admin` — stays exactly as restrained as §7/§10 already specify; this amendment does
+not touch them.

@@ -74,9 +74,12 @@ export async function StakesBand({ playerId }: { playerId: string }) {
     const message = await getContent("band.preseason_message", { lock });
     return (
       <div
-        className="chamfer flex items-center gap-4 px-5 py-4"
-        style={{ background: `linear-gradient(120deg, var(--color-tier-purple-deep), var(--color-surface-1) 70%)` }}
+        className="band-in chamfer relative flex items-center gap-4 overflow-hidden px-5 py-4"
+        style={{
+          background: `linear-gradient(120deg, var(--color-tier-purple-deep), var(--color-surface-1) 70%), repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 6px)`,
+        }}
       >
+        <div className="shine-sweep pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.12)_50%,transparent_60%)]" aria-hidden />
         <SeasonRing weekNumber={1} />
         <p className="text-sm text-[color:var(--color-text-hi)]">{message}</p>
       </div>
@@ -112,12 +115,13 @@ export async function StakesBand({ playerId }: { playerId: string }) {
 
   return (
     <div
-      className="chamfer flex flex-wrap items-center gap-x-8 gap-y-3 px-5 py-4"
+      className="band-in chamfer relative flex flex-wrap items-center gap-x-8 gap-y-3 overflow-hidden px-5 py-4"
       style={{
-        background: `linear-gradient(120deg, ${v.deep} 0%, ${v.base} 45%, ${v.deep} 100%)`,
+        background: `linear-gradient(120deg, ${v.deep} 0%, ${v.base} 45%, ${v.deep} 100%), repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 6px)`,
         borderTop: `2px solid ${v.bright}`,
       }}
     >
+      <div className="shine-sweep pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.14)_50%,transparent_60%)]" aria-hidden />
       <SeasonRing weekNumber={week.number} />
       <div className="flex flex-col">
         <span className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase italic text-white">
@@ -128,7 +132,12 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         </span>
       </div>
       {stat(anteLabel, String(week.ante))}
-      {stat(potLabel, String(potBalance))}
+      <div className="flex flex-col">
+        <span className="text-[10px] uppercase tracking-wider text-white/50">{potLabel}</span>
+        <span className="gold-pulse nums font-[family-name:var(--font-display)] text-lg font-bold" style={{ color: "var(--color-gold)" }}>
+          {potBalance}
+        </span>
+      </div>
       {snap && stat(limitLabel, String(snap.house_limit))}
       <div className="ml-auto">{stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}</div>
     </div>

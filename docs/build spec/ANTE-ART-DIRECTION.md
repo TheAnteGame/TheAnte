@@ -147,6 +147,11 @@ Be theatrical at the reveal, the shove, and the pot award. Be completely plain e
 number lives — the leaderboard, settlement, the ledger, admin. The restraint in the dense
 areas is what makes the loud moments land.
 
+**As of D-007**, the stakes band, the wager area (bet slip), and the how-to-play tutorial
+join the reveal/shove/pot-award as a second, deliberate loud zone — chip and felt texture,
+gold-accent glow, and playful micro-motion are now in scope there. The dense surfaces named
+above (leaderboard, settlement, the ledger, admin) are unaffected.
+
 ---
 
 ## 3. Color
@@ -422,7 +427,12 @@ There is no separate "shove announcement" moment to animate — it was removed f
 product, because it happened inside the blackout. The shove's animation budget belongs to the
 reveal sequence.
 
-Not worth animating: settlement tables, the leaderboard, chat, anything in admin.
+**As of D-007**, also worth animating: idle motion on the stakes band (shine sweep, gold
+pulse on the Pot), the bet slip's chip steppers, and the how-to-play tutorial's step
+transitions and callouts.
+
+Not worth animating: settlement tables, the leaderboard, chat, anything in admin. That
+boundary is unchanged by D-007.
 
 Keep it short everywhere except the reveal. Honor `prefers-reduced-motion` throughout —
 the specs call this out for the ticker and news fade specifically. And nothing celebratory

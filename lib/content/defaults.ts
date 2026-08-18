@@ -32,6 +32,54 @@ export const contentDefaults: Record<string, string> = {
   "profile.submit_label": "Continue",
   "profile.error_generic": "That didn't take. Try again.",
 
+  // How-to-play tutorial (gate between profile complete and dashboard)
+  "howto.heading": "How this works",
+  "howto.intro": "Ten steps. No chips move. Then you're in the room.",
+  "howto.step_label": "Step {step} of {total}",
+  "howto.next_cta": "Next",
+  "howto.back_cta": "Back",
+  "howto.skip_cta": "Skip to the end",
+  "howto.accept_cta": "I've got it — take me in",
+  "howto.error_generic": "That didn't take. Try again.",
+
+  "howto.intro_title": "What this is",
+  "howto.intro_body":
+    "A season-long chip pool. Everyone starts with 500. No cash, ever — chips have no value outside this room.",
+
+  "howto.ante_title": "The ante",
+  "howto.ante_body": "Every week costs an ante, paid straight from your stack before you pick a single game.",
+
+  "howto.pick_title": "Pick a side",
+  "howto.pick_body": "Tap a team. That's the whole interaction — away or home, straight up.",
+
+  "howto.chips_title": "Stake your chips",
+  "howto.chips_body": "Use the − and + to size the bet. You don't have to spend it all on one game.",
+
+  "howto.limit_title": "The house limit",
+  "howto.limit_body":
+    "You can only commit up to your house limit this week — capped by your stack, or capped by the room, whichever is smaller.",
+  "howto.spread_note": "The spread is context. Bets settle straight-up — winner wins.",
+
+  "howto.deadline_title": "The deadline",
+  "howto.deadline_body": "Thursday noon ET. Miss it and you're folded — and you still owe the ante.",
+
+  "howto.blackout_title": "The blackout",
+  "howto.blackout_body": "Nobody sees a pick until everyone is locked in. Not other players. Not the Commissioner.",
+
+  "howto.reveal_title": "The reveal",
+  "howto.reveal_body": "Every ticket in the league turns over at once. Multipliers are set by how many people were on each side.",
+
+  "howto.shove_title": "The shove",
+  "howto.shove_body":
+    "Once a season, you can push your entire stack onto one game at even money. Nobody knows until the reveal — including the Commissioner.",
+
+  "howto.settlement_title": "Settlement and the Pot",
+  "howto.settlement_body":
+    "Winners get paid, losers don't, and a slice of every ante feeds the Pot — awarded to whoever's furthest from the median that week.",
+
+  "howto.ready_title": "That's it",
+  "howto.ready_body": "Four tiers, one season, nobody eliminated. Take your seat.",
+
   // Dashboard
   "dash.header_rank_label": "Rank",
   "dash.header_chips_label": "Chips",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitWager } from "@/app/actions/wager";
 
@@ -73,6 +73,12 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
   const [shoveWord, setShoveWord] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [bumpedGame, setBumpedGame] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
 
   const committed = useMemo(() => [...picks.values()].reduce((s, p) => s + p.chips, 0), [picks]);
   const remaining = houseLimit - committed;
@@ -104,6 +110,10 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
       next.set(gameId, { ...p, chips });
       return next;
     });
+    if (!reducedMotion) {
+      setBumpedGame(gameId);
+      window.setTimeout(() => setBumpedGame(null), 250);
+    }
   };
 
   const canSubmit = shoveMode
@@ -139,7 +149,7 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
   return (
     <section aria-label={copy.heading} className="border border-[color:var(--color-border)]">
       {/* Header strip — always visible while scrolling (§5.2) */}
-      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3 [background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.025)_0_1px,transparent_1px_6px)]">
         <span className="font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">
           Wk {weekNumber}
         </span>
@@ -222,7 +232,13 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
                     >
                       −
                     </button>
-                    <span className="nums w-8 text-center font-semibold text-[color:var(--color-text-hi)]">{pick.chips}</span>
+                    <span
+                      className={`nums w-8 text-center font-semibold text-[color:var(--color-text-hi)] ${
+                        !reducedMotion && bumpedGame === g.id ? "chip-drop" : ""
+                      }`}
+                    >
+                      {pick.chips}
+                    </span>
                     <button
                       type="button"
                       onClick={() => bump(g.id, 1)}

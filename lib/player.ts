@@ -1,21 +1,14 @@
 import "server-only";
 import { auth } from "@clerk/nextjs/server";
 import { serviceDb } from "@/lib/jobs/util";
+import { routeFor, type PlayerState } from "@/lib/playerRouting";
 
 // Roster-state lookup for routing. This is an internal system check (which page does
 // this person see), not a data surface — player-visible data always flows through
 // the user client under RLS. Ticket reads never happen here.
 
-export interface PlayerState {
-  clerkUserId: string;
-  player: {
-    id: string;
-    status: "pending" | "approved" | "rejected" | "deactivated";
-    profileComplete: boolean;
-    firstName: string | null;
-  } | null;
-  rosterLocked: boolean;
-}
+export { routeFor };
+export type { PlayerState };
 
 export async function getPlayerState(): Promise<PlayerState | null> {
   const { userId } = await auth();
@@ -25,7 +18,7 @@ export async function getPlayerState(): Promise<PlayerState | null> {
   const [{ data: player }, { data: season }] = await Promise.all([
     db
       .from("players")
-      .select("id, status, profile_complete, first_name")
+      .select("id, status, profile_complete, first_name, how_to_play_accepted_at")
       .eq("clerk_user_id", userId)
       .maybeSingle(),
     db.from("seasons").select("week1_lock_at, status").order("year", { ascending: false }).limit(1).maybeSingle(),
@@ -42,23 +35,9 @@ export async function getPlayerState(): Promise<PlayerState | null> {
           status: player.status,
           profileComplete: player.profile_complete,
           firstName: player.first_name,
+          howToPlayAcceptedAt: player.how_to_play_accepted_at,
         }
       : null,
     rosterLocked,
   };
-}
-
-/** The routing table from ANTE-PLAYER §3. One place, used by every gate. */
-export function routeFor(state: PlayerState): string {
-  const { player, rosterLocked } = state;
-  if (!player) return rosterLocked ? "/closed" : "/join";
-  switch (player.status) {
-    case "rejected":
-      return "/closed";
-    case "pending":
-      return player.profileComplete ? "/waiting" : "/onboarding";
-    case "deactivated":
-    case "approved":
-      return player.profileComplete ? "/dashboard" : "/onboarding";
-  }
 }
