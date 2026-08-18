@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitWager } from "@/app/actions/wager";
+import { tierForWeek } from "@/lib/engine";
+import { ChipStack, PokerChip } from "@/components/chip/PokerChip";
 
 // The most-used surface in the product, built for a phone on a Wednesday night
 // (ANTE-PLAYER §11). Every rule here is advisory UX — the database re-validates all
@@ -61,6 +63,7 @@ type Side = "away" | "home";
 export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapshot, medianSnapshot, shoveUsedWeek, copy }: Props) {
   const router = useRouter();
   const { felt, houseLimit, stackPreAnte } = snapshot;
+  const chipTone = tierForWeek(weekNumber);
   const step = felt ? 1 : 10;
   const minChips = felt ? 1 : 10;
   const maxChips = felt ? houseLimit : 50;
@@ -223,29 +226,25 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
                   </span>
                 )}
                 {!shoveMode && pick && (
-                  <div className="ml-auto flex items-center gap-2">
+                  <div className="ml-auto flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => bump(g.id, -1)}
-                      aria-label={`− ${step}`}
-                      className="chamfer bg-[color:var(--color-surface-3)] px-3 py-1 text-[color:var(--color-text-hi)]"
+                      aria-label={`take back ${step}`}
+                      className="relative shrink-0 opacity-70 transition hover:opacity-100"
                     >
-                      −
+                      <PokerChip tone="chrome" size={28} />
+                      <span className="absolute inset-0 flex items-center justify-center font-bold text-[color:var(--color-canvas)]">−</span>
                     </button>
-                    <span
-                      className={`nums w-8 text-center font-semibold text-[color:var(--color-text-hi)] ${
-                        !reducedMotion && bumpedGame === g.id ? "chip-drop" : ""
-                      }`}
-                    >
-                      {pick.chips}
-                    </span>
+                    <ChipStack tone={chipTone} total={pick.chips} size={32} animated={!reducedMotion && bumpedGame === g.id} />
                     <button
                       type="button"
                       onClick={() => bump(g.id, 1)}
-                      aria-label={`+ ${step}`}
-                      className="chamfer bg-[color:var(--color-surface-3)] px-3 py-1 text-[color:var(--color-text-hi)]"
+                      aria-label={`push in ${step} more`}
+                      className="relative shrink-0 transition hover:brightness-110"
                     >
-                      +
+                      <PokerChip tone={chipTone} size={28} />
+                      <span className="absolute inset-0 flex items-center justify-center font-bold text-white">+</span>
                     </button>
                   </div>
                 )}

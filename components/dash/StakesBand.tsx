@@ -4,6 +4,7 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { tierForWeek } from "@/lib/engine";
 import { ET } from "@/lib/time";
+import { PokerChip } from "@/components/chip/PokerChip";
 
 // The stakes band (art §3, §7): the ONE large colored surface in the product, and
 // the only thing that changes with the season. Faceted plane in the current tier,
@@ -132,11 +133,14 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         </span>
       </div>
       {stat(anteLabel, String(week.ante))}
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wider text-white/50">{potLabel}</span>
-        <span className="gold-pulse nums font-[family-name:var(--font-display)] text-lg font-bold" style={{ color: "var(--color-gold)" }}>
-          {potBalance}
-        </span>
+      <div className="flex items-center gap-2">
+        <PokerChip tone="gold" size={26} className="gold-pulse" />
+        <div className="flex flex-col">
+          <span className="text-[10px] uppercase tracking-wider text-white/50">{potLabel}</span>
+          <span className="nums font-[family-name:var(--font-display)] text-lg font-bold" style={{ color: "var(--color-gold)" }}>
+            {potBalance}
+          </span>
+        </div>
       </div>
       {snap && stat(limitLabel, String(snap.house_limit))}
       <div className="ml-auto">{stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}</div>

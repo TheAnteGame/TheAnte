@@ -5,6 +5,7 @@ import { SignOutButton } from "@clerk/nextjs";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
+import { getCommissioner } from "@/lib/admin";
 import { WagerArea } from "@/components/wager/WagerArea";
 import { Leaderboard } from "@/components/Leaderboard";
 import { StakesBand } from "@/components/dash/StakesBand";
@@ -36,11 +37,13 @@ export default async function Dashboard() {
     .eq("player_id", playerId)
     .maybeSingle();
 
-  const [rankLabel, chipsLabel, logoutLabel, logoAlt] = await Promise.all([
+  const [rankLabel, chipsLabel, logoutLabel, logoAlt, commissionerLabel, commissioner] = await Promise.all([
     getContent("dash.header_rank_label"),
     getContent("dash.header_chips_label"),
     getContent("dash.logout_label"),
     getContent("home.logo_alt"),
+    getContent("dash.commissioner_link_label"),
+    getCommissioner(),
   ]);
 
   return (
@@ -57,6 +60,14 @@ export default async function Dashboard() {
           <div className="nums text-sm text-[color:var(--color-text-mid)]">
             {rankLabel} {standing?.rank ?? "—"} · {standing?.stack ?? "—"} {chipsLabel}
           </div>
+          {commissioner && (
+            <Link
+              href="/admin"
+              className="chamfer border border-[color:var(--color-gold-dim)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[color:var(--color-gold)] hover:bg-[color:var(--color-surface-2)]"
+            >
+              {commissionerLabel}
+            </Link>
+          )}
           <SignOutButton>
             <button className="text-xs text-[color:var(--color-text-low)] underline-offset-4 hover:underline">
               {logoutLabel}

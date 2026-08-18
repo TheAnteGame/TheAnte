@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { ChipStack, PokerChip } from "@/components/chip/PokerChip";
 
 // The how-to-play gate's interactive tutorial: a harmless mock bet slip (fake games,
 // no server calls until the final accept) with a guided click-through and pointer
@@ -71,15 +72,18 @@ const MOCK_ANTE = 20;
 const MOCK_LIMIT = 120;
 const MOCK_POT = 640;
 
-function Callout({ title, body, animated }: { title: string; body: string; animated: boolean }) {
+function Callout({ title, body, animated, stepNum }: { title: string; body: string; animated: boolean; stepNum: number }) {
   return (
     <div
-      className={`chamfer w-72 max-w-[calc(100vw-2rem)] border border-[color:var(--color-gold-dim)] bg-[color:var(--color-surface-2)] p-3 shadow-lg ${
+      className={`chamfer relative w-72 max-w-[calc(100vw-2rem)] border-2 border-[color:var(--color-gold)] bg-[color:var(--color-surface-2)] p-4 pt-5 shadow-[0_8px_28px_rgba(0,0,0,0.55)] ${
         animated ? "callout-in" : ""
       }`}
     >
-      <p className="text-xs font-bold uppercase tracking-wide text-[color:var(--color-gold)]">{title}</p>
-      <p className="mt-1 text-sm text-[color:var(--color-text-hi)]">{body}</p>
+      <div className="absolute -left-3 -top-3">
+        <PokerChip tone="gold" size={30} value={stepNum} />
+      </div>
+      <p className="text-sm font-bold uppercase tracking-wide text-[color:var(--color-gold)]">{title}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--color-text-hi)]">{body}</p>
     </div>
   );
 }
@@ -92,6 +96,7 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [isPhone, setIsPhone] = useState(false);
   const [calloutStyle, setCalloutStyle] = useState<{ top?: number; bottom?: number; left: number } | null>(null);
+  const [spotlightRect, setSpotlightRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const anteRef = useRef<HTMLDivElement>(null);
@@ -145,8 +150,9 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
   }, []);
 
   useLayoutEffect(() => {
-    if (isPhone || !current.target || !rootRef.current) {
+    if (!current.target || !rootRef.current) {
       setCalloutStyle(null);
+      setSpotlightRect(null);
       return;
     }
     const measure = () => {
@@ -154,10 +160,22 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
       const targetEl = targets[current.target!].current;
       if (!root || !targetEl) {
         setCalloutStyle(null);
+        setSpotlightRect(null);
         return;
       }
       const rootRect = root.getBoundingClientRect();
       const targetRect = targetEl.getBoundingClientRect();
+      const pad = 6;
+      setSpotlightRect({
+        top: targetRect.top - rootRect.top - pad,
+        left: targetRect.left - rootRect.left - pad,
+        width: targetRect.width + pad * 2,
+        height: targetRect.height + pad * 2,
+      });
+      if (isPhone) {
+        setCalloutStyle(null);
+        return;
+      }
       const calloutWidth = 288;
       const placeAbove = window.innerHeight - targetRect.bottom < 180;
       const targetMidX = targetRect.left - rootRect.left + targetRect.width / 2;
@@ -225,10 +243,13 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
 
       {!current.target && (
         <div
-          className={`chamfer border border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-6 py-8 text-center ${anim("callout-in")}`}
+          className={`chamfer relative border-2 border-[color:var(--color-gold)] bg-[color:var(--color-surface-1)] px-6 py-10 text-center shadow-[0_0_32px_rgba(201,162,75,0.18)] ${anim("callout-in")}`}
         >
-          <p className="font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-gold)]">{current.title}</p>
-          <p className="mx-auto mt-2 max-w-md text-[color:var(--color-text-hi)]">{current.body}</p>
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+            <PokerChip tone="gold" size={38} value={step + 1} />
+          </div>
+          <p className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-wide text-[color:var(--color-gold)]">{current.title}</p>
+          <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-[color:var(--color-text-hi)]">{current.body}</p>
           {current.showRevealCard && (
             <div className={`mx-auto mt-4 max-w-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] p-3 text-left ${anim("card-in")}`}>
               <div className="flex items-baseline justify-between">
@@ -299,27 +320,25 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
                   {g.spread > 0 ? `${g.home} −${g.spread}` : g.spread < 0 ? `${g.away} −${-g.spread}` : "PK"}
                 </span>
                 {pick && (
-                  <div ref={i === 0 ? chipsRef : undefined} className="ml-auto flex items-center gap-2">
+                  <div ref={i === 0 ? chipsRef : undefined} className="ml-auto flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => bump(g.id, -1)}
-                      aria-label="fewer chips"
-                      className={`chamfer bg-[color:var(--color-surface-3)] px-3 py-1 text-[color:var(--color-text-hi)] ${focusCls}`}
+                      aria-label="take back chips"
+                      className={`relative shrink-0 opacity-70 transition hover:opacity-100 ${focusCls}`}
                     >
-                      −
+                      <PokerChip tone="chrome" size={30} />
+                      <span className="absolute inset-0 flex items-center justify-center font-bold text-[color:var(--color-canvas)]">−</span>
                     </button>
-                    <span
-                      className={`nums w-8 text-center font-semibold text-[color:var(--color-text-hi)] ${i === 0 && chipBump ? anim("chip-drop") : ""}`}
-                    >
-                      {pick.chips}
-                    </span>
+                    <ChipStack tone="purple" total={pick.chips} size={34} animated={i === 0 && !reducedMotion && chipBump} />
                     <button
                       type="button"
                       onClick={() => bump(g.id, 1)}
-                      aria-label="more chips"
-                      className={`chamfer bg-[color:var(--color-surface-3)] px-3 py-1 text-[color:var(--color-text-hi)] ${focusCls}`}
+                      aria-label="toss in more chips"
+                      className={`relative shrink-0 transition hover:brightness-110 ${focusCls}`}
                     >
-                      +
+                      <PokerChip tone="purple" size={30} />
+                      <span className="absolute inset-0 flex items-center justify-center font-bold text-white">+</span>
                     </button>
                   </div>
                 )}
@@ -329,14 +348,27 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
         </ul>
       </section>
 
+      {current.target && spotlightRect && (
+        <div
+          className="pointer-events-none absolute z-[15] chamfer"
+          style={{
+            top: spotlightRect.top,
+            left: spotlightRect.left,
+            width: spotlightRect.width,
+            height: spotlightRect.height,
+            boxShadow: "0 0 0 2000px rgba(4,4,6,0.74), 0 0 0 2px var(--color-gold), 0 0 18px 2px var(--color-gold)",
+          }}
+        />
+      )}
+
       {!isPhone && current.target && calloutStyle && (
         <div className="absolute z-20" style={{ top: calloutStyle.top, bottom: calloutStyle.bottom, left: calloutStyle.left }}>
-          <Callout title={current.title} body={current.body} animated={!reducedMotion} />
+          <Callout title={current.title} body={current.body} animated={!reducedMotion} stepNum={step + 1} />
         </div>
       )}
       {isPhone && current.target && (
         <div className="sticky bottom-0 z-20 -mx-4 sm:-mx-6">
-          <Callout title={current.title} body={current.body} animated={!reducedMotion} />
+          <Callout title={current.title} body={current.body} animated={!reducedMotion} stepNum={step + 1} />
         </div>
       )}
 

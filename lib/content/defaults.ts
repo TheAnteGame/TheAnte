@@ -81,6 +81,7 @@ export const contentDefaults: Record<string, string> = {
   "howto.ready_body": "Four tiers, one season, nobody eliminated. Take your seat.",
 
   // Dashboard
+  "dash.commissioner_link_label": "Commissioner",
   "dash.header_rank_label": "Rank",
   "dash.header_chips_label": "Chips",
   "dash.logout_label": "Log out",
