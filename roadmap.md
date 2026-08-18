@@ -1,0 +1,333 @@
+# ANTE — Build Roadmap & Session State
+
+**Purpose:** the single place any session — human or cold-started agent — looks to learn
+where the build stands and what comes next. Update the **Current Status** block and the
+checkboxes every time meaningful work lands. Keep entries terse; detail lives in the specs.
+
+---
+
+## Current Status
+
+> **Phase:** Phases 0–11 COMPLETE and the Phase 12 SEASON TORTURE TEST IS GREEN
+> (18 weeks × 25 players on a real local stack — caught and fixed the
+> 1,000-row-truncation settlement bug before it could hit mid-season). Verified:
+> 64 unit tests, content-grep, typecheck, build. REMAINING TO LAUNCH (all quick):
+> (1) owner: Resend domain DNS + confirm key, (2) owner: mirror env vars to
+> Vercel project settings, (3) first commit + push on owner's go (deploys to
+> theantegame.com), (4) smoke the deployed site + cron 401s turn 200,
+> (5) recruit 8+ players, approve them, hit Activate season before Sep 8.
+> Local test stack: `supabase start && supabase db reset` then
+> `npx tsx --conditions=react-server scripts/season-torture.mts`.
+> Dev server: port 33333. (1) Clerk↔Supabase third-party
+> integration in both dashboards, (2) owner signup at localhost:3000, then agent
+> runs commissioner bootstrap — these unlock end-to-end testing of everything
+> from Phase 5 on. Vercel env mirror + first push still pending (owner said:
+> don't push yet). pg_cron schedules live; Vault cron_secret verified; 2026
+> season row created (preseason, lock 2026-09-10 noon ET).
+> **Last updated:** 2026-08-17 (evening)
+> **Done so far:** infra wired; Next.js 16 scaffold with content plumbing (51 engine
+> tests green, typecheck + build green); full schema/RLS/triggers/seeds LIVE on
+> Supabase (5 migrations applied, guards smoke-tested, advisors clean); pure
+> settlement engine complete incl. full-season simulation asserting conservation
+> weekly.
+> **Blocked on (owner):** the 5 `PASTE_ME` keys in `.env.local`; same vars must be
+> set in Vercel BEFORE the first push (the build prerenders via Supabase env). Not
+> blocking Phase 4.
+> **Not yet done, deliberately:** repo has NO commits (owner confirms before first
+> push — it deploys to theantegame.com); RLS behavioral tests land with the
+> Playwright blackout suite (needs Clerk JWTs, Phase 6+); generated DB types vendor
+> in at Phase 4–5 via the Supabase connector; submit_ticket RPC (DB-side slip
+> validation) lands with Phase 6.
+
+## Cold-session bootstrap
+
+1. Read `CLAUDE.md` (targets + invariants), `docs/DECISIONS.md` (post-spec decisions),
+   then this file.
+2. The full product spec is `docs/build spec/` — authority order:
+   RULEBOOK → PLAYER → ADMIN → ART-DIRECTION → TECH. Read what the current phase needs.
+3. Verify tooling: Supabase connector → org "The ANTE Game Org", project `vyhxslqddjyyrgbmaedn`
+   (apply migrations through it). Vercel connector → team `toler`, project `ante-game`
+   (GitHub `TheAnteGame/TheAnte` connected; push to main = production deploy to
+   theantegame.com). Clerk connector = SDK docs only; keys come from the dashboard.
+4. UI phases must load these skills before writing UI: `/frontend-design`,
+   `/ui-ux-pro-max`, `/ui-styling`, `/design` (owner instruction, 2026-08-17).
+5. The two invariants that are never weakened: RLS-enforced blackout; exact chip
+   conservation over an append-only ledger. If a change touches either, stop and re-read
+   `ANTE-TECH.md` §7 and `ANTE-PLAYER.md` §8.12 first.
+
+---
+
+## Phase 0 — Infrastructure & decisions ✅ (2026-08-17)
+
+- [x] Domain theantegame.com bought, on Vercel nameservers, assigned to `ante-game`, SSL live
+- [x] GitHub repo `TheAnteGame/TheAnte` created and connected to Vercel (auto-deploy armed)
+- [x] Local repo linked (`.vercel/project.json`)
+- [x] Supabase project `TheAnte` created (us-west-2), connector scoped, schema empty
+- [x] Clerk application "The Ante" created (`app_3HosXHrAzzGhRnBa3MKOlOB0qL4`)
+- [x] Decisions D-001 (phone OTP + email-only notifications, SMS stubbed), D-005
+      (nflverse + ESPN), D-006 (Google Fonts) → `docs/DECISIONS.md`
+- [x] `.env.example` updated; `.env.local` templated with `CRON_SECRET` generated
+- [ ] **Owner:** paste 5 keys into `.env.local`; mirror to Vercel env for prod/preview
+- [ ] **Owner:** enable phone OTP as the only auth strategy in Clerk
+- [ ] **Owner (later, at Phase 5):** register Clerk as third-party auth provider in
+      Supabase dashboard (exact steps will be provided at that point)
+- [ ] **Owner (later, at Phase 10):** create Resend API key; agent wires
+      theantegame.com DNS records via Vercel
+
+## Phase 1 — Scaffold & plumbing
+
+Next.js App Router + TypeScript strict + Tailwind; repo layout per `ANTE-TECH.md` §5
+(`app/`, `lib/engine|sports|notify|db|content`, `components/`, `supabase/migrations/`,
+`tests/engine|blackout`). Tooling: Drizzle, supabase-js, Zod, Luxon, TanStack Query,
+Vitest, Playwright, ESLint + Prettier. `getContent(key)` with seeded repo defaults.
+First commit + push gate: **confirm with owner before first push** (it goes live).
+
+- [x] App scaffold (Next 16, strict TS, Tailwind v4), fonts via next/font (D-006)
+- [x] Directory layout + lint/format/CI workflow (content-grep lands Phase 6)
+- [x] Content-block plumbing (`lib/content/`) with seeded defaults
+- [x] Local build green (placeholder page) — Vercel env mirror pending owner keys
+
+## Phase 2 — Schema, RLS, triggers, ledger ⚠️ over-engineer deliberately
+
+All tables per `ANTE-PLAYER.md` §9 + `ANTE-ADMIN.md` §3, as reviewable SQL migrations.
+The blackout policy (readable only when `revealed_at IS NOT NULL` or own row — no admin
+bypass), ticket-immutability trigger (raises for service role too), append-only
+ledger/audit triggers, `(week_id, job_key)` idempotency constraints, waiting-on narrow
+view, standings materialized view, seeded 32-team table (nflverse codes), Clerk `sub` as
+`text` in policies (`auth.jwt()->>'sub'`, native third-party integration — never
+`auth.uid()`).
+
+- [x] 5 SQL migrations applied to Supabase (`supabase/migrations/`): tables, guards,
+      RLS + views, team seed, advisor hardening
+- [x] Blackout RLS live (no admin bypass; `ante.me()`/`ante.is_approved()` identity fns)
+- [x] Immutability + append-only triggers, smoke-tested against live DB (all raise)
+- [x] 32 teams seeded (nflverse codes); content defaults live in repo fallback
+- [ ] Commissioner row + season row — created when the owner signs up (Phase 5)
+- [ ] RLS behavioral tests — with the Playwright blackout suite (needs Clerk JWTs)
+
+## Phase 3 — Settlement engine (pure) ⚠️ over-engineer deliberately
+
+`lib/engine/` — no I/O, no clock, no imports from below. Everything in
+`ANTE-PLAYER.md` §8: median, ante tiers, house limit, payout clamp, sweep, pot
+places/splits/marker, shove lifecycle, felt rules, tiebreakers, invariants (§8.12).
+
+- [x] Engine complete in `lib/engine/`: constants, median/limit/payout core,
+      slateOpen, reveal (deferred-entry posting), settleWeek (sweep/pot/marker/felt),
+      invariants — pure, exact integer/rational math, no floats near chips
+- [x] 51 Vitest tests green: every rulebook worked example + boundaries
+- [x] Full-season simulation ×5 seeds: conservation asserted after every week
+- [x] Invariant assertion module (`assertInvariants`) ready for the settlement job
+
+## Phase 4 — Sports ingest & weekly jobs
+
+`lib/sports/` adapter (D-005: nflverse `games.csv` schedule+spreads; ESPN scoreboard
+live; joined on the `espn` column; raw responses stored in `job_runs.detail`).
+Cron jobs per `ANTE-ADMIN.md` §5, all idempotent, all writing `job_runs`.
+
+- [x] Adapter: `lib/sports/` — nflverse (own CSV parser, schedule + spreads + finals)
+      and ESPN (live status/scores), joined on the `espn` column, raw rows preserved
+- [x] `lib/time.ts` — ET anchors via Luxon (Tue 6am open / Thu noon deadline from the
+      week's first kickoff), DST-proof (tested across the Nov change)
+- [x] All six jobs in `lib/jobs/` + `/api/jobs/*` routes (CRON_SECRET-gated) +
+      `vercel.json` crons (UTC entries with internal ET guards): slate.open (atomic
+      idempotent antes, felt, snapshots), reveal.check/deadline (auto-fold, atomic
+      deferred-entry posting, shove cards), scores.sync (auto-triggers settlement),
+      settle.week (asserts conservation BEFORE writing; halts loud), schedule.refetch
+      (kickoff-moved commissioner alert per §10)
+- [x] Preseason data validation PASSED live (2026): spreads populated, espn join clean,
+      Wk 1 Wed opener (NE@SEA 9/9) + Wk 12 Wed game (GB@LA 11/25) present, 272 REG games
+- [x] Jobs smoke-tested against the live DB (graceful no-season skip, job_runs written)
+- [x] 57 tests green (engine + CSV + time anchors)
+
+## Phase 5 — Auth & onboarding
+
+Clerk phone OTP (D-001), Supabase third-party handshake, middleware, admission flow
+(pending → approve/reject, preseason-only at API layer), roster lock, 8-player gate,
+onboarding form, 500-chip buy-in entry. Per `ANTE-PLAYER.md` §3.
+
+- [x] `proxy.ts` (Next 16 middleware) with Clerk; /api/jobs excluded (own auth)
+- [x] Homepage phone OTP (Clerk v7 future API: phoneCode/verifications), in-place
+      code entry, E.164 US default, 30s resend, one-time-code autocomplete
+- [x] `/join` (pending application via RLS players_apply), `/waiting`, `/closed`,
+      `/onboarding` + `/profile` (self-edit under RLS), `/dashboard` stub proving
+      the auth→RLS→standings pipeline; routing table in `lib/player.ts`
+- [x] Homepage verified in browser, desktop + mobile
+- [x] **Owner:** Clerk↔Supabase integration done (domain
+      destined-deer-68.clerk.accounts.dev registered); phone-only strategy on
+- [x] **Owner:** first real signup completed end-to-end (phone OTP → application →
+      onboarding → waiting page) — the full auth→RLS pipeline works live
+- [x] Commissioner bootstrap run 2026-08-17: owner approved, 500-chip buy_in
+      posted (the league's first ledger entry), commissioner seat filled,
+      audit-logged. Required migration 0008 (self-update guard now permits
+      adminstrative/no-JWT and service-role writes; players still confined to
+      profile fields). Interim admissions until Phase 10: bootstrap SQL + audit.
+- [x] Fixes from owner testing: favorite-team select sized to match inputs;
+      clerk-captcha mount element added (kills the Smart CAPTCHA console error)
+
+## Phase 6 — Bet slip & submission ✅ code complete (2026-08-17)
+
+- [x] Migration 0007: `week_players` snapshot (felt + house limit fixed at slate
+      open, written by the job) + `submit_ticket` RPC — SECURITY INVOKER, runs under
+      RLS, validates every slip rule in Postgres (steps, min games w/ short-stack
+      rule, limit, felt mode, shove = pre-ante stack + refund bookkeeping),
+      validate-then-insert because tickets are immutable from birth
+- [x] Wager area (Closed / Open / Submitted states; Revealed/Settled placeholders
+      until Phases 7–8), all strings via content blocks
+- [x] Bet slip: sticky header strip, side buttons + steppers, spread-as-context,
+      felt mode, shove mode (typed SHOVE, pre-ante stake note, dark-until-reveal
+      note), irreversibility confirm modal — verified interactively in browser
+- [x] Event-driven reveal: submitWager fires revealCheck inline after the last
+      ticket lands; pg_cron poll is the fallback
+- [x] Waiting-on list from the narrow view + 15s RSC poll (the one moving thing)
+- [ ] End-to-end submit test — needs the owner signup + commissioner bootstrap
+      (see Phase 5 owner items), then a test slate
+
+## Phase 7 — Reveal ✅ code complete (2026-08-17)
+
+- [x] Reveal job already live from Phase 4 (atomic deferred-entry posting, event-
+      driven trigger from Phase 6); this phase built the experience
+- [x] Three-act sequence, verified in browser: interstitial ("The room is open") →
+      shove beat (gold, breaks here for the first time, names the bent prices) →
+      the board with cards-turning-over stagger. Plays once per week per device
+      (sessionStorage); prefers-reduced-motion cuts straight to the board
+- [x] By-game view: both sides, head counts, prices from the engine's exact
+      rational math (shove heads bend prices; empty side shows even money);
+      shovers gold-flagged inline
+- [x] By-player pivot: shoves sort first, "you" marker, folders receded
+- [x] All reads as the user — the same RLS that sealed the rows serves them
+- [ ] End-to-end with real data — same gate as Phases 5–6 (owner signup + bootstrap)
+
+## Phase 8 — Settlement UI & leaderboard ✅ code complete (2026-08-17)
+
+(The settle.week job itself — sweep, pot, marker, conservation halt — shipped in
+Phase 4; this phase made outcomes visible.)
+
+- [x] Settled state in the wager area (§5.5): per-bet outcome with sign + label +
+      color (never hue alone), applied multiplier, profit, weekly delta including
+      the ante, pot result (winners / roll / marker), new stack + rank
+- [x] Leaderboard (§6): 11 columns, click-to-sort, felt badge, deactivated rows
+      muted + "out", own row highlighted, tabular numerals — verified in browser
+- [x] Weekly delta wiring is blackout-safe by construction (ledger-only)
+- [x] Wager area now covers all five states: Closed / Open / Submitted / Revealed
+      / Settled
+- [ ] Live end-to-end settlement — will be exercised by the seed/test slate in
+      Phase 12 (or the first real week)
+
+## Phase 9 — Dashboard surfaces ✅ code complete (2026-08-17)
+
+- [x] Two-column layout per the wireframe (62/38, single column under 900px with
+      the spec's exact mobile order: wager → chat → leaderboard → news → promo →
+      support)
+- [x] Stakes band: the one big tier-colored plane (gradient facet, tier top edge),
+      season ring SVG (elapsed dimmed / current bright / future dark, gold bezel),
+      week + tier + ante + Pot + your limit + deadline; preseason variant with the
+      Week 1 lock date
+- [x] Ticker: blended rail (stored manual/feed rows + system items computed at
+      render per ADMIN §4.5.3, worded by content blocks, ordered pinned→priority→
+      source-rank→recency), CSS crawl with hover pause, reduced-motion static
+      rotation, empty rail renders nothing; waiting_on stops at reveal
+- [x] Table Talk: 50-message panel, system messages gold, tombstones for hidden,
+      composer via RLS (mute enforced by policy + muted notice with expiry), 5s
+      poll cadence with hidden-tab backoff
+- [x] Fav-team news fader (5s crossfade, hover pause, league-wide fallback),
+      promo box (content-managed, collapses to fallback), support box (mailto)
+- [x] Migration 0009: app_settings readable by approved players
+- [ ] Owner visual pass on the live dashboard (signed-in view)
+
+## Phase 10 — Admin console ✅ code complete (2026-08-17)
+
+- [x] Gate: one seat, 404 not 403, every action re-checks (`lib/admin.ts`); all
+      mutations audit-logged, public corrections mirror to Table Talk (§13)
+- [x] Ops: current week card, submission tracker via the PLAYER-facing waiting_on
+      view (names only — no privileged pre-reveal panel exists) + email nudge,
+      Pot + marker banner, job health strip, alerts
+- [x] Week control: slate table (off-slate struck through), the five permitted
+      game-data overrides (score / cancel / postpone / void-pre-deadline /
+      un-final) each demanding a public reason, force reveal (hard-blocked before
+      the deadline), manual settlement run
+- [x] Players CRM: applications tab (approve = buy-in moment + welcome email,
+      reject; hard-locked at the API layer after Week 1 lock), roster table,
+      mute/unmute (never touches betting), deactivate with the two-field friction
+      (evidence required — acceptance 27), reactivate, private notes
+- [x] Content editor: every default key grouped + searchable, save-with-revision,
+      restore-to-default, rules.* namespace blocked (only rules.intro editable)
+- [x] Feeds & ticker: manual item composer (pin/priority/window), hide-only for
+      feed items, source CRUD with health, RSS/Atom ingest (`lib/feeds.ts` +
+      feeds.sync job + pg_cron every 15m — migration 0010)
+- [x] Notifications: all 8 event templates editable (content-managed), SMS
+      visibly deferred per D-001; sends wire up in Phase 11
+- [x] Settings: season card with the 8-player activation gate (acceptance 15),
+      rule constants read-only + locked, provider health, commissioner handoff
+      with typed-name confirmation
+- [x] Audit: append-only viewer with filter
+- [ ] Deferred to Phase 11/12: re-settlement cascade + diff UI, season-close
+      tooling (high card, marker write-off, awards), scheduled notification sends,
+      audit CSV export
+
+## Phase 11 — Notifications, re-settlement, awards, season close ✅ (2026-08-17)
+
+- [x] Template rendering (`lib/notify/templates.ts`): content-managed notify.* keys,
+      whitelist vars (blackout by construction), unfilled-variable sends fail loud,
+      per-(player, week) dedupe via notification_log
+- [x] Sends wired into the season's rhythm: slate.open (per-player limits), reveal,
+      settled (per-player deltas + pot), plus reminder Wed 6pm / final call Thu 9am
+      ET for unsubmitted players (new notify.reminders job + pg_cron 0011)
+- [x] Re-settlement cascade (`lib/jobs/resettle.ts`): reverses every settlement
+      entry with visible reversal rows (never deletes), replays the target week and
+      all later weeks in order with run-scoped idempotency keys; posts publicly;
+      console form on the Week page (acceptance 4/28 groundwork)
+- [x] Awards engine (`lib/engine/awards.ts`, pure, 7 new tests — 64 total): all
+      seven computed awards per §12's exact definitions + championship tiebreaker
+      order (§11) + The Mark electorate rule
+- [x] Season close console (/admin/season-close): standings with tiebreakers shown,
+      awards preview, one-shot high card (SHA-256 commit → reveal in Table Talk,
+      re-draw refused — acceptance 21), marker write-off (§8.10), season lock
+- [x] /season player page: final standings with out markers, awards, The Mark
+      ballot (felt finishers, 7-day window, plurality with co-winners)
+
+## Phase 12 — Acceptance & launch (IN PROGRESS)
+
+- [x] **The season torture test** (`scripts/season-torture.mts`): a full 18-week,
+      25-player season against a REAL local Supabase stack — actual migrations,
+      triggers, RLS (players are real signed JWTs), submit_ticket RPC, and job
+      code. Per week: double-fired slate.open (must not double-ante), submissions
+      with folds/shoves/felt slips, blackout probes as rival players (no foreign
+      tickets, Pot frozen), no-ledger-writes-in-window check (AT 24a), real
+      auto-fold + reveal, post-reveal visibility, scores with ties/cancellations,
+      real settlement, SQL conservation (sum+pot == 12,500, stacks ≥ 1). Plus a
+      mid-season re-settlement cascade with tickets asserted byte-identical
+      (AT 28). Run: `supabase start && supabase db reset`, then
+      `npx tsx --conditions=react-server scripts/season-torture.mts`
+- [x] slateOpen refactored: `openWeekCore` seam (identical writes; feed + anchors
+      injectable) so the test can march 18 weeks in minutes
+- [x] Acceptance test 8 live in CI: `scripts/content-grep.mjs` + allowlist —
+      found and fixed 10 hardcoded strings on first run
+- [x] **TORTURE TEST GREEN** (2026-08-18): 18 weeks × 25 players, zero failures,
+      5.7s. It caught ONE REAL PRODUCTION BUG before going green: PostgREST's
+      1,000-row default cap silently truncated every unpaginated ledger read —
+      settlement would have computed wrong stacks around Week 14 of a 25-player
+      season (exactly the owner's fear). Fixed with `lib/db/fetchAll.ts` paging,
+      applied to all nine JS-side ledger readers (settle, resettle, util,
+      leaderboard, settled results, stakes band, ticker, admin ops, admin players,
+      season data). The standings SQL view was never affected (sums in-database).
+- [x] Rules-dynamics observation for the owner (not a bug): a big-stack winning
+      shove drains the Pot into a large multi-week marker (§7 permits this —
+      "the Pot goes negative and carries"). With 25 aggressive simulated shovers
+      the marker ran −5,995 late-season and weekly Pots stopped paying. Real
+      humans shove more carefully, but worth knowing the rulebook allows it.
+- [ ] Remaining launch items: Resend API key + theantegame.com DNS, Vercel env
+      mirror, cron URLs already point at production, first commit + push (owner
+      confirms), smoke the deployed site, activate season when 8+ approved
+
+- [ ] All 35 acceptance tests in `ANTE-ADMIN.md` §7 pass (blackout suite against real DB)
+- [ ] Blackout surface-diff test green across a simulated shove week
+- [ ] Seed script produces a realistic mid-season league (TECH §9) for preview env
+- [ ] Preview Supabase project for PR branches (TECH §9) — decide when needed
+- [ ] Sentry, Supabase PITR + weekly ledger export, four SMS/email alarms
+- [ ] Production env vars, cron schedules, go-live on theantegame.com
+- [x] Cron plan RESOLVED (owner confirmed Hobby, 2026-08-17): all five schedules
+      live in Supabase pg_cron (migration 0006), vercel.json removed. The reveal is
+      additionally event-driven from Phase 6 (fired by the last submission).
+- [ ] **Owner:** create Vault secret `cron_secret` in Supabase dashboard (Project
+      Settings → Vault) with the exact value of CRON_SECRET from `.env.local` —
+      cron calls 401 until it exists. Then also set CRON_SECRET in Vercel env.

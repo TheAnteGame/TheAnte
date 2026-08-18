@@ -1,0 +1,150 @@
+import { DateTime } from "luxon";
+import { createUserClient } from "@/lib/db/supabase";
+import { getContent } from "@/lib/content/getContent";
+import { ET } from "@/lib/time";
+import { BetSlip, type SlipCopy } from "./BetSlip";
+import { PollRefresh } from "./PollRefresh";
+import { RevealBoard } from "./RevealBoard";
+import { SettledResults } from "./SettledResults";
+
+// The wager area: one slot, five states (ANTE-PLAYER §5.1). This phase renders
+// Closed / Open / Submitted; Revealed and Settled get their real treatments in
+// Phases 7–8. All reads run as the user — the blackout RLS is the data boundary.
+
+export async function WagerArea({ playerId }: { playerId: string }) {
+  const db = createUserClient();
+
+  const { data: week } = await db
+    .from("weeks")
+    .select("id, number, ante, phase, opens_at, deadline_at, revealed_at, median_snapshot, pot_awarded, marker")
+    .in("phase", ["open", "revealed", "settled"])
+    .order("number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const heading = await getContent("dash.wager.heading");
+
+  if (!week) {
+    const closed = await getContent("dash.wager.closed_message");
+    return (
+      <section aria-label={heading} className="border border-[color:var(--color-border)] p-6">
+        <p className="text-[color:var(--color-text-mid)]">{closed}</p>
+      </section>
+    );
+  }
+
+  if (week.phase === "revealed") {
+    return <RevealBoard week={week} playerId={playerId} />;
+  }
+
+  if (week.phase === "settled") {
+    return <SettledResults week={week} playerId={playerId} />;
+  }
+
+  // Open week: has this player already submitted?
+  const { data: myTicket } = await db
+    .from("tickets")
+    .select("id, is_shove, total_chips, committed_stake")
+    .eq("week_id", week.id)
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  if (myTicket) {
+    const [submittedMessage, waitingLabel] = await Promise.all([
+      getContent("dash.wager.submitted_message"),
+      getContent("dash.wager.waiting_on_label"),
+    ]);
+    const { data: waiting } = await db.from("waiting_on").select("first_name, last_name, submitted");
+    const out = (waiting ?? []).filter((w) => !w.submitted);
+    const inCount = (waiting ?? []).length - out.length;
+    return (
+      <section aria-label={heading} className="border border-[color:var(--color-border)] p-6">
+        {/* The waiting-on list is the ONE thing allowed to move during the blackout (§6). */}
+        <PollRefresh intervalMs={15000} />
+        <p className="text-[color:var(--color-text-hi)]">{submittedMessage}</p>
+        <p className="mt-4 text-sm text-[color:var(--color-text-mid)]">
+          {inCount} of {(waiting ?? []).length} in — {waitingLabel}{" "}
+          <span className="text-[color:var(--color-gold)]">
+            {out.map((w) => `${w.first_name ?? ""} ${(w.last_name ?? "").slice(0, 1)}.`.trim()).join(", ") || "—"}
+          </span>
+        </p>
+      </section>
+    );
+  }
+
+  // The slip. Snapshot + slate, all as the user.
+  const [{ data: snap }, { data: games }, { data: me }] = await Promise.all([
+    db.from("week_players").select("stack_pre_ante, felt, house_limit").eq("week_id", week.id).eq("player_id", playerId).maybeSingle(),
+    db
+      .from("games")
+      .select("id, away_team, home_team, spread_frozen, kickoff_at, on_slate")
+      .eq("week_id", week.id)
+      .eq("on_slate", true)
+      .order("kickoff_at"),
+    db.from("players").select("shove_used_week").eq("id", playerId).maybeSingle(),
+  ]);
+
+  if (!snap || !games || games.length === 0) {
+    const closed = await getContent("dash.wager.closed_message");
+    return (
+      <section aria-label={heading} className="border border-[color:var(--color-border)] p-6">
+        <p className="text-[color:var(--color-text-mid)]">{closed}</p>
+      </section>
+    );
+  }
+
+  const copy: SlipCopy = Object.fromEntries(
+    await Promise.all(
+      (
+        [
+          ["heading", "dash.wager.heading"],
+          ["anteLabel", "dash.wager.ante_label"],
+          ["limitLabel", "dash.wager.limit_label"],
+          ["committedLabel", "dash.wager.committed_label"],
+          ["remainingLabel", "dash.wager.remaining_label"],
+          ["gamesLabel", "dash.wager.games_label"],
+          ["submitCta", "dash.wager.submit_cta"],
+          ["confirmTitle", "dash.wager.confirm_title"],
+          ["confirmBody", "dash.wager.confirm_body"],
+          ["confirmCta", "dash.wager.confirm_cta"],
+          ["cancelCta", "dash.wager.cancel_cta"],
+          ["shoveModeCta", "dash.wager.shove_mode_cta"],
+          ["shoveWarning", "dash.wager.shove_warning"],
+          ["shoveCommitNote", "dash.wager.shove_commit_note"],
+          ["shoveDarkNote", "dash.wager.shove_dark_note"],
+          ["shoveSpentLabel", "dash.wager.shove_spent_label"],
+          ["spreadNote", "dash.wager.spread_note"],
+          ["feltNotice", "dash.wager.felt_notice"],
+          ["cappedRoom", "dash.wager.capped_room"],
+          ["cappedStack", "dash.wager.capped_stack"],
+          ["minGamesNote", "dash.wager.min_games_note"],
+          ["totalLabel", "dash.wager.total_label"],
+          ["errorGeneric", "profile.error_generic"],
+        ] as const
+      ).map(async ([k, key]) => [k, await getContent(key)] as const),
+    ),
+  ) as unknown as SlipCopy;
+
+  const deadlineEt = DateTime.fromISO(week.deadline_at).setZone(ET).toFormat("cccc h:mma 'ET'");
+
+  return (
+    <BetSlip
+      weekId={week.id}
+      weekNumber={week.number}
+      ante={week.ante}
+      deadlineLabel={deadlineEt}
+      games={games.map((g) => ({
+        id: g.id,
+        away: g.away_team,
+        home: g.home_team,
+        spread: g.spread_frozen,
+        kickoff: DateTime.fromISO(g.kickoff_at).setZone(ET).toFormat("ccc h:mma"),
+        kickedOff: new Date(g.kickoff_at) <= new Date(),
+      }))}
+      snapshot={{ stackPreAnte: snap.stack_pre_ante, felt: snap.felt, houseLimit: snap.house_limit }}
+      medianSnapshot={week.median_snapshot ?? 0}
+      shoveUsedWeek={me?.shove_used_week ?? null}
+      copy={copy}
+    />
+  );
+}

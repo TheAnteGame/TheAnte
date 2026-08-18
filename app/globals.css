@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* ── ANTE foundation tokens (art direction §3) ─────────────────────────────────
+   Three materials: chrome (the interface), gold (the house), gems (the stakes —
+   the only thing that changes, four times a season). Everything below the stakes
+   band lives on the neutral ramp; state is contrast + weight + iconography, not hue.
+   The design build (Phase 6+) refines these; the structure is law. */
+
+@theme {
+  /* Neutral ramp — near-black canvas, dark field is the native ground */
+  --color-canvas: #0b0b0d;
+  --color-surface-1: #131316;
+  --color-surface-2: #1b1b20;
+  --color-surface-3: #24242a;
+  --color-border: #2e2e36;
+  --color-text-hi: #f2f2f4;
+  --color-text-mid: #a3a3ad;
+  --color-text-low: #64646e;
+
+  /* Chrome — the interactive material. Hueless, near-white. */
+  --color-chrome: #e8e8ec;
+  --color-chrome-dim: #c2c2c9;
+
+  /* Gold — the house. Hairlines, system messages, the Pot, the felt badge. */
+  --color-gold: #c9a24b;
+  --color-gold-dim: #8a6f33;
+
+  /* The four gems — ante tiers, a season clock (art §3.1). Stakes band only. */
+  --color-tier-purple-deep: #2e1856;
+  --color-tier-purple: #4c2a8e;
+  --color-tier-purple-bright: #8b5fd6;
+  --color-tier-red-deep: #8c1410;
+  --color-tier-red: #d62b1f;
+  --color-tier-red-bright: #f04e2a;
+  --color-tier-teal-deep: #063e3c;
+  --color-tier-teal: #0e6b66;
+  --color-tier-teal-bright: #17a79e;
+  --color-tier-gold-deep: #7a4409;
+  --color-tier-gold: #c97a18;
+  --color-tier-gold-bright: #e8c766;
+
+  /* Muted data pair — win/loss, always paired with a sign or icon, never hue alone */
+  --color-win: #4d9a6a;
+  --color-loss: #b25050;
+
+  --font-display: var(--font-chakra-petch);
+  --font-body: var(--font-archivo);
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-text-hi);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+/* Tabular numerals are non-negotiable wherever a number lives (ANTE-TECH §6). */
+.nums,
+td.nums,
+[data-nums] {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Chamfer, not radius (art §5): the one corner treatment, via clip-path. Applied
+   to primary actions and featured cards only; ordinary rows stay plain. */
+.chamfer {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+/* One orchestrated load moment on the homepage; everything else stays still. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: rise 0.5s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}
+
+/* The reveal — the one place to be genuinely theatrical (art §8). */
+@keyframes stage-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.reveal-stage {
+  animation: stage-in 0.6s ease-out both;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) rotateX(18deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+  }
+}
+.card-in {
+  animation: card-in 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-stage,
+  .card-in {
+    animation: none;
+  }
+}
+
+/* The ticker crawl — pauses on hover; reduced-motion swaps to a static item in JS. */
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  animation: ticker-scroll 40s linear infinite;
+}
+.ticker-rail:hover .ticker-track {
+  animation-play-state: paused;
+}
