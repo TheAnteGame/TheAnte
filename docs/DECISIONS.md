@@ -560,3 +560,34 @@ retry still cannot ante them twice.
 **Backfilled the affected player.** Conservation verified across the change: league total
 4,500 before and after, Pot 80 → 90, the player 500 → 490, house limit 160 matching every
 peer, and all nine approved players now hold a Week 1 snapshot.
+
+## D-021 — The reveal told the room a shove paid the fade price (2026-08-21)
+
+**Found by previewing the reveal before the league sees it**, which is exactly what the
+preview was for. Driving the real `RevealExperience` with a realistic Week 1 — the actual
+15-game slate, the actual nine players, one shove, one fold — put a 490-chip shove on the
+board at **2.50×**.
+
+**§8 is unambiguous: a shove always pays even money — 1×, no multiplier, ever.** The shove
+beat directly above it even said "even money" in the same breath, so the screen contradicted
+itself.
+
+**The chips were never at risk.** `settleWeek` has always paid a shove `{num: 1, den: 1}`,
+and `tests/engine/settle.test.ts` covers it explicitly — *"a winning shove doubles the
+pre-ante stack at exactly 1× — never the fade price."* This was `RevealBoard` assembling
+the by-player view from the crowd price on that side, which is correct for everyone else
+and wrong for the shover: they **move** the price (§14) but do not ride it.
+
+Left alone it would have shown a 490 shove as paying 1,225 on the product's most dramatic
+screen, for the days between the reveal and settlement — and then paid 490. That is the
+precise kind of argument the rulebook exists to prevent.
+
+**The by-game view was already right** and needs no change: the side price is what the
+other players collect, and the shover's entry is already marked in gold with the SHOVE
+label.
+
+**A note on the preview harness.** It reproduces `RevealBoard`'s assembly rather than
+importing it (that assembly lives inside a server component that queries the database), so
+it carried its own copy of the same bug and had to be fixed in both places. The harness is
+**deliberately never committed**: it renders fabricated tickets against real player names,
+which on a public URL would read as leaked picks.

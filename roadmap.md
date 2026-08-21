@@ -8,6 +8,18 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (thirteenth pass):** **The reveal misreported shove payouts (D-021).** Previewing
+> the reveal against a realistic Week 1 put a 490-chip shove on the board at **2.50×** when
+> §8 says a shove always pays even money — the shove beat directly above it even said "even
+> money". Chips were never at risk: `settleWeek` has always paid 1× and it is unit-tested;
+> this was `RevealBoard` reusing the crowd price for the shover, who *moves* that price (§14)
+> but does not ride it. Fixed and pushed. The by-game view was already correct.
+>
+> A local-only reveal preview exists at `app/reveal-preview/` (uncommitted, never shipped —
+> it renders fabricated tickets against real names, which on a public URL would read as
+> leaked picks). Visit `localhost:33333/reveal-preview` while signed in; delete the folder
+> when done.
+
 > **2026-08-21 (twelfth pass):** **Late joiners could not play (D-020).** A real signup after
 > Week 1's slate opened saw a locked Game Board and sat at 500/Δ+0 while everyone else was at
 > 490/−10. `approvePlayer` credits the buy-in but only `slate.open` writes the `week_players`

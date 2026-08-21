@@ -91,7 +91,13 @@ export async function RevealBoard({
             label: gameLabel.get(b.game_id) ?? "",
             team: b.side === "away" ? g.away : g.home,
             chips: b.chips,
-            pays: g.sides[b.side as "away" | "home"].pays,
+            // §8 — a shove always pays even money, no multiplier, ever. The crowd price
+            // on that side is what everyone ELSE collects: the shover moved it (§14) but
+            // does not ride it. settleWeek already pays 1× here; showing the side's
+            // multiplier told the room a 490 shove paid 2.5× when it pays 490.
+            pays: t.is_shove
+              ? formatMultiplier({ num: 1, den: 1 })
+              : g.sides[b.side as "away" | "home"].pays,
           };
         }),
     }))
