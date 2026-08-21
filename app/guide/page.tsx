@@ -17,13 +17,12 @@ export default async function Guide() {
   const state = await getPlayerState();
   if (!state) redirect("/");
 
-  const [logoAlt, heading, intro, backCta, tutorialCta, rulesCta, rulesNote, ...sectionCopy] = await Promise.all([
+  const [logoAlt, heading, intro, backCta, tutorialCta, rulesNote, ...sectionCopy] = await Promise.all([
     getContent("home.logo_alt"),
     getContent("guide.heading"),
     getContent("guide.intro"),
     getContent("guide.back_cta"),
     getContent("guide.tutorial_cta"),
-    getContent("guide.rules_cta"),
     getContent("guide.rules_note"),
     ...SECTIONS.flatMap((k) => [getContent(`guide.${k}_title`), getContent(`guide.${k}_body`)]),
   ]);
@@ -84,12 +83,6 @@ export default async function Guide() {
               className="chamfer chrome-face px-5 py-3 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wide"
             >
               {tutorialCta}
-            </Link>
-            <Link
-              href="/rules"
-              className="chamfer border border-[color:var(--color-gold-dim)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold)] hover:bg-[color:var(--color-surface-2)]"
-            >
-              {rulesCta}
             </Link>
           </div>
         </div>

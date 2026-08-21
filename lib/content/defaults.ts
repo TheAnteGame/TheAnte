@@ -76,7 +76,6 @@ export const contentDefaults: Record<string, string> = {
   "guide.intro": "ANTE is a season-long football pool. You bet chips on NFL games. The biggest stack on the last Sunday wins. Here is the whole thing in plain English.",
   "guide.back_cta": "Back to the game board",
   "guide.tutorial_cta": "Run the tutorial again",
-  "guide.rules_cta": "Read the full rulebook",
   "guide.rules_note": "This page is the short version. The rulebook is the real thing, and it wins any argument.",
   "guide.start_title": "You start with 500 chips",
   "guide.start_body": "Everyone in the league starts with the same 500 chips. Nobody can buy more. Chips are just points \u2014 they are never worth money. The season runs from Week 1 to Week 18.",

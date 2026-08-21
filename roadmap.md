@@ -8,6 +8,19 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 — PUSHED TO PRODUCTION.** Commit `6a4edfe` (D-008 … D-018) is live at
+> https://theantegame.com. Verified after deploy: `/` 200 at 31KB, `/tex/*` 200,
+> `/guide` 307 (correct redirect when signed out), `/api/jobs/*` 401 (correctly gated),
+> 17 migrations applied and matching the 17 files.
+>
+> **Smoke test caught a live 404:** `/guide` linked to `/rules`, which has never been
+> built — the rulebook still lives only in `docs/build spec/`. Link removed and pushed as a
+> follow-up. **Building `/rules` is outstanding** and needs a markdown renderer.
+>
+> Still open: (a) the restore write path has never been run to completion against a real
+> empty database; (b) `promo.cta_label` is still the placeholder "CTA Label"; (c) Supabase
+> stays on the free plan by choice — the downloaded backup is the only off-platform copy.
+
 > **2026-08-21 (tenth pass):** **Dashboard-crashing bug fixed (D-018).** Saving a promo
 > image threw `Invalid src prop … hostname not configured` and took the whole dashboard
 > down for every player. `next/image` requires remote hosts to be allowlisted, and the

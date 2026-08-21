@@ -472,3 +472,17 @@ The CTA link is validated the same way and now carries `target="_blank" rel="nor
 **The console shows the box before players do.** `/admin/promo` renders the real
 `PromoBox` underneath the form as a live preview, warns when the image URL is unusable,
 and says plainly when an empty heading means the box will not appear at all.
+
+### D-018 amendment — /rules is not built (2026-08-21)
+
+Production smoke test after the first push caught a live 404: `/guide` carried a
+"Read the full rulebook" button pointing at `/rules`, and **that route does not exist**.
+It is listed in `proxy.ts`'s public matcher and the content console explains its absence
+("it renders from the versioned repo file"), but the page was never built — the rulebook
+still lives only at `docs/build spec/ANTE-RULEBOOK.md`.
+
+The link is removed rather than left pointing at nothing, along with its now-orphaned
+`guide.rules_cta` key. **Building `/rules` remains outstanding**: it needs the rulebook
+rendered from a versioned file, which means a markdown renderer this project does not yet
+depend on. `rules.intro` (the one editable line, guarded in `saveContent`) is already
+reserved for it.
