@@ -153,9 +153,12 @@ export default async function Dashboard() {
             <div className="min-[900px]:hidden">
               <Leaderboard playerId={playerId} />
             </div>
+            {/* Owner's order: the promo rides with the chat at the top, and simply is
+                not rendered when no heading is set, so nothing collapses to a gap.
+                This puts promo above news, where ANTE-PLAYER §4 had news first. */}
+            <PromoBox />
             <LeagueStats />
             <NewsBox playerId={playerId} />
-            <PromoBox />
             <SupportBox />
           </div>
         </div>
