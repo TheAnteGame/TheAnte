@@ -193,7 +193,7 @@ async function main() {
       service,
       seasonRow,
       week,
-      { games, spreads: games.map((g) => ({ externalId: g.externalId, spreadLine: 3.5 })), finals: new Map(), raw: [] },
+      { games, spreads: games.map((g) => ({ externalId: g.externalId, spreadLine: 3.5, awayMoneyline: 150, homeMoneyline: -180 })), finals: new Map(), raw: [] },
       { opensAt, deadlineAt },
     );
     check(open.status === "succeeded", `week ${week} slate open (${JSON.stringify(open.detail)})`);

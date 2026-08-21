@@ -47,10 +47,53 @@
   --font-body: var(--font-archivo);
 }
 
+/* ── Materials (D-008) ─────────────────────────────────────────────────────────
+   Three photographic swatches stand in for the three materials the art direction
+   already names. They are grain, not imagery: every one sits under 12% and the
+   design is fully legible if they never load. Light comes from the upper left,
+   everywhere, without exception (art §5). */
+
+:root {
+  --tex-felt: url("/tex/felt.jpg");
+  --tex-metal: url("/tex/metal.jpg");
+
+  /* One light rig, reused. Highlight on the top and left edge, shadow cast down-right. */
+  --lit-edge: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 1px 0 0 rgba(255, 255, 255, 0.03);
+  --lit-drop: 0 18px 44px -26px rgba(0, 0, 0, 0.95), 0 2px 6px -2px rgba(0, 0, 0, 0.55);
+}
+
+html {
+  background-color: var(--color-canvas);
+}
+
 body {
-  background: var(--color-canvas);
+  background: transparent;
   color: var(--color-text-hi);
   font-family: var(--font-body), system-ui, sans-serif;
+}
+
+/* The table. A felt ground and a single pool of house light over it — the reason
+   the product stops reading as a dark admin panel. Both layers are fixed, so the
+   table stays put while the page scrolls across it. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+body::before {
+  background-image: var(--tex-felt);
+  background-size: 380px 380px;
+  background-repeat: repeat;
+  opacity: 0.5;
+  z-index: -2;
+}
+body::after {
+  background-image:
+    radial-gradient(118% 72% at 26% -14%, rgba(236, 236, 242, 0.075), transparent 62%),
+    radial-gradient(84% 52% at 54% -6%, rgba(201, 162, 75, 0.055), transparent 56%);
 }
 
 /* Tabular numerals are non-negotiable wherever a number lives (ANTE-TECH §6). */
@@ -64,6 +107,177 @@ td.nums,
    to primary actions and featured cards only; ordinary rows stay plain. */
 .chamfer {
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.chamfer-lg {
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+}
+
+/* ── Surfaces ──────────────────────────────────────────────────────────────────
+   A panel is a milled plate on the felt, not an outline. Top and left edges catch
+   the light; the plate casts down and right. Neutral throughout — this is the 90%
+   quiet the faceted 10% is paid for with (art §5). */
+
+.panel {
+  position: relative;
+  background-color: var(--color-surface-1);
+  background-image: linear-gradient(177deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 44%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--lit-edge), var(--lit-drop);
+}
+
+/* Heading strip: display face, a darker machined bar, closed by a gold hairline. */
+.panel-head {
+  position: relative;
+  background-color: var(--color-surface-2);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(0, 0, 0, 0.18));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.panel-head::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-gold-dim) 8%,
+    var(--color-gold) 42%,
+    var(--color-gold-dim) 76%,
+    transparent
+  );
+  opacity: 0.65;
+}
+
+/* A recessed tray — where a number sits milled into the plate rather than on it. */
+.well {
+  background-color: rgba(0, 0, 0, 0.42);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.75),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+/* Chrome is a material, not a text colour (art §3.0): polished steel with a hard
+   highlight-to-shadow break across the middle, lit from above-left. */
+.chrome-face {
+  background-color: var(--color-chrome);
+  background-image:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      var(--color-chrome) 44%,
+      var(--color-chrome-dim) 56%,
+      #a9a9b2 100%
+    ),
+    var(--tex-metal);
+  background-size: auto, 260px 260px;
+  background-blend-mode: normal, soft-light;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+    0 10px 22px -12px rgba(0, 0, 0, 0.95);
+  color: var(--color-canvas);
+  transition:
+    filter 0.16s ease-out,
+    transform 0.16s ease-out;
+}
+.chrome-face:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.chrome-face:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.4);
+}
+/* A dead control is an unmilled blank, not a faded one. */
+.chrome-face:disabled {
+  background-image: none;
+  background-color: var(--color-surface-2);
+  border-color: var(--color-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: var(--color-text-low);
+  cursor: not-allowed;
+}
+
+/* Gold is light, not ink. A hairline brightens where the beam crosses it. */
+.gold-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-gold-dim) 10%,
+    var(--color-gold) 50%,
+    var(--color-gold-dim) 90%,
+    transparent
+  );
+}
+/* The house's own tray: same depth as every other, rimmed in gold. */
+.well-gold {
+  border-color: var(--color-gold-dim);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.75),
+    inset 0 -1px 0 rgba(201, 162, 75, 0.3);
+}
+
+/* The header rail — no plate of its own: the table shows straight through, and a
+   single gold hairline is all that separates the masthead from the page. */
+.rail {
+  position: relative;
+  background: transparent;
+}
+.rail::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-gold-dim) 8%,
+    var(--color-gold) 42%,
+    var(--color-gold-dim) 76%,
+    transparent
+  );
+  opacity: 0.7;
+}
+
+/* ── Browser surfaces ──────────────────────────────────────────────────────────
+   The parts we did not draw still belong to the table. */
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-canvas);
+}
+:focus-visible {
+  outline: 2px solid var(--color-chrome);
+  outline-offset: 2px;
+}
+* {
+  scrollbar-color: var(--color-surface-3) transparent;
+  scrollbar-width: thin;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-3);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border);
+  background-clip: content-box;
+}
+input,
+textarea {
+  caret-color: var(--color-gold);
 }
 
 /* One orchestrated load moment on the homepage; everything else stays still. */
@@ -122,7 +336,7 @@ td.nums,
   }
 }
 
-/* The ticker crawl — pauses on hover; reduced-motion swaps to a static item in JS. */
+/* The ticker crawl — runs uninterrupted; reduced-motion swaps to a static item in JS. */
 @keyframes ticker-scroll {
   from {
     transform: translateX(0);
@@ -132,10 +346,7 @@ td.nums,
   }
 }
 .ticker-track {
-  animation: ticker-scroll 40s linear infinite;
-}
-.ticker-rail:hover .ticker-track {
-  animation-play-state: paused;
+  animation: ticker-scroll var(--ticker-seconds, 40s) linear infinite;
 }
 
 /* Second "loud zone" — stakes band, wager area, how-to-play (D-007). Motion here
@@ -186,14 +397,44 @@ td.nums,
     transform: scale(1);
   }
   40% {
-    transform: scale(1.25) translateY(-2px);
+    transform: scale(1.16) translateY(-2px);
   }
   100% {
     transform: scale(1);
   }
 }
 .chip-drop {
-  animation: chip-drop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: chip-drop 0.25s cubic-bezier(0.22, 1.18, 0.36, 1);
+}
+
+/* The live-chat tell (D-013): a slow pulse on the light and a shine crossing the
+   composer. Table Talk is otherwise a dense surface and stays still. */
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.78);
+  }
+}
+.live-dot {
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes shine-loop {
+  0% {
+    transform: translateX(-130%);
+  }
+  55%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+.shine-loop {
+  animation: shine-loop 4.5s ease-in-out infinite;
 }
 
 @keyframes callout-in {
@@ -212,6 +453,8 @@ td.nums,
 
 @media (prefers-reduced-motion: reduce) {
   .band-in,
+  .live-dot,
+  .shine-loop,
   .shine-sweep,
   .gold-pulse,
   .chip-drop,

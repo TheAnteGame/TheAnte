@@ -37,46 +37,104 @@ export default async function Dashboard() {
     .eq("player_id", playerId)
     .maybeSingle();
 
-  const [rankLabel, chipsLabel, logoutLabel, logoAlt, commissionerLabel, commissioner] = await Promise.all([
+  const [
+    rankLabel,
+    chipsLabel,
+    logoutLabel,
+    logoAlt,
+    commissionerLabel,
+    guideLabel,
+    tutorialLabel,
+    commissioner,
+  ] = await Promise.all([
     getContent("dash.header_rank_label"),
     getContent("dash.header_chips_label"),
     getContent("dash.logout_label"),
     getContent("home.logo_alt"),
     getContent("dash.commissioner_link_label"),
+    getContent("dash.guide_link_label"),
+    getContent("dash.tutorial_link_label"),
     getCommissioner(),
   ]);
 
   return (
     <div className="min-h-screen">
       <PollRefresh intervalMs={5000} />
-      <header className="flex items-center justify-between border-b border-[color:var(--color-border)] px-6 py-3">
-        <Link href="/dashboard">
-          <Image src="/logo.png" alt={logoAlt} width={83} height={53} priority />
-        </Link>
-        <div className="flex items-center gap-6">
-          <Link href="/profile" className="text-sm text-[color:var(--color-text-hi)] underline-offset-4 hover:underline">
-            {state.player!.firstName ?? "—"}
+      {/* The masthead sits in the same column as everything else, so the rail and
+          the ticker read as plates on the table rather than a browser chrome bar. */}
+      <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
+        <header className="rail flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-3">
+          <Link href="/dashboard" className="shrink-0">
+            <Image
+              src="/logo.png"
+              alt={logoAlt}
+              width={104}
+              height={66}
+              priority
+              className="h-auto w-[83px] sm:w-[104px]"
+            />
           </Link>
-          <div className="nums text-sm text-[color:var(--color-text-mid)]">
-            {rankLabel} {standing?.rank ?? "—"} · {standing?.stack ?? "—"} {chipsLabel}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.14em]">
+              <Link
+                href="/guide"
+                className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
+              >
+                {guideLabel}
+              </Link>
+              <span aria-hidden className="text-[color:var(--color-border)]">
+                ·
+              </span>
+              <Link
+                href="/how-to-play?replay=1"
+                className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
+              >
+                {tutorialLabel}
+              </Link>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
+              <Link
+                href="/profile"
+                className="text-sm font-medium text-[color:var(--color-text-hi)] underline-offset-4 hover:underline"
+              >
+                {state.player!.firstName ?? "\u2014"}
+              </Link>
+              <div className="well chamfer flex items-baseline gap-2 px-3 py-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
+                  {rankLabel}
+                </span>
+                <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-text-hi)]">
+                  {standing?.rank ?? "\u2014"}
+                </span>
+                <span aria-hidden className="text-[color:var(--color-border)]">
+                  /
+                </span>
+                <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-gold)]">
+                  {standing?.stack ?? "\u2014"}
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
+                  {chipsLabel}
+                </span>
+              </div>
+              {commissioner && (
+                <Link
+                  href="/admin"
+                  className="chamfer border border-[color:var(--color-gold-dim)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold)] hover:bg-[color:var(--color-surface-2)]"
+                >
+                  {commissionerLabel}
+                </Link>
+              )}
+              <SignOutButton>
+                <button className="text-xs text-[color:var(--color-text-low)] underline-offset-4 hover:underline hover:text-[color:var(--color-text-mid)]">
+                  {logoutLabel}
+                </button>
+              </SignOutButton>
+            </div>
           </div>
-          {commissioner && (
-            <Link
-              href="/admin"
-              className="chamfer border border-[color:var(--color-gold-dim)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[color:var(--color-gold)] hover:bg-[color:var(--color-surface-2)]"
-            >
-              {commissionerLabel}
-            </Link>
-          )}
-          <SignOutButton>
-            <button className="text-xs text-[color:var(--color-text-low)] underline-offset-4 hover:underline">
-              {logoutLabel}
-            </button>
-          </SignOutButton>
-        </div>
-      </header>
+        </header>
 
-      <Ticker />
+        <Ticker />
+      </div>
 
       <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
         <StakesBand playerId={playerId} />

@@ -5,11 +5,16 @@ import { getContent } from "@/lib/content/getContent";
 import { tierForWeek } from "@/lib/engine";
 import { ET } from "@/lib/time";
 import { PokerChip } from "@/components/chip/PokerChip";
+import { Facets } from "@/components/ui/Facets";
+import { BandOffset } from "./BandOffset";
 
 // The stakes band (art §3, §7): the ONE large colored surface in the product, and
 // the only thing that changes with the season. Faceted plane in the current tier,
 // carrying the ring, week, tier, ante, Pot, limit, and deadline. Everything on it
 // is blackout-still: the Pot and limits are fixed from Tuesday to the reveal.
+//
+// D-008: the plane is cut from real facets rather than a striped gradient, and
+// every figure sits in a milled tray so white type clears 4.5:1 over any tier.
 
 const TIER_VARS: Record<string, { deep: string; base: string; bright: string; labelKey: string }> = {
   purple: { deep: "var(--color-tier-purple-deep)", base: "var(--color-tier-purple)", bright: "var(--color-tier-purple-bright)", labelKey: "band.tier_purple" },
@@ -17,6 +22,10 @@ const TIER_VARS: Record<string, { deep: string; base: string; bright: string; la
   teal: { deep: "var(--color-tier-teal-deep)", base: "var(--color-tier-teal)", bright: "var(--color-tier-teal-bright)", labelKey: "band.tier_teal" },
   gold: { deep: "var(--color-tier-gold-deep)", base: "var(--color-tier-gold)", bright: "var(--color-tier-gold-bright)", labelKey: "band.tier_gold" },
 };
+
+// A flat directional veil: it protects type over any tier without softening the
+// gem, and it runs with the same upper-left light as everything else.
+const SCRIM = "linear-gradient(102deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.26) 46%, rgba(0,0,0,0.44) 100%)";
 
 /** The season ring (art §6): four quadrants for four tiers — elapsed lit and dimmed,
  *  current at full strength, future dark. Gold bezel at full weight, here only. */
@@ -32,8 +41,19 @@ function SeasonRing({ weekNumber }: { weekNumber: number }) {
   };
   const order = { purple: 0, red: 1, teal: 2, gold: 3 };
   return (
-    <svg viewBox="0 0 50 50" className="h-14 w-14 shrink-0" aria-hidden>
-      <circle cx="25" cy="25" r="16" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" />
+    <svg viewBox="0 0 50 50" className="h-16 w-16 shrink-0" aria-hidden>
+      <defs>
+        {/* The bezel is turned metal: brightest where the light lands, upper left. */}
+        <linearGradient id="ante-ring-bezel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="var(--color-tier-gold-bright)" />
+          <stop offset="45%" stopColor="var(--color-gold)" />
+          <stop offset="100%" stopColor="var(--color-gold-dim)" />
+        </linearGradient>
+      </defs>
+      {/* Seat the ring in the plane rather than floating it on top. */}
+      <circle cx="25" cy="25" r="19.5" fill="#000" fillOpacity="0.34" />
+      <circle cx="25" cy="25" r="16" fill="none" stroke="url(#ante-ring-bezel)" strokeWidth="1.75" />
+      <circle cx="25" cy="25" r="13.6" fill="none" stroke="#000" strokeOpacity="0.35" strokeWidth="1" />
       {tiers.map((t) => {
         const state = order[t] < order[currentTier] ? "elapsed" : t === currentTier ? "current" : "future";
         return (
@@ -41,8 +61,8 @@ function SeasonRing({ weekNumber }: { weekNumber: number }) {
             key={t}
             d={arcs[t]}
             fill="none"
-            stroke={state === "future" ? "var(--color-surface-3)" : TIER_VARS[t].bright}
-            strokeOpacity={state === "elapsed" ? 0.35 : 1}
+            stroke={state === "future" ? "#fff" : TIER_VARS[t].bright}
+            strokeOpacity={state === "elapsed" ? 0.55 : state === "future" ? 0.15 : 1}
             strokeWidth="5"
           />
         );
@@ -75,14 +95,23 @@ export async function StakesBand({ playerId }: { playerId: string }) {
     const message = await getContent("band.preseason_message", { lock });
     return (
       <div
-        className="band-in chamfer relative flex items-center gap-4 overflow-hidden px-5 py-4"
+        className="band-in chamfer-lg relative isolate flex items-center gap-5 overflow-hidden px-6 py-5"
         style={{
-          background: `linear-gradient(120deg, var(--color-tier-purple-deep), var(--color-surface-1) 70%), repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 6px)`,
+          borderTop: "2px solid var(--color-tier-purple-bright)",
+          boxShadow: "0 26px 60px -30px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.14)",
         }}
       >
-        <div className="shine-sweep pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.12)_50%,transparent_60%)]" aria-hidden />
+        <Facets
+          deep="var(--color-tier-purple-deep)"
+          base="var(--color-tier-purple)"
+          bright="var(--color-tier-purple-bright)"
+          seed={3}
+          className="absolute inset-0 -z-10 h-full w-full"
+        />
+        <div className="pointer-events-none absolute inset-0 -z-10" style={{ background: SCRIM }} aria-hidden />
+        <div className="shine-sweep pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.14)_50%,transparent_60%)]" aria-hidden />
         <SeasonRing weekNumber={1} />
-        <p className="text-sm text-[color:var(--color-text-hi)]">{message}</p>
+        <p className="text-sm leading-relaxed text-white">{message}</p>
       </div>
     );
   }
@@ -107,41 +136,63 @@ export async function StakesBand({ playerId }: { playerId: string }) {
   ]);
 
   const deadline = DateTime.fromISO(week.deadline_at).setZone(ET);
+
+  // Every figure sits in a tray milled into the plane — the tray is what makes a
+  // number readable over a gem, and what makes the band read as machined.
   const stat = (label: string, value: string) => (
-    <div className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wider text-white/50">{label}</span>
-      <span className="nums font-[family-name:var(--font-display)] text-lg font-bold text-white">{value}</span>
+    <div className="well chamfer px-3.5 py-2">
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">{label}</span>
+      <span className="nums block font-[family-name:var(--font-display)] text-xl font-bold leading-tight text-white">{value}</span>
     </div>
   );
 
   return (
     <div
-      className="band-in chamfer relative flex flex-wrap items-center gap-x-8 gap-y-3 overflow-hidden px-5 py-4"
+      data-stakes-band
+      className="band-in chamfer-lg relative isolate z-30 flex flex-wrap items-center gap-x-6 gap-y-4 overflow-hidden px-6 py-5 min-[900px]:sticky min-[900px]:top-0"
       style={{
-        background: `linear-gradient(120deg, ${v.deep} 0%, ${v.base} 45%, ${v.deep} 100%), repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 6px)`,
         borderTop: `2px solid ${v.bright}`,
+        boxShadow: "0 26px 60px -30px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.16)",
       }}
     >
-      <div className="shine-sweep pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.14)_50%,transparent_60%)]" aria-hidden />
+      <Facets deep={v.deep} base={v.base} bright={v.bright} seed={week.number * 17 + 3} className="absolute inset-0 -z-10 h-full w-full" />
+      <div className="pointer-events-none absolute inset-0 -z-10" style={{ background: SCRIM }} aria-hidden />
+      <div className="shine-sweep pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.15)_50%,transparent_60%)]" aria-hidden />
+
+      <BandOffset />
       <SeasonRing weekNumber={week.number} />
+
       <div className="flex flex-col">
-        <span className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase italic text-white">
+        <span
+          className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase italic leading-none tracking-tight text-white"
+          style={{ textShadow: "0 2px 10px rgba(0,0,0,0.6)" }}
+        >
           {weekLabel} {week.number}
         </span>
-        <span className="text-[11px] uppercase tracking-widest" style={{ color: v.bright }}>
+        <span
+          className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.3em]"
+          style={{ color: v.bright, textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
+        >
           {tierLabel}
         </span>
       </div>
+
       {stat(anteLabel, String(week.ante))}
-      <div className="flex items-center gap-2">
-        <PokerChip tone="gold" size={26} className="gold-pulse" />
+
+      {/* The Pot is the house's money, so it is the one thing here wearing gold. */}
+      <div className="well well-gold chamfer flex items-center gap-3 px-3.5 py-2">
+        <PokerChip tone="gold" size={30} className="gold-pulse shrink-0" />
         <div className="flex flex-col">
-          <span className="text-[10px] uppercase tracking-wider text-white/50">{potLabel}</span>
-          <span className="nums font-[family-name:var(--font-display)] text-lg font-bold" style={{ color: "var(--color-gold)" }}>
+          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">{potLabel}</span>
+          <span
+            className="nums block font-[family-name:var(--font-display)] text-xl font-bold leading-tight"
+            style={{ color: "var(--color-tier-gold-bright)" }}
+          >
             {potBalance}
           </span>
         </div>
       </div>
+
       {snap && stat(limitLabel, String(snap.house_limit))}
       <div className="ml-auto">{stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}</div>
     </div>

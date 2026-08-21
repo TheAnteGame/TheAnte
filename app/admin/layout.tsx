@@ -11,12 +11,15 @@ const NAV = [
   ["/admin", "Ops"],
   ["/admin/week", "Week"],
   ["/admin/players", "Players"],
+  ["/admin/support", "Support"],
   ["/admin/content", "Content"],
+  ["/admin/ticker", "Ticker"],
   ["/admin/feeds", "Feeds"],
   ["/admin/promo", "Promo"],
   ["/admin/notifications", "Notifications"],
   ["/admin/settings", "Settings"],
   ["/admin/audit", "Audit"],
+  ["/admin/backup", "Backups"],
   ["/admin/season-close", "Season close"],
 ] as const;
 
@@ -44,7 +47,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           ))}
         </ul>
       </nav>
-      <div className="min-w-0 flex-1 px-6 py-6">{children}</div>
+      <div id="top" className="min-w-0 flex-1 px-6 py-6">{children}</div>
     </div>
   );
 }

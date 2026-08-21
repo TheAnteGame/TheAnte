@@ -59,3 +59,416 @@ chip/felt texture, glow, gold-accent motion, and playful micro-animation are in 
 there. Every dense data surface — the leaderboard, the ledger, settlement tables, and all
 of `/admin` — stays exactly as restrained as §7/§10 already specify; this amendment does
 not touch them.
+
+## D-008 — Material and light: the table under the interface (2026-08-21)
+
+**Amendment to ANTE-ART-DIRECTION.md §5/§7.** The owner's call: the player interface
+read as a dark admin panel rather than a card room. The cause was not the palette or the
+layout — both stay exactly as specified — but that the app had quietly opted out of its
+own art direction. Facets were a 45° striped gradient, chrome was a text colour rather
+than a material, the canvas was a flat void, panels were 1px outlines, and nothing on
+screen honoured the "lit from the upper left" rule §5 already required. This decision
+adds **material and light**; it adds no hue, no font, and no layout.
+
+- **The table.** The canvas carries a photographic felt ground and one fixed pool of
+  house light. Both layers are fixed, so the table stays put while the page scrolls.
+- **Panels are milled plates.** `.panel` / `.panel-head` replace the hairline outlines:
+  a lit top-left edge, a shadow cast down and right, and a gold hairline closing each
+  heading strip. Neutral throughout — this is the 90% quiet §5 asks for.
+- **Chrome is a material.** `.chrome-face` renders primary actions as polished steel
+  with a hard highlight-to-shadow break, per §3.0's "chrome for every interactive
+  element." Disabled reads as an unmilled blank, not a faded button.
+- **Real facets.** `components/ui/Facets.tsx` cuts the irregular triangular flat planes
+  §5 actually specifies, quantised to five tones and shaded from a single upper-left
+  light. Used only where §5 permits: the stakes band and the homepage.
+- **Figures sit in trays.** `.well` recesses every number on a tier plane, which is what
+  keeps small white labels above 4.5:1 over any of the four gems. The Pot's tray is
+  rimmed in gold — the house's own material, on the rim rather than the fill, because a
+  gold fill lifts the plate and drops the 10px label below the contrast floor.
+- **The chip is a physical object.** Clay body, moulded edge spots, a recessed inlay and
+  one specular arc, at the same light angle as everything else.
+- **Browser surfaces are themed** — selection, caret, focus ring, scrollbars.
+
+**Two generated textures ship** in `public/tex/` (felt, brushed metal), each used under
+12% opacity as grain rather than imagery; the design is fully legible if neither loads.
+A third (gold leaf) was generated and discarded because no contrast-safe use survived.
+
+**What is explicitly unchanged.** The layout (`ANTE-PLAYER.md` §4), every content block,
+the token palette, the blackout constraints in §9, and the restraint boundary from D-007:
+the leaderboard, settlement tables, the ledger and all of `/admin` get the shared neutral
+plate and nothing else — no facets, no tier colour, no motion.
+
+## D-009 — The stake ladder replaces the chip steppers (2026-08-21)
+
+**Amends ANTE-PLAYER §5.2 and the stepper reference in D-007/ANTE-ART-DIRECTION §8.**
+The owner's call: the +/− chip steppers were both ugly and confusing — a control parked
+off to the side of the row, operating on a pick made somewhere else.
+
+**The slate now centres the game and faces the two sides across it.** Backing a team is
+one press on the team itself. Each further press raises the stake one rung; one press
+past the top takes the bet back off the table. There is no separate stepper, and the
+chips sit on the side you backed, which is where a player would actually push them.
+
+- **The ladder is the existing rules, drawn.** Off the felt that is exactly 10/20/30/40/50
+  — the `step`/`maxChips` rules already in force, which happen to give precisely five
+  rungs and a sixth press that clears. On the felt (`step` 1, limit = whole stack) the
+  same five rungs are derived across the player's range in whole chips, ending exactly on
+  the limit; a one-chip stack collapses to a single rung. No staking rule changed, and
+  `submit_ticket` re-validates everything regardless.
+- **Raising is capped by the room.** A rung that would breach the house limit clamps to
+  what is left; if there is nothing left to raise, the next press clears the bet.
+- **Five rungs are drawn as pips** on the backed side, so the reset is visible before it
+  happens rather than being a surprise.
+- **Chips are larger (44px) and better defined** — the chip's cast shadow was a centred
+  halo that washed out the chip beneath it in a stack, so a stack read as one smudge.
+- `dash.wager.raise_hint` is a new content block, commissioner-editable like every other
+  string, carrying the top-of-ladder figure as `{max}`.
+
+**Also in this pass:** the dashboard masthead (rail + ticker) is constrained to the same
+`max-w-6xl` column as the rest of the page instead of running full-bleed; the logo is 25%
+larger on desktop only; and the ticker no longer pauses under the cursor.
+
+## D-010 — News sources, the Game Board, and the how-to-play split (2026-08-21)
+
+**1. The news feed had no sources.** `feeds.sync` (ANTE-ADMIN §5), the ticker projection
+and the Fav Team News box all shipped complete and correct, but `feed_sources` was empty,
+so every player's news box rendered the "quiet day" empty state permanently. Migration
+`0013` seeds it: one first-party club RSS feed per team (32) plus two league wires for the
+ticker (ESPN, CBS Sports). Keyless and quota-free, on D-005's criterion — least likely to
+break or deny access. **Google News RSS was rejected**: its feed terms limit use to
+personal, non-commercial reading, which this is not. First sync ingested 722 items with
+zero source errors and all 32 teams covered; `ante-feeds-sync` re-runs every 15 minutes.
+
+**2. The wager slot is the Game Board.** It now carries a real section title like Table
+Talk instead of opening on an unlabelled stats strip, and the strip is subordinate to it.
+`dash.wager.heading` changes from "This week" to "Game Board". **"The Felt" was rejected
+as the name** — in the rulebook being *on the felt* means broke (§9), so naming the whole
+surface that would collide with a real game state.
+
+**3. Point spreads moved under the team names.** Each side now carries its own line
+(`−3.5` / `+3.5`) so the favourite is readable without parsing a sentence; the centre
+column no longer repeats it. Positive `spread_frozen` = home favoured (ANTE-TECH §3.1).
+
+**4. Chips fan out where there is room.** The stack stays vertical on a phone, where a
+narrow button has height to spare, and lays out horizontally from `sm` up, where the row
+has width instead.
+
+**5. The two commitment controls explain themselves.** "Push your chips in" and "The
+shove" carry hover/focus tooltips (`dash.wager.submit_tooltip`, `dash.wager.shove_tooltip`).
+
+**6. How-to-play is now two things.** `/how-to-play` remains the mandatory interactive
+gate. `/guide` is new: the written version, plain language, every string content-managed
+under `guide.*`, with the rulebook still named as the authority where they differ. Both are
+reachable from two small links above the account row in the dashboard header, and the
+tutorial replays via `/how-to-play?replay=1` — allowed only for a player whose route is
+already `/dashboard`, so nobody mid-onboarding can skip their real gate.
+
+**7. The empty promo slot renders nothing.** It used to fall back to the wordmark in a
+chamfered panel, which read as a stray button with no explanation. ADMIN §4.6's fallback
+heading is dropped; the commissioner manages the slot from the console, so it never needed
+a placeholder on the player's dashboard.
+
+**8. The masthead is transparent.** `.rail` has no plate of its own — the table shows
+through, and one gold hairline separates the masthead from the page.
+
+## D-011 — A ticker console, a legible content editor, and the news source line (2026-08-21)
+
+**1. The ticker gets its own console page.** `/admin/ticker` now owns the rail: an
+on/off switch, a **crawl-speed slider** (`ticker.speed_seconds`, 15–180s per pass, default
+40 — the CSS animation duration is now a variable), **two colour choices**
+(`ticker.accent_color` for generated league facts, `ticker.text_color` for posts and
+headlines), the cap on lines shown, the six generated-line toggles shown with the sentence
+each will actually produce, a composer, and the live list of lines with a Remove control.
+
+**Colours are a closed set** drawn from the token palette, not a free-form picker: the rail
+is still part of the product (art §3.2). **Remove hides rather than deletes** — nothing in
+this product is ever deleted (rulebook §14), so a pulled line stays in the record.
+`app_settings` has no write policy by design, so the action writes service-role, past the
+commissioner check (ANTE-TECH §4.3).
+
+**2. The content editor is readable.** It was a wall of one-line fields labelled only by
+code key. It now carries a **jump menu**, every namespace is titled in plain English with a
+line saying which screen it belongs to (`lib/content/groups.ts` — e.g. `band` is "Stakes
+band: the big coloured bar across the top of the dashboard"), and the fields are
+**full-width, multi-line and resizable**, sized to their content. The keys themselves are
+untouched: they are how the code finds a string.
+
+**3. Fav Team News carries its source.** The box is a **fixed three headline lines tall**,
+so the right column stops resizing every rotation, and the source name now travels with
+each item from `feed_sources` and renders under the headline as a link that opens in a new
+tab (`dash.news.source_label`).
+
+**4. Chips match the rung.** The stack draws one chip per press — five presses, five chips
+— instead of deriving a count from the amount, which topped out at four. Overlap increased
+so a stack reads as chips rather than one shape.
+
+**5. Point spreads stay point spreads.** Raised as a question: `−3.5` is not the `+180 /
+−200` most people picture. Those are American moneyline odds, which state a payout. **ANTE
+never pays by odds** — rulebook §5 pays *players against you ÷ players with you*, capped
+0.25×–2.50×, and bets settle straight-up. Printing a moneyline would advertise a payout the
+game does not offer, and the real multiplier cannot be shown pre-reveal because pick
+distribution is blackout-protected (§6). The spread is the only legitimate pre-reveal
+signal, so it stays, unchanged, pending the owner's call.
+
+**6. Found: `support@theantegame.com` cannot receive mail.** The domain has **no MX
+records** — outbound is fully configured (Resend SPF + DKIM on `send.theantegame.com`) but
+nothing accepts inbound, so anything a player sends to the support address bounces. There is
+also no `_dmarc` record. Not fixed here: it needs a mailbox or forwarder plus DNS, which is
+the owner's to set up.
+
+## D-012 — Support moves in-app; the stakes band sticks (2026-08-21)
+
+**1. The support desk is on the platform.** The mailto: link pointed at a domain with
+no MX records, so every message a player sent bounced (D-011 §6). Replaced end to end:
+
+- The player presses **Message the desk** and gets a dialog with one field. We already
+  know who is asking, so there is no name or email to fill in.
+- The confirmation states plainly that **the reply arrives by email**, at the owner's
+  instruction — a player should never have to check back to find out if they were answered.
+- The ticket lands in `support_messages` (migration `0014`), inserted as the player under
+  an RLS policy that lets them write and read only their own.
+- The commissioner is **emailed that a message is waiting**, via the existing Resend
+  notifier. That send is best-effort and wrapped: a failed notification must never lose a
+  message that is already stored.
+- **`/admin/support`** lists tickets, open ones first, and the reply goes back out by
+  email — the only path that keeps the promise the confirmation made. Answered tickets
+  stay on the page; nothing is ever deleted (§14).
+- `dash.support.email` is removed rather than left dead in the content console.
+
+**One change to the notifier.** `emailPlayer` refuses a body containing `{`, on the
+assumption an unfilled brace means a broken template. A support ticket is free text a
+player wrote and may legitimately contain braces, so an opt-in `allowFreeText` checks the
+*template's* placeholders instead of scanning the filled body. Nothing else uses it, and
+the blackout fence is unaffected — support carries no pick data in either direction.
+
+**2. The stakes band sticks on desktop.** From 900px up the band pins to the top of the
+viewport and the page scrolls under it. The bet slip's header strip becomes a **running
+tally** — `Committed / limit`, Remaining, Games, and a fill bar — and pins directly beneath
+it. The ante, house limit and deadline were showing in both places; they now live only on
+the band, which is what makes the second bar short enough to stack.
+
+**The offset is measured, not guessed.** `BandOffset` reads the band's height into
+`--band-h` with a `ResizeObserver`; a hardcoded value opens a gap or an overlap the moment
+a tier label or the deadline wraps. Below 900px neither element sticks — the band is above
+the slip anyway, so a phone loses nothing and gains its screen back.
+
+## D-013 — Table Talk sizing, a live-chat tell, and homepage weight (2026-08-21)
+
+**1. Table Talk grows, then scrolls.** The panel was capped at 384px whatever the
+traffic. It now runs `min-h 144px` to `max-h 512px` — roughly a dozen messages before the
+scrollbar appears — so a quiet room still reads as a panel and a busy one keeps its history
+reachable without taking the column.
+
+**2. The composer announces itself.** Players were not registering that the room is live.
+The field now carries a gold label ("Chat with the league" — `dash.tabletalk.live_label`),
+a pulsing light, and a shine crossing the field every 4.5s. **This amends
+ANTE-ART-DIRECTION §8**, which lists chat under "not worth animating": the owner's call is
+that a live room has to look live. The rest of Table Talk stays still — this is two small
+loops on one control, not motion on the message list.
+
+The shine sits in its own clipping layer rather than on a wrapper around the input; clipping
+the input would cut off its focus outline. Both animations stop under `prefers-reduced-motion`.
+
+**3. Homepage weight, measured rather than guessed.** Server time was never the problem —
+dev and production both answer in ~110–170ms. The page was simply heavy:
+
+- **Chakra Petch shipped weight 500 on every page and nothing used it.** Only 600 and 700
+  appear in the codebase. Dropping it removes a font file from every route.
+- **The facet field was 120 paths at one decimal place** — 12.4KB of a 46.6KB homepage. The
+  field renders with `preserveAspectRatio="none"`, so a tenth of a viewBox unit is invisible:
+  coordinates are now integers, and the homepage uses larger planes (9×5 rather than 11×7),
+  which suits a poster better anyway.
+
+Result: **HTML 46.6KB → 30.3KB (−35%)**, one fewer font file, load event **319ms** with
+DOM ready at 260ms on a production build. The remaining cost is Clerk's own script and its
+two API calls, which the sign-in genuinely needs.
+
+**Note for the owner:** the perceived slowness was not the dev server — it measures the
+same. It was page weight and third-party auth, and the first of those is now fixed.
+
+## D-014 — Moneyline alongside the spread; the live tell is first-run only (2026-08-21)
+
+**1. Both numbers, from a real source.** The owner's call, after D-011 §5 raised the
+distinction: each side now shows its **frozen point spread and its frozen American
+moneyline** (`−3.5 · −180`). The moneylines are **ingested from nflverse's own
+`away_moneyline` / `home_moneyline` columns** (migration `0015`), frozen at slate open
+exactly like the spread. Nothing is derived: a game without a published moneyline shows
+its spread alone rather than a converted guess.
+
+**They remain context and nothing else.** ANTE pays by the room's split (rulebook §5),
+never by odds, so `dash.wager.spread_note` was rewritten to say so in as many words:
+"Neither one pays here: bets settle straight-up, and what you win is set by how the room
+split." Displaying a moneyline without that sentence would advertise a payout the game
+does not offer.
+
+The already-open Week 1 was backfilled from nflverse (16/16 games); every future week gets
+them at slate open.
+
+**2. The live-chat tell is a first-run tell.** The gold label, the pulsing light and the
+shine (D-013) now show only to a player who has **never posted**. One message and the
+composer goes quiet permanently — the point was to teach that the room is live, and it
+stops being information the moment it has been learned.
+
+**3. The guide answers "who wins the Pot".** The owner predicted this would be the main
+point of confusion, and it is a fair one: the ante pool and the bet-to-bet chip movement
+are two separate flows. `/guide` gains a section — *"Your bets and the Pot are two
+different things"* — and the Pot section now states who wins it, that folding forfeits it,
+that the ante counts inside your weekly gain, and that a full-league fold rolls the Pot.
+
+## D-015 — Backups, on a database that had none (2026-08-21)
+
+**The finding first.** The Supabase org is on the **free plan**: no automated backups,
+no point-in-time recovery, and projects pause after inactivity. An 18-week season whose
+central invariant is that chips are exactly conserved and nothing is ever deleted was
+running with no floor underneath it. **Upgrading to Pro ($25/mo, daily backups with 7-day
+retention, PITR available as an add-on) is the single highest-value change available and
+is the owner's to make** — everything below is what the application can do regardless.
+
+**Two jobs, deliberately not conflated.** Conflating them is how people end up believing
+they have a backup when they do not:
+
+- **Snapshots** (`league_snapshots`, migration `0016`) live in the same database they
+  protect. They defend against a **bad write** — a settlement that came out wrong — and
+  one is taken automatically before every operation that can rewrite chips: manual
+  settlement, re-settlement, a forced reveal, and season close. Plus on demand, with a
+  typed reason. Only the 20 most recent are kept.
+- **The download** (`/admin/backup/download`) is a single timestamped JSON file on the
+  commissioner's own disk. It is the **only** thing that protects against losing the
+  project, and the console says so in those words.
+
+**What is in the file.** Twenty-two tables: roster, season, weeks, games, tickets, bets,
+the ledger, pot awards, chat, moderation, support, audit, notifications, content and its
+revisions, settings, feed sources and ticker. **`feed_items` and `job_runs` are excluded** —
+743 and 3,024 rows respectively, both of which refill or regrow on their own and would
+bloat the file without protecting anything. The whole league record is currently a few
+hundred KB and will stay small.
+
+**Self-checking.** Every snapshot records the ledger's chip total, so a file can be
+verified against the conservation invariant rather than trusted.
+
+**No wholesale restore, on purpose.** For the likeliest failure — a settlement that came
+out wrong — restore is the wrong instrument: the ledger is append-only and `resettle`
+plus a public correction (§13) is the designed path, which preserves the record of what
+happened. A bespoke importer over a live schema with foreign keys is where new data-loss
+bugs get made, and overwriting would erase the audit trail that "nothing is ever deleted"
+rests on. Catastrophic loss is what the downloaded file and (once on Pro) Supabase's own
+restore are for.
+
+**A pre-flight caught a real bug:** `week_players` has a composite key and no `id` column,
+so its paged read would have sheared. Sort keys are now per-table and composite where the
+table is.
+
+## D-016 — The tutorial is five steps, and it teaches the strategy (2026-08-21)
+
+**Ten steps was too many, and one of them was wrong.** The gate tutorial still drove a
+`+ / −` chip stepper — a control D-009 removed from the real bet slip. A tutorial that
+teaches a control the product no longer has is worse than no tutorial, so the mock board
+now mirrors the real one exactly: press a team to back it, press again to raise, one press
+past the top clears.
+
+**The new five:**
+
+1. **Everyone starts even** — 500 chips, the ante, biggest stack on the last Sunday.
+2. **Press a team to back it** — they actually do it; the step will not advance until they have.
+3. **Here is the real game** — the step that was missing. Payout is *players against you ÷
+   players with you*: back the crowd and win almost nothing, be alone and right and take
+   2.5×. So hunt the game where the room is wrong, not the safe pick.
+4. **Nobody sees a thing until everyone is in** — the blackout, then the reveal, with a
+   sample card showing 2 players at 2.5× against 6 at 0.33× so the arithmetic lands.
+5. **The Pot goes to the biggest week** — all the antes, to whoever gained the most.
+
+The house limit, the Thursday deadline, the shove and settlement mechanics move to
+`/guide`, which is linked from the dashboard header and can be read at leisure. Twenty-one
+now-orphaned `howto.*` content keys were deleted rather than left dead in the console.
+
+**`/guide` gained a strategy section too** — *"How to actually win"* — covering the same
+ground at more length, plus the earlier *"Your bets and the Pot are two different things"*.
+Between them the two surfaces now answer the question the owner predicted would be the
+league's main point of confusion: the ante pool and bet-to-bet chip movement are two
+separate flows, and the multipliers are how you win the first one.
+
+## D-017 — Staying on the free plan, deliberately (2026-08-21)
+
+**The owner declined Supabase Pro for now**, reasonably: eight players, week zero, and
+$25/mo is a real cost against a league that may not gel. Revisit around week 2–3 if it
+does. That decision makes the downloaded file the *only* copy of the league that survives
+losing the project, so the app now treats taking one as an operational duty rather than
+an option.
+
+**A backup nobody remembers to take is not a backup.** `backup.reminder` (cron `0017`,
+daily at 13:00 UTC) emails the commissioner every day from the moment a download is
+overdue until they press **"I've got the file"** on the backups page, which stamps
+`backup.last_confirmed_at` and stops the nag until the next one is due
+(`backup.remind_after_days`, default 7). Confirming is the whole mechanism: the app
+cannot see the commissioner's disk, only their word for it — and the page says so.
+
+**Restore is a command-line tool, not a button.** `npm run db:restore -- <file> --confirm`
+(`scripts/restore.mts`). It is for a **fresh, empty database** — a new Supabase project, or
+one whose schema has just been rebuilt from `supabase/migrations/`. Guards, in order:
+refuses without `--confirm`; refuses if the target already holds players unless `--force`;
+loads parents before children; relinks `players.approved_by` in a second pass because it
+points back at players; drops `ticker_items.feed_item_id` when the headline is not in the
+file (headlines are excluded because they re-ingest themselves); and finally **verifies the
+restored ledger against the chip total recorded in the file**, failing loudly on a
+mismatch. A dry run prints what it would do and writes nothing.
+
+**It is still not the tool for a bad reveal.** Re-settling from the console corrects the
+numbers *and* keeps the record of what happened; a restore would erase it.
+
+**Validated end to end against the live database**, not just typechecked: all 22 tables
+read cleanly (including `week_players`, whose composite key had no `id` column), a real
+file was produced, the dry run parsed it, and the guard correctly refused to overwrite
+8 live players. The file's chip total came out at exactly 4,000 — 8 players × 500 — so
+the conservation invariant checks out.
+
+**Also fixed: the tutorial's step chips were being sliced.** `chamfer` is a `clip-path`,
+and a clip-path clips absolutely positioned children too, so both numbered chips were cut
+against their own border. They are now siblings of the clipped box rather than children of
+it. Verified in the DOM: zero clipping ancestors.
+
+### D-017 amendment — file verification and the download cadence (2026-08-21)
+
+**`--verify` proves a file with no database involved.** `npm run db:restore -- <file>
+--verify` checks that every expected table is present, that the ledger rows sum to the
+chip total recorded in the file, and that no row points at a parent missing from the same
+file. Confirmed against a deliberately corrupted copy: it caught the dropped table, the
+480-chip ledger shortfall, and the orphaned chat row. Run it on a fresh download and the
+copy is proven rather than assumed.
+
+**Cadence: twice a week**, and the backups page now says so rather than leaving it to
+judgement. Thursday after the reveal fires — the week's tickets are locked and cannot be
+reconstructed from anything else — and Tuesday morning after settlement, before the new
+slate opens. `backup.remind_after_days` set to **3** to match; a weekly threshold would
+never notice a missed reveal-day download.
+
+**Known gap, stated plainly:** the restore's write path has been dry-run and guard-tested
+but never run to completion against a real empty database. Until it has, it is a tested
+design and an untested execution.
+
+## D-018 — One promo URL could take the dashboard down (2026-08-21)
+
+**Found in use, not in review.** Setting a promo image threw a runtime error that
+crashed the entire dashboard — not a broken image, the whole page, for every player:
+
+> Invalid src prop … hostname "bransonrestaurants.com" is not configured under images
+> in your `next.config.js`
+
+`next/image` refuses any remote hostname not allowlisted in `next.config.ts`. The promo
+image URL is whatever the commissioner pastes, so **no allowlist can ever be right** —
+and the failure mode was a hard crash rather than a missing picture.
+
+**Fixed by dropping `next/image` for this one element.** The promo image is now a plain
+`<img>`. Allowlisting `**` would have stopped the crash but turned the deployment into an
+open image proxy: anyone able to call `/_next/image?url=…` could push arbitrary remote
+fetches through the server. A single banner capped at 160px tall does not justify that,
+and does not need the optimizer.
+
+**And it can no longer crash at all.** The URL is parsed before it is rendered; anything
+that is not http(s) is skipped and the rest of the box still shows. Verified both ways
+against the live content: the real URL renders an `<img>`, and a deliberately malformed
+value produced HTTP 200, zero runtime errors, no `<img>`, and the heading and body intact.
+The CTA link is validated the same way and now carries `target="_blank" rel="noreferrer"`.
+
+**The console shows the box before players do.** `/admin/promo` renders the real
+`PromoBox` underneath the form as a live preview, warns when the image URL is unusable,
+and says plainly when an empty heading means the box will not appear at all.

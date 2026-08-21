@@ -8,6 +8,181 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (tenth pass):** **Dashboard-crashing bug fixed (D-018).** Saving a promo
+> image threw `Invalid src prop … hostname not configured` and took the whole dashboard
+> down for every player. `next/image` requires remote hosts to be allowlisted, and the
+> promo URL is arbitrary commissioner input, so no allowlist can be right; allowlisting
+> `**` would have turned the deploy into an open image proxy. The promo image is now a
+> plain `<img>`, the URL is parsed before render (non-http(s) is skipped, box still shows),
+> and the CTA link is validated the same way. `/admin/promo` now renders the real PromoBox
+> as a live preview with a warning for an unusable image URL. Verified against live content
+> both ways: real URL renders, malformed value returns HTTP 200 with zero runtime errors.
+> Typecheck/tests(69)/build/content-grep green; lint at the 6 pre-existing errors.
+
+> **2026-08-21 (ninth pass, cont.):** Added `--verify` to the restore script — proves a
+> backup file offline (tables present, ledger sums to the recorded chip total, no orphaned
+> rows); confirmed against a deliberately corrupted copy. Download cadence set to twice
+> weekly (Thursday post-reveal, Tuesday post-settlement) with `backup.remind_after_days` = 3,
+> and the guidance written onto the backups page. **Open gap: the restore write path has
+> never been run to completion against a real empty database** — dry run and guards are
+> tested, the actual load is not.
+
+> **2026-08-21 (ninth pass):** Free-plan backup discipline + restore + chip clipping fix
+> (**D-017**). Owner declined Supabase Pro for now (revisit ~week 2–3), so the downloaded
+> file is the only off-platform copy. Added a **daily reminder email** (`backup.reminder`,
+> cron `0017`, 13:00 UTC) that nags until the commissioner presses "I've got the file" on
+> `/admin/backup`, which stamps `backup.last_confirmed_at`. Added **`npm run db:restore`**
+> (`scripts/restore.mts`) — a guarded CLI restore for a FRESH database: dry run by default,
+> refuses a populated target without `--force`, loads parents before children, relinks
+> `players.approved_by`, nulls dangling `ticker_items.feed_item_id`, and verifies the ledger
+> against the file's chip total. Re-settlement remains the right tool for a bad reveal.
+> **Validated live:** all 22 tables read, real file produced, dry run parsed it, guard
+> refused to overwrite 8 live players, chip total exactly 4,000 (8 × 500). Fixed the tutorial
+> step chips being sliced by `chamfer`'s clip-path (chips are now siblings of the clipped box).
+> Typecheck/tests(69)/build/content-grep green; lint back to the 6 pre-existing errors after
+> removing a dead variable of my own. Not yet pushed to `main`.
+
+> **2026-08-21 (eighth pass):** Backups (**D-015**) + tutorial rebuild (**D-016**).
+>
+> **Backups.** Found: the Supabase org is on the **free plan — no automated backups, no
+> point-in-time recovery**, projects pause on inactivity. Built two clearly separated things:
+> in-database `league_snapshots` (migration `0016`) taken automatically before settlement,
+> re-settlement, forced reveal and season close, plus on demand — these protect against a bad
+> write; and `/admin/backup/download`, a timestamped JSON of 22 tables that is the only thing
+> protecting against losing the project. `feed_items` and `job_runs` excluded (regenerate /
+> regrow). Each snapshot records the ledger chip total so a file is self-checking. No wholesale
+> restore by design — `resettle` + a public correction is the right tool for a bad settlement
+> and preserves the audit trail. A schema pre-flight caught that `week_players` has a composite
+> key and no `id`, which would have sheared its paged read. **Owner action: Supabase Pro
+> ($25/mo) is the single highest-value change and is not something the app can do for itself.**
+>
+> **Tutorial.** Cut 10 steps to 5, and fixed real drift — it was still teaching the `+/−`
+> stepper that D-009 deleted. The mock board now mirrors the live one (press to raise). New
+> middle step teaches the actual strategy: payout is players-against ÷ players-with, so hunt
+> the unpopular side. 21 orphaned `howto.*` keys deleted. `/guide` gained "How to actually win".
+> Typecheck/tests(69)/build/content-grep green; lint unchanged at 6 pre-existing errors.
+> Not yet pushed to `main`.
+
+> **2026-08-21 (seventh pass):** Moneylines + first-run chat tell (**D-014**). Each side of
+> a game now shows its frozen spread and frozen American moneyline (`−3.5 · −180`), ingested
+> from nflverse's own `away_moneyline`/`home_moneyline` (migration `0015`, applied; Week 1
+> backfilled 16/16). No derived odds — a game without a published moneyline shows the spread
+> alone. `dash.wager.spread_note` rewritten to state plainly that neither number pays: ANTE
+> settles straight-up and the payout comes from the room's split (§5). The live-chat tell now
+> shows only to players who have never posted; one message and it is off for good. `/guide`
+> gained a "Your bets and the Pot are two different things" section, and the Pot section now
+> says who wins it, that folding forfeits it, and that a full-league fold rolls it forward.
+> Typecheck/tests(69)/build/content-grep green; lint unchanged at 6 pre-existing errors.
+>
+> **Confirmed working by the owner:** the in-app support desk — message sent, commissioner
+> email received. **Still unverified:** the reply-to-player leg, and the admin pages.
+> Not yet pushed to `main`.
+
+> **2026-08-21 (sixth pass):** Table Talk, live-chat tell, homepage weight (**D-013**),
+> plus a clean-up sweep. Chat panel now sizes 144px–512px (about a dozen messages) before
+> scrolling. The composer carries a gold "Chat with the league" label, a pulsing light and a
+> 4.5s shine — an amendment to art §8, which had chat under "not worth animating"; the
+> message list itself stays still and both loops honour reduced-motion. Homepage: dropped the
+> unused Chakra Petch 500 weight and shrank the facet field (integer coordinates, 9×5 on the
+> homepage) — **HTML 46.6KB → 30.3KB, load event 319ms** on a production build, comfortably
+> under the 1s target. Server time was never the issue (dev and prod both ~110–170ms); the
+> remaining cost is Clerk's script plus its two API calls, which sign-in needs.
+>
+> **Sweep:** no temporary routes, `proxy.ts` unmodified, no TODO/FIXME/console.log in
+> app/components/lib, no dead exports (`CONTENT_GROUPS` un-exported), typecheck/tests(69)/
+> build/content-grep green, lint unchanged at the 6 pre-existing errors. `.claude/launch.json`
+> gained an `ante-prod` entry for production-build measurement.
+>
+> **Still open for the owner:** (a) point spreads vs moneyline — unchanged pending a decision;
+> (b) `support@theantegame.com` still has no MX, but the support desk no longer depends on it
+> (D-012); (c) the live support send/reply round trip and every admin page remain unverified —
+> they need sessions the agent cannot create. Not yet pushed to `main`.
+
+> **2026-08-21 (fifth pass):** In-app support desk + sticky game board (**D-012**).
+> The mailto: support link is gone (the domain has no MX, so those messages bounced):
+> players now press **Message the desk**, get a one-field dialog, and the confirmation says
+> the reply comes by email. Tickets land in `support_messages` (migration `0014`, applied),
+> the commissioner is emailed that one is waiting, and `/admin/support` lists them with a
+> reply that emails the player back. Answered tickets stay — nothing is deleted.
+> `emailPlayer` gained an `allowFreeText` option so a player's braces are not mistaken for
+> a broken template. On desktop (≥900px) the stakes band now sticks to the top and the slip's
+> strip became a running tally (`Committed / limit`, Remaining, Games, fill bar) pinned
+> directly beneath it, with the offset measured via `ResizeObserver` into `--band-h`; ante,
+> limit and deadline were de-duplicated off the strip and live only on the band.
+> Typecheck/tests(69)/build/content-grep green; lint unchanged at 6 pre-existing errors.
+> Verified: sticky offset exact (band 103px → tally pinned at 103px, zero gap), tally and
+> fill bar correct, support dialog opens focused with the right copy. **Not verified: the
+> live send/reply round trip and every admin page — both need sessions the agent cannot
+> create.** Not yet pushed to `main`.
+
+> **2026-08-21 (fourth pass):** Commissioner-console usability + player fixes (**D-011**).
+> New `/admin/ticker` page owns the rail: on/off, crawl-speed slider (15–180s per pass),
+> two colour choices from the token palette, item cap, the six generated-line toggles shown
+> with their actual wording, a composer, and the live line list with Remove (which hides —
+> nothing is ever deleted). Content editor rebuilt: jump menu, plain-English titles for every
+> namespace via `lib/content/groups.ts`, and full-width multi-line fields. Fav Team News is a
+> fixed three lines tall and now shows the story's source as a new-tab link. Chips draw one
+> per rung (five presses = five chips). Typecheck/tests(69)/build/content-grep green; lint
+> unchanged at 6 pre-existing errors.
+>
+> **Two open items for the owner.** (a) Point spreads vs moneyline: `−3.5` is a spread, not
+> `+180/−200` odds; ANTE pays by crowd split (rulebook §5), never by odds, so a moneyline
+> would advertise a payout that does not exist — left unchanged pending a decision.
+> (b) **`support@theantegame.com` cannot receive mail** — `theantegame.com` has no MX
+> records (sending via Resend is fine; inbound is not configured), so the support link
+> bounces. Needs a mailbox/forwarder plus DNS.
+>
+> Admin pages this pass were **not** visually verified — they require a commissioner session
+> the agent cannot create. Not yet pushed to `main`.
+
+> **2026-08-21 (third pass):** Owner review round (**D-010**). **News is live** — the
+> feeds pipeline was complete but `feed_sources` was empty, so migration `0013` seeds 32
+> first-party club RSS feeds plus ESPN and CBS league wires (applied to production; first
+> sync 722 items, 0 errors, all 32 teams covered, cron re-runs every 15 min). The wager
+> slot is now the titled **Game Board** ("The Felt" rejected — it means broke in rulebook
+> §9). Point spreads moved under each team name so the favourite is obvious. Chips stay
+> vertical on a phone and fan horizontally from `sm` up. Submit and shove carry tooltips.
+> New `/guide` page — the written, plain-language how-to-play, all copy under `guide.*`;
+> `/how-to-play` stays the interactive gate and replays via `?replay=1` (only for players
+> already routed to `/dashboard`). Two small links added above the account row. Empty promo
+> slot now renders nothing instead of a wordmark that looked like a button. Masthead rail is
+> transparent. Typecheck/tests(69)/build/content-grep green; lint unchanged at 6 pre-existing
+> errors. Verified via harness (real `BetSlip`, guide page) — **the signed-in dashboard has
+> still not been walked with live data.** Not yet pushed to `main`.
+
+> **2026-08-21 (later):** Bet-slip usability pass (**D-009**) plus masthead adjustments.
+> The +/− chip steppers are gone: the slate now centres each game with the two teams facing
+> across it, and backing a team is one press on the team — each further press raises the
+> stake a rung, one press past the top clears the bet. Off the felt the ladder is exactly
+> 10/20/30/40/50 (the existing `step`/`maxChips` rules, which already gave five rungs);
+> on the felt it is derived across the player's stack in whole chips. Raises clamp to the
+> remaining house limit. Five rungs are drawn as pips so the reset is not a surprise. Chips
+> are larger (44px) and the cast shadow was fixed so a stack reads as discrete chips.
+> `dash.wager.raise_hint` added to `lib/content/defaults.ts` (commissioner-editable).
+> Masthead (rail + ticker) constrained to the `max-w-6xl` column; logo +25% on desktop only;
+> ticker no longer pauses on hover. Verified by rendering the real `BetSlip` with static
+> props behind a temporary route (removed afterwards, `proxy.ts` restored): ladder climb,
+> six-press reset, side switching, felt mode, desktop + mobile. Typecheck/tests(69)/build
+> green; lint unchanged at the same 6 pre-existing errors. **Still not seen with live data
+> behind a real Clerk session.** Not yet pushed to `main`.
+
+> **2026-08-21:** Casino-material pass on the player interface (**D-008**). The layout,
+> palette, copy and blackout rules are untouched; what changed is material and light. The
+> canvas now carries a felt ground and one fixed pool of house light; panels became milled
+> plates (`.panel` / `.panel-head`) instead of 1px outlines; primary actions became
+> polished steel (`.chrome-face`); the stakes band's striped-gradient stand-in was replaced
+> with real cut facets (`components/ui/Facets.tsx`) per art §5; every figure on a tier plane
+> sits in a recessed tray (`.well`, Pot rimmed in gold) which is what holds small labels
+> above 4.5:1 on all four gems; the poker chip became a physical object; browser surfaces
+> (selection, caret, focus ring, scrollbars) are themed. Two generated textures ship in
+> `public/tex/` (felt, brushed metal), used as sub-12% grain — the design is fully legible
+> if neither loads. Restraint boundary from D-007 is intact: leaderboard, settlement, ledger
+> and all of `/admin` get the shared neutral plate and nothing else. Typecheck/tests(69)/build
+> green; lint unchanged at the same 6 pre-existing errors. Verified in-browser at desktop and
+> mobile via a temporary preview route, since `/dashboard` needs a Clerk phone OTP session —
+> that route and its `proxy.ts` allowance were removed afterwards. **The signed-in dashboard
+> and bet slip have not been seen rendered with live data.** Not yet pushed to `main`.
+
 > **2026-08-18 (later):** Added the how-to-play gate — an interactive, click-through
 > tutorial (`app/how-to-play`, `components/howtoplay/HowToPlayTutorial.tsx`) inserted
 > between profile completion and `/dashboard` for `approved` players (migration 0012:

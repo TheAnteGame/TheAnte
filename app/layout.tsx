@@ -4,7 +4,8 @@ import { Archivo, Chakra_Petch } from "next/font/google";
 import "./globals.css";
 
 // D-006: Google Fonts only, self-hosted via next/font. Display = Chakra Petch
-// (angular, rhymes with the chiseled wordmark without imitating it); body = Archivo,
+// (angular, rhymes with the chiseled wordmark without imitating it) — only the two
+// weights the app actually uses; body = Archivo,
 // a neutral grotesque with expanded widths available for display duty if needed.
 
 const archivo = Archivo({
@@ -14,7 +15,7 @@ const archivo = Archivo({
 
 const chakraPetch = Chakra_Petch({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["600", "700"],
   variable: "--font-chakra-petch",
 });
 

@@ -28,6 +28,7 @@ export async function emailPlayer(
   subject: string,
   vars: Record<string, string | number>,
   dedupeKey?: string,
+  opts?: { allowFreeText?: boolean },
 ): Promise<void> {
   if (!player.email) return;
 
@@ -44,8 +45,15 @@ export async function emailPlayer(
     if (existing && existing.length > 0) return;
   }
 
-  const body = fill(await template(db, templateKey), vars);
-  if (body.includes("{") || body.trim().length === 0) {
+  const raw = await template(db, templateKey);
+  const body = fill(raw, vars);
+  // Normally an unfilled "{" in the result means a template edit went wrong. When a
+  // variable carries player-written text, check the template's own placeholders
+  // instead, so a message containing a brace is not mistaken for a broken template.
+  const unfilled = opts?.allowFreeText
+    ? [...raw.matchAll(/\{(\w+)\}/g)].some((m) => !(m[1] in vars))
+    : body.includes("{");
+  if (unfilled || body.trim().length === 0) {
     await db.from("notification_log").insert({
       player_id: player.id,
       channel: "email",

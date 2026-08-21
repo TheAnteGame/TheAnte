@@ -79,14 +79,16 @@ export async function openWeekCore(
 
   // Freeze the slate. Games kicking before Thursday noon are off-slate (§3) — the
   // 2026 Week 1 Wednesday opener and the Week 12 Wednesday game arrive here.
-  const spreadByGame = new Map(feed.spreads.map((s) => [s.externalId, s.spreadLine]));
+  const oddsByGame = new Map(feed.spreads.map((s) => [s.externalId, s]));
   const gameRows = feed.games.map((g) => ({
     week_id: weekId,
     external_id: g.externalId,
     espn_id: g.espnId,
     away_team: g.awayTeam,
     home_team: g.homeTeam,
-    spread_frozen: spreadByGame.get(g.externalId) ?? null,
+    spread_frozen: oddsByGame.get(g.externalId)?.spreadLine ?? null,
+    away_moneyline: oddsByGame.get(g.externalId)?.awayMoneyline ?? null,
+    home_moneyline: oddsByGame.get(g.externalId)?.homeMoneyline ?? null,
     kickoff_at: g.kickoffAt.toISOString(),
     on_slate: g.kickoffAt >= deadlineAt,
   }));

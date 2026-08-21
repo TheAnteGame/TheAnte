@@ -18,6 +18,9 @@ export interface SpreadRow {
   externalId: string;
   /** Home-favored positive, away-favored negative. Display context ONLY — never settles (§1.5). */
   spreadLine: number | null;
+  /** American moneyline, as published. Display context ONLY — never settles (§1.5). */
+  awayMoneyline: number | null;
+  homeMoneyline: number | null;
 }
 
 export type GameStatus = "scheduled" | "in_progress" | "final";

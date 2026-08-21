@@ -4,8 +4,23 @@
     {
       "name": "ante-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 33333
+    },
+    {
+      "name": "ante-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start",
+        "--",
+        "-p",
+        "33334"
+      ],
+      "port": 33334
     }
   ]
 }

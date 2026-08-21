@@ -78,8 +78,8 @@ export async function Leaderboard({ playerId }: { playerId: string }) {
   };
 
   return (
-    <section aria-label={copy.heading} className="border border-[color:var(--color-border)]">
-      <h2 className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">
+    <section aria-label={copy.heading} className="panel">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
         {copy.heading}
       </h2>
       <LeaderboardTable rows={rows} copy={copy} />

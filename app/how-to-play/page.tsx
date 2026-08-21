@@ -11,13 +11,20 @@ import { HowToPlayTutorial } from "@/components/howtoplay/HowToPlayTutorial";
 
 export const dynamic = "force-dynamic";
 
-export default async function HowToPlay({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function HowToPlay({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; replay?: string }>;
+}) {
   const state = await getPlayerState();
   if (!state) redirect("/");
-  const dest = routeFor(state);
-  if (dest !== "/how-to-play") redirect(dest);
+  const { error, replay } = await searchParams;
 
-  const { error } = await searchParams;
+  // ?replay=1 lets a player who is already through the gate run it again from the
+  // dashboard. Only from /dashboard: everyone still mid-onboarding keeps their route.
+  const dest = routeFor(state);
+  const replaying = replay === "1" && dest === "/dashboard";
+  if (dest !== "/how-to-play" && !replaying) redirect(dest);
 
   const [
     logoAlt,
@@ -29,34 +36,22 @@ export default async function HowToPlay({ searchParams }: { searchParams: Promis
     skipCta,
     acceptCta,
     errorGeneric,
-    introTitle,
-    introBody,
-    anteTitle,
-    anteBody,
-    pickTitle,
-    pickBody,
-    chipsTitle,
-    chipsBody,
-    limitTitle,
-    limitBody,
-    spreadNote,
-    deadlineTitle,
-    deadlineBody,
-    blackoutTitle,
-    blackoutBody,
+    tableTitle,
+    tableBody,
+    betTitle,
+    betBody,
+    edgeTitle,
+    edgeBody,
     revealTitle,
     revealBody,
-    shoveTitle,
-    shoveBody,
-    settlementTitle,
-    settlementBody,
+    potTitle,
+    potBody,
     readyTitle,
     readyBody,
     anteLabel,
     limitLabel,
-    deadlineLabel,
     potLabel,
-    shoveCta,
+    atLabel,
   ] = await Promise.all([
     getContent("home.logo_alt"),
     getContent("howto.heading"),
@@ -67,34 +62,22 @@ export default async function HowToPlay({ searchParams }: { searchParams: Promis
     getContent("howto.skip_cta"),
     getContent("howto.accept_cta"),
     getContent("howto.error_generic"),
-    getContent("howto.intro_title"),
-    getContent("howto.intro_body"),
-    getContent("howto.ante_title"),
-    getContent("howto.ante_body"),
-    getContent("howto.pick_title"),
-    getContent("howto.pick_body"),
-    getContent("howto.chips_title"),
-    getContent("howto.chips_body"),
-    getContent("howto.limit_title"),
-    getContent("howto.limit_body"),
-    getContent("howto.spread_note"),
-    getContent("howto.deadline_title"),
-    getContent("howto.deadline_body"),
-    getContent("howto.blackout_title"),
-    getContent("howto.blackout_body"),
+    getContent("howto.table_title"),
+    getContent("howto.table_body"),
+    getContent("howto.bet_title"),
+    getContent("howto.bet_body"),
+    getContent("howto.edge_title"),
+    getContent("howto.edge_body"),
     getContent("howto.reveal_title"),
     getContent("howto.reveal_body"),
-    getContent("howto.shove_title"),
-    getContent("howto.shove_body"),
-    getContent("howto.settlement_title"),
-    getContent("howto.settlement_body"),
+    getContent("howto.pot_title"),
+    getContent("howto.pot_body"),
     getContent("howto.ready_title"),
     getContent("howto.ready_body"),
     getContent("band.ante_label"),
     getContent("dash.wager.limit_label"),
-    getContent("band.deadline_label"),
     getContent("band.pot_label"),
-    getContent("dash.wager.shove_mode_cta"),
+    getContent("dash.wager.at_label"),
   ]);
 
   return (
@@ -121,34 +104,22 @@ export default async function HowToPlay({ searchParams }: { searchParams: Promis
             backCta,
             skipCta,
             acceptCta,
-            introTitle,
-            introBody,
-            anteTitle,
-            anteBody,
-            pickTitle,
-            pickBody,
-            chipsTitle,
-            chipsBody,
-            limitTitle,
-            limitBody,
-            spreadNote,
-            deadlineTitle,
-            deadlineBody,
-            blackoutTitle,
-            blackoutBody,
+            tableTitle,
+            tableBody,
+            betTitle,
+            betBody,
+            edgeTitle,
+            edgeBody,
             revealTitle,
             revealBody,
-            shoveTitle,
-            shoveBody,
-            settlementTitle,
-            settlementBody,
+            potTitle,
+            potBody,
             readyTitle,
             readyBody,
             anteLabel,
             limitLabel,
-            deadlineLabel,
             potLabel,
-            shoveCta,
+            atLabel,
           }}
         />
       </main>

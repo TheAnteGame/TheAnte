@@ -11,15 +11,18 @@ import { ChatComposer } from "./ChatComposer";
 export async function TableTalk({ playerId }: { playerId: string }) {
   const db = createUserClient();
 
-  const [{ data: messages }, { data: me }, heading, placeholder, mutedNotice, tombstone] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, tombstone] = await Promise.all([
     db
       .from("chat_messages")
       .select("id, player_id, body, is_system, hidden_at, hidden_reason, created_at")
       .order("created_at", { ascending: false })
       .limit(50),
     db.from("players").select("is_muted, muted_until").eq("id", playerId).maybeSingle(),
+    // Has this player ever said anything? One row is enough to know.
+    db.from("chat_messages").select("id").eq("player_id", playerId).limit(1),
     getContent("dash.tabletalk.heading"),
     getContent("dash.tabletalk.placeholder"),
+    getContent("dash.tabletalk.live_label"),
     getContent("dash.tabletalk.muted_notice"),
     getContent("dash.tabletalk.tombstone"),
   ]);
@@ -41,11 +44,11 @@ export async function TableTalk({ playerId }: { playerId: string }) {
   );
 
   return (
-    <section aria-label={heading} className="flex min-h-0 flex-col border border-[color:var(--color-border)]">
-      <h2 className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">
+    <section aria-label={heading} className="panel flex min-h-0 flex-col">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
         {heading}
       </h2>
-      <ul className="flex max-h-96 flex-col-reverse gap-2 overflow-y-auto px-4 py-3">
+      <ul className="flex max-h-[32rem] min-h-[9rem] flex-col-reverse gap-2 overflow-y-auto px-4 py-3">
         {(messages ?? []).map((m) => (
           <li key={m.id} className="text-sm">
             {m.hidden_at ? (
@@ -67,7 +70,7 @@ export async function TableTalk({ playerId }: { playerId: string }) {
       {muted ? (
         <p className="border-t border-[color:var(--color-border)] px-4 py-3 text-sm text-[color:var(--color-gold)]">{mutedText}</p>
       ) : (
-        <ChatComposer placeholder={placeholder} />
+        <ChatComposer placeholder={placeholder} liveLabel={liveLabel} showLive={(mine ?? []).length === 0} />
       )}
     </section>
   );

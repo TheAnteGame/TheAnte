@@ -36,9 +36,12 @@ export async function fetchNflverseWeek(season: number, week: number): Promise<N
     kickoffAt: kickoffFromNflverse(r.gameday, r.gametime),
   }));
 
+  const num = (v: string | undefined) => (v === undefined || v === "" ? null : Number(v));
   const spreads: SpreadRow[] = rows.map((r) => ({
     externalId: r.game_id,
-    spreadLine: r.spread_line === "" ? null : Number(r.spread_line),
+    spreadLine: num(r.spread_line),
+    awayMoneyline: num(r.away_moneyline),
+    homeMoneyline: num(r.home_moneyline),
   }));
 
   const finals = new Map<string, { awayScore: number; homeScore: number }>();

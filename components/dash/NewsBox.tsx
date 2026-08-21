@@ -9,44 +9,55 @@ import { NewsFader } from "./NewsFader";
 export async function NewsBox({ playerId }: { playerId: string }) {
   const db = createUserClient();
 
-  const [{ data: me }, heading, empty] = await Promise.all([
+  const [{ data: me }, heading, empty, sourceLabel] = await Promise.all([
     db.from("players").select("favorite_team").eq("id", playerId).maybeSingle(),
     getContent("dash.news.heading"),
     getContent("dash.news.empty"),
+    getContent("dash.news.source_label"),
   ]);
 
-  let items: Array<{ id: string; title: string; url: string | null }> = [];
+  // The source travels with the item so a player can see who wrote it and go read it.
+  type Row = { id: string; title: string; url: string | null; feed_sources: { name: string } | { name: string }[] | null };
+  const named = (rows: Row[] | null) =>
+    (rows ?? []).map((r) => ({
+      id: r.id,
+      title: r.title,
+      url: r.url,
+      source: (Array.isArray(r.feed_sources) ? r.feed_sources[0]?.name : r.feed_sources?.name) ?? null,
+    }));
+
+  let items: Array<{ id: string; title: string; url: string | null; source: string | null }> = [];
   if (me?.favorite_team) {
     const { data } = await db
       .from("feed_items")
-      .select("id, title, url")
+      .select("id, title, url, feed_sources(name)")
       .eq("team_code", me.favorite_team)
       .order("published_at", { ascending: false })
       .limit(8);
-    items = data ?? [];
+    items = named(data as Row[] | null);
   }
   if (items.length === 0) {
     const { data } = await db
       .from("feed_items")
-      .select("id, title, url")
+      .select("id, title, url, feed_sources(name)")
       .is("team_code", null)
       .order("published_at", { ascending: false })
       .limit(8);
-    items = data ?? [];
+    items = named(data as Row[] | null);
   }
 
   const { data: rotate } = await db.from("app_settings").select("value").eq("key", "news.rotate_ms").maybeSingle();
   const rotateMs = typeof rotate?.value === "number" ? rotate.value : 5000;
 
   return (
-    <section aria-label={heading} className="border border-[color:var(--color-border)]">
-      <h2 className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">
+    <section aria-label={heading} className="panel">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
         {heading}
       </h2>
       {items.length === 0 ? (
         <p className="px-4 py-4 text-sm text-[color:var(--color-text-mid)]">{empty}</p>
       ) : (
-        <NewsFader items={items} rotateMs={rotateMs} />
+        <NewsFader items={items} rotateMs={rotateMs} sourceLabel={sourceLabel} />
       )}
     </section>
   );

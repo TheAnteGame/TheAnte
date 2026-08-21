@@ -12,7 +12,17 @@ export interface TickerItem {
   source: "manual" | "system" | "feed";
 }
 
-export function TickerMarquee({ items }: { items: TickerItem[] }) {
+export function TickerMarquee({
+  items,
+  speedSeconds,
+  accentCss,
+  textCss,
+}: {
+  items: TickerItem[];
+  speedSeconds: number;
+  accentCss: string;
+  textCss: string;
+}) {
   const [reduced, setReduced] = useState(false);
   const [staticIndex, setStaticIndex] = useState(0);
 
@@ -31,11 +41,11 @@ export function TickerMarquee({ items }: { items: TickerItem[] }) {
   }, [reduced, items.length]);
 
   const render = (item: TickerItem, key: string) => {
-    const cls =
-      item.source === "system"
-        ? "text-[color:var(--color-gold)]"
-        : "text-[color:var(--color-text-mid)]";
-    const body = <span className={`nums ${cls}`}>{item.text}</span>;
+    const body = (
+      <span className="nums" style={{ color: item.source === "system" ? accentCss : textCss }}>
+        {item.text}
+      </span>
+    );
     return (
       <span key={key} className="inline-flex items-center gap-3 px-4">
         {item.url ? (
@@ -54,7 +64,7 @@ export function TickerMarquee({ items }: { items: TickerItem[] }) {
 
   if (reduced) {
     return (
-      <div className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-2 text-sm">
+      <div className="panel-head px-4 py-2 text-sm">
         {render(items[staticIndex], items[staticIndex].id)}
       </div>
     );
@@ -63,7 +73,8 @@ export function TickerMarquee({ items }: { items: TickerItem[] }) {
   return (
     <div
       aria-label="League ticker"
-      className="ticker-rail overflow-hidden whitespace-nowrap border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] py-2 text-sm"
+      className="overflow-hidden whitespace-nowrap panel-head py-2 text-sm"
+      style={{ ["--ticker-seconds" as string]: `${speedSeconds}s` }}
     >
       <div className="ticker-track inline-block">
         {items.map((i) => render(i, i.id))}

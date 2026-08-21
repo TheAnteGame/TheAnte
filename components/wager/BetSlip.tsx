@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitWager } from "@/app/actions/wager";
 import { tierForWeek } from "@/lib/engine";
-import { ChipStack, PokerChip } from "@/components/chip/PokerChip";
+import { ChipStack } from "@/components/chip/PokerChip";
 
 // The most-used surface in the product, built for a phone on a Wednesday night
 // (ANTE-PLAYER §11). Every rule here is advisory UX — the database re-validates all
@@ -16,13 +16,14 @@ export interface SlipGame {
   away: string;
   home: string;
   spread: number | null;
+  awayMoneyline: number | null;
+  homeMoneyline: number | null;
   kickoff: string;
   kickedOff: boolean;
 }
 
 export interface SlipCopy {
   heading: string;
-  anteLabel: string;
   limitLabel: string;
   committedLabel: string;
   remainingLabel: string;
@@ -38,10 +39,15 @@ export interface SlipCopy {
   shoveDarkNote: string;
   shoveSpentLabel: string;
   spreadNote: string;
+  raiseHint: string;
+  atLabel: string;
+  submitTooltip: string;
+  shoveTooltip: string;
   feltNotice: string;
   cappedRoom: string;
   cappedStack: string;
   minGamesNote: string;
+  minGamesNoteOne: string;
   totalLabel: string;
   errorGeneric: string;
 }
@@ -50,7 +56,6 @@ interface Props {
   weekId: string;
   weekNumber: number;
   ante: number;
-  deadlineLabel: string;
   games: SlipGame[];
   snapshot: { stackPreAnte: number; felt: boolean; houseLimit: number };
   medianSnapshot: number;
@@ -60,13 +65,26 @@ interface Props {
 
 type Side = "away" | "home";
 
-export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapshot, medianSnapshot, shoveUsedWeek, copy }: Props) {
+export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnapshot, shoveUsedWeek, copy }: Props) {
   const router = useRouter();
   const { felt, houseLimit, stackPreAnte } = snapshot;
   const chipTone = tierForWeek(weekNumber);
   const step = felt ? 1 : 10;
   const minChips = felt ? 1 : 10;
   const maxChips = felt ? houseLimit : 50;
+  // The stake ladder. Off the felt that is exactly 10/20/30/40/50; on the felt it
+  // spans the whole stack in the same five rungs, still in whole chips. Clicking a
+  // side walks up the ladder and one more click past the top takes the bet back.
+  const rungs = useMemo(() => {
+    const count = Math.min(5, Math.max(1, Math.floor((maxChips - minChips) / step) + 1));
+    const out: number[] = [];
+    for (let i = 0; i < count; i++) {
+      const raw = count === 1 ? minChips : minChips + ((maxChips - minChips) * i) / (count - 1);
+      const snapped = Math.min(maxChips, Math.max(minChips, Math.round(raw / step) * step));
+      if (!out.includes(snapped)) out.push(snapped);
+    }
+    return out;
+  }, [minChips, maxChips, step]);
   const minGames = felt ? 1 : Math.min(5, Math.max(1, Math.floor(houseLimit / 10)));
 
   const [picks, setPicks] = useState<Map<string, { side: Side; chips: number }>>(new Map());
@@ -96,21 +114,24 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
     }
     setPicks((cur) => {
       const next = new Map(cur);
-      const existing = next.get(gameId);
-      if (existing?.side === side) next.delete(gameId);
-      else next.set(gameId, { side, chips: Math.min(minChips, maxChips) || minChips });
-      return next;
-    });
-  };
-
-  const bump = (gameId: string, delta: number) => {
-    setPicks((cur) => {
-      const next = new Map(cur);
       const p = next.get(gameId);
-      if (!p) return cur;
-      const room = houseLimit - ([...next.values()].reduce((s, x) => s + x.chips, 0) - p.chips);
-      const chips = Math.max(minChips, Math.min(p.chips + delta * step, maxChips, room));
-      next.set(gameId, { ...p, chips });
+      const roomFor = houseLimit - ([...next.values()].reduce((s, x) => s + x.chips, 0) - (p?.chips ?? 0));
+
+      // Backing the other side of a game you already have starts the ladder over.
+      if (!p || p.side !== side) {
+        const opening = Math.min(rungs[0], roomFor);
+        if (opening < rungs[0]) return cur;
+        next.set(gameId, { side, chips: opening });
+        return next;
+      }
+
+      const nextRung = rungs.find((r) => r > p.chips);
+      // Top of the ladder, or no room left to raise: the next click takes it back.
+      if (nextRung === undefined || Math.min(nextRung, roomFor) <= p.chips) {
+        next.delete(gameId);
+        return next;
+      }
+      next.set(gameId, { side, chips: Math.min(nextRung, roomFor) });
       return next;
     });
     if (!reducedMotion) {
@@ -140,6 +161,18 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
     router.refresh();
   };
 
+  const withTip = (text: string, control: React.ReactNode) => (
+    <span className="group relative inline-flex">
+      {control}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-0 z-30 mb-2 hidden w-64 border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] px-3 py-2 text-xs leading-relaxed text-[color:var(--color-text-mid)] shadow-lg group-hover:block group-focus-within:block"
+      >
+        {text}
+      </span>
+    </span>
+  );
+
   const stat = (label: string, value: string, accent?: boolean) => (
     <div className="flex flex-col">
       <span className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{label}</span>
@@ -150,23 +183,41 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
   );
 
   return (
-    <section aria-label={copy.heading} className="border border-[color:var(--color-border)]">
-      {/* Header strip — always visible while scrolling (§5.2) */}
-      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3 [background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.025)_0_1px,transparent_1px_6px)]">
-        <span className="font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">
-          Wk {weekNumber}
-        </span>
-        {stat(copy.anteLabel, felt ? "—" : String(ante))}
-        <div className="group relative">
-          {stat(copy.limitLabel, String(houseLimit))}
-          <span className="pointer-events-none absolute left-0 top-full z-20 hidden whitespace-nowrap bg-[color:var(--color-surface-3)] px-2 py-1 text-xs text-[color:var(--color-text-mid)] group-hover:block">
-            {cappedBy}
-          </span>
+    <section aria-label={copy.heading} className="panel">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+        {copy.heading}
+      </h2>
+      {/* The running tally (§5.2). Ante, limit and deadline live on the stakes band
+          directly above, so this bar carries only what changes as you bet — and on
+          desktop it sticks just under the band, measured rather than guessed. */}
+      <div className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] min-[900px]:top-[var(--band-h,7rem)]">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
+          <div className="group relative">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">
+                {copy.committedLabel}
+              </span>
+              <span className="nums text-sm font-semibold text-[color:var(--color-text-hi)]">
+                {shoveMode ? (shovePick ? stackPreAnte : 0) : committed}
+                <span className="text-[color:var(--color-text-low)]"> / {houseLimit}</span>
+              </span>
+            </div>
+            <span className="pointer-events-none absolute left-0 top-full z-30 hidden whitespace-nowrap border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] px-2 py-1 text-xs text-[color:var(--color-text-mid)] group-hover:block">
+              {copy.limitLabel} — {cappedBy}
+            </span>
+          </div>
+          {!shoveMode && stat(copy.remainingLabel, String(remaining), remaining === 0)}
+          {!shoveMode && stat(copy.gamesLabel, `${picks.size} / ${minGames}`)}
         </div>
-        {stat(copy.committedLabel, String(shoveMode ? (shovePick ? stackPreAnte : 0) : committed))}
-        {!shoveMode && stat(copy.remainingLabel, String(remaining))}
-        {!shoveMode && stat(copy.gamesLabel, `${picks.size} / ${minGames}`)}
-        <span className="ml-auto text-xs text-[color:var(--color-text-low)]">{deadlineLabel}</span>
+        {/* How full the table is, at a glance, without reading a number. */}
+        {!shoveMode && (
+          <div className="h-1 w-full bg-[color:var(--color-surface-3)]" aria-hidden>
+            <div
+              className="h-full bg-[color:var(--color-chrome)] transition-[width] duration-200"
+              style={{ width: `${houseLimit > 0 ? Math.min(100, (committed / houseLimit) * 100) : 0}%` }}
+            />
+          </div>
+        )}
       </div>
 
       {felt && (
@@ -185,7 +236,15 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
         </div>
       )}
 
-      {/* The slate — off-slate games are absent, not greyed out (§5.2) */}
+      {!shoveMode && (
+        <p className="px-4 pt-3 text-xs text-[color:var(--color-text-low)]">
+          {copy.raiseHint.replace("{max}", String(rungs[rungs.length - 1]))}
+        </p>
+      )}
+
+      {/* The slate — off-slate games are absent, not greyed out (§5.2). The game sits
+          in the middle and the two sides face each other across it, so backing a team
+          is one press on the team itself rather than a stepper parked off to the side. */}
       <ul>
         {games
           .filter((g) => !g.kickedOff)
@@ -195,62 +254,91 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
                 ? { side: shovePick.side, chips: stackPreAnte }
                 : undefined
               : picks.get(g.id);
-            const sideBtn = (side: Side, team: string) => (
-              <button
-                type="button"
-                onClick={() => pickSide(g.id, side)}
-                aria-pressed={pick?.side === side}
-                className={`chamfer px-3 py-2 font-[family-name:var(--font-display)] text-sm font-semibold ${
-                  pick?.side === side
-                    ? "bg-[color:var(--color-chrome)] text-[color:var(--color-canvas)]"
-                    : "bg-[color:var(--color-surface-2)] text-[color:var(--color-text-hi)] hover:bg-[color:var(--color-surface-3)]"
-                }`}
-              >
-                {team}
-              </button>
-            );
+            const rung = pick ? rungs.findIndex((r) => r >= pick.chips) + 1 : 0;
+            // Positive spread = home favoured by that many (ANTE-TECH §3.1). Both
+            // numbers are frozen sportsbook context: neither settles anything here.
+            const signed = (n: number) => (n < 0 ? `\u2212${Math.abs(n)}` : `+${n}`);
+            const spreadFor = (side: Side) => {
+              if (g.spread === null) return null;
+              if (g.spread === 0) return "PK";
+              const favourite: Side = g.spread > 0 ? "home" : "away";
+              const magnitude = Math.abs(g.spread);
+              return side === favourite ? `\u2212${magnitude}` : `+${magnitude}`;
+            };
+            const moneyFor = (side: Side) => {
+              const n = side === "away" ? g.awayMoneyline : g.homeMoneyline;
+              return n === null || n === 0 ? null : signed(n);
+            };
+
+            const sideBtn = (side: Side, team: string) => {
+              const active = pick?.side === side;
+              const label = shoveMode
+                ? team
+                : active
+                  ? `${team} — ${pick!.chips} in. Press to ${rung >= rungs.length ? "take it back" : `raise to ${rungs[rung]}`}.`
+                  : `${team} — press to back for ${rungs[0]}.`;
+              return (
+                <button
+                  type="button"
+                  onClick={() => pickSide(g.id, side)}
+                  aria-pressed={active}
+                  aria-label={label}
+                  className={`chamfer flex flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${
+                    active
+                      ? "chrome-face"
+                      : "bg-[color:var(--color-surface-2)] text-[color:var(--color-text-hi)] hover:bg-[color:var(--color-surface-3)]"
+                  }`}
+                >
+                  <span className="leading-tight">{team}</span>
+                  {(spreadFor(side) || moneyFor(side)) && (
+                    <span
+                      title={copy.spreadNote}
+                      className={`nums flex items-center gap-1.5 text-[11px] font-normal ${
+                        active ? "text-[color:var(--color-canvas)]/55" : "text-[color:var(--color-text-low)]"
+                      }`}
+                    >
+                      {spreadFor(side) && <span>{spreadFor(side)}</span>}
+                      {spreadFor(side) && moneyFor(side) && <span aria-hidden>·</span>}
+                      {moneyFor(side) && <span>{moneyFor(side)}</span>}
+                    </span>
+                  )}
+                  {active && !shoveMode && (
+                    <>
+                      <ChipStack
+                        tone={chipTone}
+                        total={pick!.chips}
+                        count={rung}
+                        size={44}
+                        animated={!reducedMotion && bumpedGame === g.id}
+                      />
+                      {/* Five rungs, drawn: the reset stops being a surprise. */}
+                      <span className="flex gap-1" aria-hidden>
+                        {rungs.map((_, i) => (
+                          <span
+                            key={i}
+                            className={`h-1 w-3 ${i < rung ? "bg-[color:var(--color-canvas)]" : "bg-[color:var(--color-canvas)]/25"}`}
+                          />
+                        ))}
+                      </span>
+                    </>
+                  )}
+                  {active && shoveMode && (
+                    <span className="nums text-[color:var(--color-gold)]">{stackPreAnte}</span>
+                  )}
+                </button>
+              );
+            };
+
             return (
-              <li
-                key={g.id}
-                className="flex flex-wrap items-center gap-3 border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0"
-              >
-                <span className="nums w-20 shrink-0 text-xs text-[color:var(--color-text-low)]">{g.kickoff}</span>
-                <div className="flex items-center gap-2">
+              <li key={g.id} className="border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 sm:gap-4">
                   {sideBtn("away", g.away)}
-                  <span className="text-xs text-[color:var(--color-text-low)]">@</span>
+                  <div className="flex flex-col items-center justify-center gap-0.5 px-1 text-center">
+                    <span className="nums text-[11px] text-[color:var(--color-text-low)]">{g.kickoff}</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--color-text-low)]">{copy.atLabel}</span>
+                  </div>
                   {sideBtn("home", g.home)}
                 </div>
-                {g.spread !== null && (
-                  <span title={copy.spreadNote} className="nums text-xs text-[color:var(--color-text-low)]">
-                    {g.spread > 0 ? `${g.home} −${g.spread}` : g.spread < 0 ? `${g.away} −${-g.spread}` : "PK"}
-                  </span>
-                )}
-                {!shoveMode && pick && (
-                  <div className="ml-auto flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => bump(g.id, -1)}
-                      aria-label={`take back ${step}`}
-                      className="relative shrink-0 opacity-70 transition hover:opacity-100"
-                    >
-                      <PokerChip tone="chrome" size={28} />
-                      <span className="absolute inset-0 flex items-center justify-center font-bold text-[color:var(--color-canvas)]">−</span>
-                    </button>
-                    <ChipStack tone={chipTone} total={pick.chips} size={32} animated={!reducedMotion && bumpedGame === g.id} />
-                    <button
-                      type="button"
-                      onClick={() => bump(g.id, 1)}
-                      aria-label={`push in ${step} more`}
-                      className="relative shrink-0 transition hover:brightness-110"
-                    >
-                      <PokerChip tone={chipTone} size={28} />
-                      <span className="absolute inset-0 flex items-center justify-center font-bold text-white">+</span>
-                    </button>
-                  </div>
-                )}
-                {shoveMode && pick && (
-                  <span className="nums ml-auto font-semibold text-[color:var(--color-gold)]">{stackPreAnte}</span>
-                )}
               </li>
             );
           })}
@@ -260,32 +348,38 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
         {copy.spreadNote}
       </p>
 
-      <div className="flex items-center gap-3 border-t border-[color:var(--color-border)] px-4 py-3">
-        <button
-          type="button"
-          disabled={!canSubmit || busy}
-          onClick={() => setConfirming(true)}
-          className="chamfer bg-[color:var(--color-chrome)] px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide text-[color:var(--color-canvas)] disabled:opacity-40"
-        >
-          {copy.submitCta}
-        </button>
-        {shoveUsedWeek === null ? (
+      <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--color-border)] px-4 py-3">
+        {withTip(
+          copy.submitTooltip,
           <button
             type="button"
-            onClick={() => {
-              setShoveMode((m) => !m);
-              setShovePick(null);
-              setError("");
-            }}
-            aria-pressed={shoveMode}
-            className={`chamfer px-4 py-3 text-sm font-semibold uppercase tracking-wide ${
-              shoveMode
-                ? "bg-[color:var(--color-gold)] text-[color:var(--color-canvas)]"
-                : "border border-[color:var(--color-gold-dim)] text-[color:var(--color-gold)]"
-            }`}
+            disabled={!canSubmit || busy}
+            onClick={() => setConfirming(true)}
+            className="chamfer chrome-face px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide text-[color:var(--color-canvas)]"
           >
-            {copy.shoveModeCta}
-          </button>
+            {copy.submitCta}
+          </button>,
+        )}
+        {shoveUsedWeek === null ? (
+          withTip(
+            copy.shoveTooltip,
+            <button
+              type="button"
+              onClick={() => {
+                setShoveMode((m) => !m);
+                setShovePick(null);
+                setError("");
+              }}
+              aria-pressed={shoveMode}
+              className={`chamfer px-4 py-3 text-sm font-semibold uppercase tracking-wide ${
+                shoveMode
+                  ? "bg-[color:var(--color-gold)] text-[color:var(--color-canvas)]"
+                  : "border border-[color:var(--color-gold-dim)] text-[color:var(--color-gold)]"
+              }`}
+            >
+              {copy.shoveModeCta}
+            </button>,
+          )
         ) : (
           <span className="text-xs text-[color:var(--color-text-low)]">
             {copy.shoveSpentLabel.replace("{week}", String(shoveUsedWeek))}
@@ -293,7 +387,7 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
         )}
         {!shoveMode && picks.size < minGames && (
           <span className="text-xs text-[color:var(--color-text-low)]">
-            {copy.minGamesNote.replace("{min}", String(minGames))}
+            {minGames === 1 ? copy.minGamesNoteOne : copy.minGamesNote.replace("{min}", String(minGames))}
           </span>
         )}
         {error && (
@@ -355,7 +449,7 @@ export function BetSlip({ weekId, weekNumber, ante, deadlineLabel, games, snapsh
                 type="button"
                 disabled={busy || (shoveMode && shoveWord !== "SHOVE")}
                 onClick={() => void submit()}
-                className="chamfer bg-[color:var(--color-chrome)] px-5 py-2 font-[family-name:var(--font-display)] font-semibold uppercase text-[color:var(--color-canvas)] disabled:opacity-40"
+                className="chamfer chrome-face px-5 py-2 font-[family-name:var(--font-display)] font-semibold uppercase text-[color:var(--color-canvas)]"
               >
                 {copy.confirmCta}
               </button>

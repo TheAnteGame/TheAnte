@@ -4,6 +4,7 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { ET } from "@/lib/time";
 import { TickerMarquee, type TickerItem } from "./TickerMarquee";
+import { DEFAULT_ACCENT, DEFAULT_SPEED, DEFAULT_TEXT, clampSpeed, colorCss } from "@/lib/ticker/style";
 
 // The blended rail (ADMIN §0, §4.5): one ordered list a player never has to parse —
 // manual posts, system league facts, and feed headlines. Stored rows (manual/feed)
@@ -15,7 +16,7 @@ export async function Ticker() {
   const db = createUserClient();
 
   const [{ data: settingsRows }, { data: stored }, { data: week }] = await Promise.all([
-    db.from("app_settings").select("key, value").in("key", ["ticker.enabled", "ticker.max_items", "ticker.system_items"]),
+    db.from("app_settings").select("key, value").in("key", ["ticker.enabled", "ticker.max_items", "ticker.system_items", "ticker.speed_seconds", "ticker.accent_color", "ticker.text_color"]),
     db
       .from("ticker_items")
       .select("id, source, text, url, pinned, priority, starts_at, ends_at, created_at")
@@ -127,5 +128,11 @@ export async function Ticker() {
   // Guardrail: an empty rail does not render at all (ADMIN §4.5.1).
   if (merged.length === 0) return null;
 
-  return <TickerMarquee items={merged} />;
+  const speedSeconds = clampSpeed(
+    typeof settings.get("ticker.speed_seconds") === "number" ? (settings.get("ticker.speed_seconds") as number) : DEFAULT_SPEED,
+  );
+  const accentCss = colorCss(settings.get("ticker.accent_color") as string | undefined, DEFAULT_ACCENT);
+  const textCss = colorCss(settings.get("ticker.text_color") as string | undefined, DEFAULT_TEXT);
+
+  return <TickerMarquee items={merged} speedSeconds={speedSeconds} accentCss={accentCss} textCss={textCss} />;
 }

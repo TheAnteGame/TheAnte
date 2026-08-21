@@ -114,8 +114,8 @@ export function RevealExperience({ data }: { data: RevealData }) {
   }
 
   return (
-    <section className="border border-[color:var(--color-border)]">
-      <div className="flex items-center gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3">
+    <section className="panel">
+      <div className="flex items-center gap-2 panel-head px-4 py-3">
         <span className="font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">
           Wk {data.weekNumber}
         </span>

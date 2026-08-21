@@ -6,6 +6,10 @@ import { send } from "@/lib/notify";
 import { revealDeadline } from "@/lib/jobs/reveal";
 import { settleCurrentWeek } from "@/lib/jobs/settle";
 import { serviceDb } from "@/lib/jobs/util";
+import { TICKER_COLORS, clampSpeed } from "@/lib/ticker/style";
+import { emailPlayer } from "@/lib/notify/templates";
+import { getContent } from "@/lib/content/getContent";
+import { takeSnapshot } from "@/lib/backup/snapshot";
 
 // Every mutating admin action re-checks the commissioner (ANTE-ADMIN §2), writes
 // audit_log, and mirrors public corrections to Table Talk (§13). The closed set of
@@ -282,6 +286,7 @@ export async function forceReveal(fd: FormData): Promise<ActionResult> {
     .limit(1)
     .maybeSingle();
   if (!week) return fail("No open week");
+  await takeSnapshot(ctx.db, `before force reveal of week ${week.number}`, ctx.playerId);
   if (new Date() < new Date(week.deadline_at)) {
     return fail("The reveal cannot fire before Thursday noon — an early reveal hands every un-submitted player the room (§4.2).");
   }
@@ -300,6 +305,7 @@ export async function resettle(fd: FormData): Promise<ActionResult> {
   if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 18) return fail("Week 1–18");
   if (!reason) return fail("Re-settlement requires a reason (§13)");
 
+  await takeSnapshot(ctx.db, `before resettle from week ${weekNumber}`, ctx.playerId);
   const { resettleFromWeek } = await import("@/lib/jobs/resettle");
   const outcome = await resettleFromWeek(ctx.db, weekNumber, reason);
   await writeAudit(ctx, "week.resettle", "week", String(weekNumber), reason, { after: outcome as unknown });
@@ -310,6 +316,7 @@ export async function resettle(fd: FormData): Promise<ActionResult> {
 export async function runSettlement(): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
+  await takeSnapshot(ctx.db, "before manual settlement", ctx.playerId);
   const outcome = await settleCurrentWeek(ctx.db);
   await writeAudit(ctx, "week.settle", "week", "current", `Manual settlement run: ${outcome.status}`);
   revalidatePath("/admin/week");
@@ -375,13 +382,122 @@ export async function composeTickerItem(fd: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** Rail presentation and which system lines run (ADMIN §4.5). app_settings has no
+ *  write policy by design — it is service-role only, past the commissioner check. */
+export async function saveTickerSettings(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+
+  const speed = clampSpeed(Number(str(fd, "speedSeconds")));
+  const accent = str(fd, "accentColor");
+  const text = str(fd, "textColor");
+  const known = new Set(TICKER_COLORS.map((c) => c.value));
+  if (!known.has(accent) || !known.has(text)) return fail("Unknown colour");
+
+  const maxItems = Number(str(fd, "maxItems"));
+  if (!Number.isFinite(maxItems) || maxItems < 1 || maxItems > 40) return fail("Show between 1 and 40 items");
+
+  // Unchecked boxes are absent from FormData, so the list of system lines is the
+  // authority for which keys exist and every one is written explicitly.
+  const systemKeys = ["deadline", "waiting_on", "pot", "marker", "reveal", "leader"];
+  const systemItems = Object.fromEntries(systemKeys.map((k) => [k, fd.get(`sys.${k}`) === "on"]));
+
+  const rows = [
+    { key: "ticker.enabled", value: fd.get("enabled") === "on" },
+    { key: "ticker.speed_seconds", value: speed },
+    { key: "ticker.accent_color", value: accent },
+    { key: "ticker.text_color", value: text },
+    { key: "ticker.max_items", value: maxItems },
+    { key: "ticker.system_items", value: systemItems },
+  ].map((r) => ({ ...r, updated_at: new Date().toISOString(), updated_by: ctx.playerId }));
+
+  const { error } = await ctx.db.from("app_settings").upsert(rows, { onConflict: "key" });
+  if (error) return fail(error.message);
+  revalidatePath("/admin/ticker");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 export async function hideTickerItem(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
   const { error } = await ctx.db.from("ticker_items").update({ hidden: true }).eq("id", str(fd, "itemId"));
   if (error) return fail(error.message);
   revalidatePath("/admin/feeds");
+  revalidatePath("/admin/ticker");
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+/** Answer a support ticket (D-012). The reply leaves by email — the player was told
+ *  it would — and the ticket is marked answered rather than removed (§14). */
+export async function replySupportMessage(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const id = str(fd, "messageId");
+  const reply = str(fd, "reply");
+  if (!id) return fail("No message");
+  if (!reply) return fail("Write a reply first");
+  if (reply.length > 4000) return fail("4000 characters is the cap");
+
+  const { data: msg } = await ctx.db
+    .from("support_messages")
+    .select("id, body, status, player_id, players(id, email)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!msg) return fail("That message is gone");
+
+  const player = (Array.isArray(msg.players) ? msg.players[0] : msg.players) as { id: string; email: string | null } | null;
+  if (!player?.email) return fail("That player has no email on file, so a reply cannot reach them.");
+
+  const subject = await getContent("notify.support_reply_subject");
+  await emailPlayer(
+    ctx.db,
+    player,
+    "notify.support_reply",
+    subject,
+    { original: msg.body, reply },
+    undefined,
+    { allowFreeText: true },
+  );
+
+  const { error } = await ctx.db
+    .from("support_messages")
+    .update({ reply, status: "answered", answered_at: new Date().toISOString(), answered_by: ctx.playerId })
+    .eq("id", id);
+  if (error) return fail(error.message);
+
+  revalidatePath("/admin/support");
+  return { ok: true };
+}
+
+/** Stops the daily nag until the next one is due (D-017). Confirming is the whole
+ *  mechanism: the app cannot see the commissioner's disk, only their word for it. */
+export async function confirmBackupDownload(): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const { error } = await ctx.db.from("app_settings").upsert(
+    {
+      key: "backup.last_confirmed_at",
+      value: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      updated_by: ctx.playerId,
+    },
+    { onConflict: "key" },
+  );
+  if (error) return fail(error.message);
+  revalidatePath("/admin/backup");
+  return { ok: true };
+}
+
+/** Take a snapshot on demand — before a deploy, or before anything hand-edited. */
+export async function takeSnapshotNow(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const label = str(fd, "reason") || "manual snapshot";
+  const { id, error } = await takeSnapshot(ctx.db, label, ctx.playerId);
+  if (!id) return fail(error ?? "Snapshot failed");
+  revalidatePath("/admin/backup");
   return { ok: true };
 }
 
@@ -507,6 +623,7 @@ export async function closeSeason(): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
 
+  await takeSnapshot(ctx.db, "before season close", ctx.playerId);
   const { gatherSeasonData } = await import("@/lib/season");
   const { computeAwards, championshipOrder, finishedOnFelt } = await import("@/lib/engine/awards");
   const season = await gatherSeasonData(ctx.db);

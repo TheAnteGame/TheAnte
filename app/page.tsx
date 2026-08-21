@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
 import { PhoneSignIn } from "@/components/PhoneSignIn";
+import { Facets } from "@/components/ui/Facets";
 
 // The logged-out homepage (ANTE-PLAYER §3.1) — the one surface that gets the full
 // treatment (art direction §7): the invitation. Single centred column, per the
@@ -32,15 +33,38 @@ export default async function Home() {
     ]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 py-16 text-center">
+    <main className="relative isolate flex min-h-screen flex-col items-center justify-center gap-8 px-6 py-16 text-center">
+      {/* The one surface that gets the full faceted treatment (art §7): a cut
+          purple plane, then a pool of dark over the middle so the invitation
+          reads as a tournament poster rather than a coloured wall. */}
+      <Facets
+        deep="var(--color-tier-purple-deep)"
+        base="var(--color-tier-purple)"
+        bright="var(--color-tier-purple-bright)"
+        seed={23}
+        cols={9}
+        rows={5}
+        className="absolute inset-0 -z-20 h-full w-full"
+      />
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(78% 62% at 50% 44%, rgba(11,11,13,0.80) 0%, rgba(11,11,13,0.93) 58%, rgba(11,11,13,0.97) 100%)",
+        }}
+        aria-hidden
+      />
+
       <div className="rise" style={{ animationDelay: "0ms" }}>
         <Image src="/logo.png" alt={logoAlt} width={333} height={213} priority />
       </div>
 
-      <div className="rise flex flex-col gap-3" style={{ animationDelay: "120ms" }}>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-wide text-[color:var(--color-chrome)]">
+      <div className="rise flex max-w-xl flex-col items-center gap-4" style={{ animationDelay: "120ms" }}>
+        <hr className="gold-rule w-40" />
+        <h1 className="text-balance font-[family-name:var(--font-display)] text-4xl font-bold uppercase italic leading-tight tracking-tight text-[color:var(--color-chrome)] sm:text-5xl">
           {heading}
         </h1>
+        <hr className="gold-rule w-40" />
         <p className="mx-auto max-w-md leading-relaxed text-[color:var(--color-text-mid)]">{body}</p>
       </div>
 
@@ -60,7 +84,7 @@ export default async function Home() {
       </div>
 
       <div className="rise flex flex-col gap-6" style={{ animationDelay: "360ms" }}>
-        <p className="text-sm tracking-wide text-[color:var(--color-gold)]">{legal}</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-gold)]">{legal}</p>
         <footer className="text-xs text-[color:var(--color-text-low)]">{copyright}</footer>
       </div>
     </main>

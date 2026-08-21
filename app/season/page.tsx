@@ -77,7 +77,7 @@ export default async function Season() {
       <p className="text-center text-[color:var(--color-text-mid)]">{intro}</p>
 
       {finalOrder.length > 0 && (
-        <section className="border border-[color:var(--color-border)] p-4">
+        <section className="panel p-4">
           <h2 className="mb-2 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">{standingsHeading}</h2>
           <ol className="space-y-1 text-sm">
             {finalOrder.map((id, i) => {
@@ -97,7 +97,7 @@ export default async function Season() {
         </section>
       )}
 
-      <section className="border border-[color:var(--color-border)] p-4">
+      <section className="panel p-4">
         <h2 className="mb-2 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">{awardsHeading}</h2>
         {awards ? (
           <ul className="space-y-1 text-sm">

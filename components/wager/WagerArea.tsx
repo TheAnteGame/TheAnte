@@ -11,6 +11,19 @@ import { SettledResults } from "./SettledResults";
 // Closed / Open / Submitted; Revealed and Settled get their real treatments in
 // Phases 7–8. All reads run as the user — the blackout RLS is the data boundary.
 
+/** Every state of this slot wears the same section title, so the game board reads
+ *  as a named surface like Table Talk rather than an unlabelled slab. */
+function Titled({ heading, children }: { heading: string; children: React.ReactNode }) {
+  return (
+    <section aria-label={heading} className="panel">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+        {heading}
+      </h2>
+      <div className="p-6">{children}</div>
+    </section>
+  );
+}
+
 export async function WagerArea({ playerId }: { playerId: string }) {
   const db = createUserClient();
 
@@ -27,9 +40,9 @@ export async function WagerArea({ playerId }: { playerId: string }) {
   if (!week) {
     const closed = await getContent("dash.wager.closed_message");
     return (
-      <section aria-label={heading} className="border border-[color:var(--color-border)] p-6">
+      <Titled heading={heading}>
         <p className="text-[color:var(--color-text-mid)]">{closed}</p>
-      </section>
+      </Titled>
     );
   }
 
@@ -58,7 +71,7 @@ export async function WagerArea({ playerId }: { playerId: string }) {
     const out = (waiting ?? []).filter((w) => !w.submitted);
     const inCount = (waiting ?? []).length - out.length;
     return (
-      <section aria-label={heading} className="border border-[color:var(--color-border)] p-6">
+      <Titled heading={heading}>
         {/* The waiting-on list is the ONE thing allowed to move during the blackout (§6). */}
         <PollRefresh intervalMs={15000} />
         <p className="text-[color:var(--color-text-hi)]">{submittedMessage}</p>
@@ -68,7 +81,7 @@ export async function WagerArea({ playerId }: { playerId: string }) {
             {out.map((w) => `${w.first_name ?? ""} ${(w.last_name ?? "").slice(0, 1)}.`.trim()).join(", ") || "—"}
           </span>
         </p>
-      </section>
+      </Titled>
     );
   }
 
@@ -77,7 +90,7 @@ export async function WagerArea({ playerId }: { playerId: string }) {
     db.from("week_players").select("stack_pre_ante, felt, house_limit").eq("week_id", week.id).eq("player_id", playerId).maybeSingle(),
     db
       .from("games")
-      .select("id, away_team, home_team, spread_frozen, kickoff_at, on_slate")
+      .select("id, away_team, home_team, spread_frozen, away_moneyline, home_moneyline, kickoff_at, on_slate")
       .eq("week_id", week.id)
       .eq("on_slate", true)
       .order("kickoff_at"),
@@ -87,9 +100,9 @@ export async function WagerArea({ playerId }: { playerId: string }) {
   if (!snap || !games || games.length === 0) {
     const closed = await getContent("dash.wager.closed_message");
     return (
-      <section aria-label={heading} className="border border-[color:var(--color-border)] p-6">
+      <Titled heading={heading}>
         <p className="text-[color:var(--color-text-mid)]">{closed}</p>
-      </section>
+      </Titled>
     );
   }
 
@@ -98,7 +111,6 @@ export async function WagerArea({ playerId }: { playerId: string }) {
       (
         [
           ["heading", "dash.wager.heading"],
-          ["anteLabel", "dash.wager.ante_label"],
           ["limitLabel", "dash.wager.limit_label"],
           ["committedLabel", "dash.wager.committed_label"],
           ["remainingLabel", "dash.wager.remaining_label"],
@@ -114,10 +126,15 @@ export async function WagerArea({ playerId }: { playerId: string }) {
           ["shoveDarkNote", "dash.wager.shove_dark_note"],
           ["shoveSpentLabel", "dash.wager.shove_spent_label"],
           ["spreadNote", "dash.wager.spread_note"],
+          ["raiseHint", "dash.wager.raise_hint"],
+          ["atLabel", "dash.wager.at_label"],
+          ["submitTooltip", "dash.wager.submit_tooltip"],
+          ["shoveTooltip", "dash.wager.shove_tooltip"],
           ["feltNotice", "dash.wager.felt_notice"],
           ["cappedRoom", "dash.wager.capped_room"],
           ["cappedStack", "dash.wager.capped_stack"],
           ["minGamesNote", "dash.wager.min_games_note"],
+          ["minGamesNoteOne", "dash.wager.min_games_note_one"],
           ["totalLabel", "dash.wager.total_label"],
           ["errorGeneric", "profile.error_generic"],
         ] as const
@@ -125,19 +142,18 @@ export async function WagerArea({ playerId }: { playerId: string }) {
     ),
   ) as unknown as SlipCopy;
 
-  const deadlineEt = DateTime.fromISO(week.deadline_at).setZone(ET).toFormat("cccc h:mma 'ET'");
-
   return (
     <BetSlip
       weekId={week.id}
       weekNumber={week.number}
       ante={week.ante}
-      deadlineLabel={deadlineEt}
       games={games.map((g) => ({
         id: g.id,
         away: g.away_team,
         home: g.home_team,
         spread: g.spread_frozen,
+        awayMoneyline: g.away_moneyline,
+        homeMoneyline: g.home_moneyline,
         kickoff: DateTime.fromISO(g.kickoff_at).setZone(ET).toFormat("ccc h:mma"),
         kickedOff: new Date(g.kickoff_at) <= new Date(),
       }))}
