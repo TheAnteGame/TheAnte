@@ -10,6 +10,8 @@ import { TICKER_COLORS, clampSpeed } from "@/lib/ticker/style";
 import { emailPlayer } from "@/lib/notify/templates";
 import { getContent } from "@/lib/content/getContent";
 import { takeSnapshot } from "@/lib/backup/snapshot";
+import { houseLimit, isFelt } from "@/lib/engine";
+import { fetchAllRows } from "@/lib/db/fetchAll";
 
 // Every mutating admin action re-checks the commissioner (ANTE-ADMIN §2), writes
 // audit_log, and mirrors public corrections to Table Talk (§13). The closed set of
@@ -64,6 +66,12 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
   });
   if (buyinErr && !buyinErr.message.includes("duplicate key")) return fail(buyinErr.message);
 
+  // A player admitted after the slate opened still plays that week — the roster locks
+  // at the WEEK 1 DEADLINE, not at slate open (rulebook §1). Without this they hold a
+  // stack but have no week_players row, and their game board reads as closed while
+  // everyone else bets (D-020).
+  await admitToOpenWeek(ctx, playerId);
+
   await writeAudit(ctx, "player.approve", "player", playerId, "Application approved; buy-in credited", {
     isPublic: true,
     publicLine: `${p.first_name ?? "A new player"} ${(p.last_name ?? "").slice(0, 1)}. has a seat. 500 chips, dead even with everybody.`,
@@ -76,6 +84,67 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
   }
   revalidatePath("/admin/players");
   return { ok: true };
+}
+
+/** Give a late-admitted player the same week snapshot and the same ante everyone else
+ *  already paid. The week's median, active count and places tier stay exactly as they
+ *  were snapshotted at slate open — those are fixed for the week (§7). */
+async function admitToOpenWeek(ctx: NonNullable<Awaited<ReturnType<typeof getCommissioner>>>, playerId: string) {
+  const { data: week } = await ctx.db
+    .from("weeks")
+    .select("id, number, ante, median_snapshot, deadline_at")
+    .eq("phase", "open")
+    .order("number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!week) return;
+  // Past the deadline there is nothing to join: the reveal is next, and charging an
+  // ante for a week they could never have bet would be taking chips for nothing.
+  if (new Date(week.deadline_at) <= new Date()) return;
+
+  const entries = await fetchAllRows<{ amount: number }>((f, t) =>
+    ctx.db.from("ledger_entries").select("amount").eq("player_id", playerId).order("id").range(f, t),
+  );
+  const stackPreAnte = entries.reduce((sum, e) => sum + Number(e.amount), 0);
+  const ante = week.ante;
+  const felt = isFelt(stackPreAnte, ante);
+
+  if (!felt) {
+    // Player side keys on open:ante so a later slate.open retry cannot ante them twice.
+    // The Pot side needs its OWN key: slate.open writes one aggregated pot row per week
+    // under open:ante:pot, and reusing that key here would be rejected as a duplicate —
+    // charging the player while the Pot went uncredited, breaking conservation.
+    const { error } = await ctx.db.from("ledger_entries").insert([
+      {
+        player_id: playerId,
+        week_id: week.id,
+        kind: "ante",
+        amount: -ante,
+        reason: `Week ${week.number} ante`,
+        idempotency_key: "open:ante",
+      },
+      {
+        player_id: null,
+        week_id: week.id,
+        kind: "ante",
+        amount: ante,
+        reason: `Week ${week.number} — Pot side of ante (admitted after slate open)`,
+        idempotency_key: `admit:ante:pot:${playerId}`,
+      },
+    ]);
+    if (error && !error.message.includes("duplicate key")) throw new Error(error.message);
+  }
+
+  await ctx.db.from("week_players").upsert(
+    {
+      week_id: week.id,
+      player_id: playerId,
+      stack_pre_ante: stackPreAnte,
+      felt,
+      house_limit: felt ? stackPreAnte : houseLimit(stackPreAnte - ante, week.median_snapshot ?? stackPreAnte - ante),
+    },
+    { onConflict: "week_id,player_id" },
+  );
 }
 
 export async function rejectPlayer(fd: FormData): Promise<ActionResult> {
@@ -182,6 +251,11 @@ export async function reactivatePlayer(fd: FormData): Promise<ActionResult> {
     .eq("id", playerId)
     .eq("status", "deactivated");
   if (error) return fail(error.message);
+
+  // Same gap as a late approval: back in the league mid-week means back in THIS week,
+  // or the board stays shut until the next slate opens (D-020).
+  await admitToOpenWeek(ctx, playerId);
+
   await writeAudit(ctx, "player.reactivate", "player", playerId, "Reactivated", {
     isPublic: true,
     publicLine: "A player is back in the league.",

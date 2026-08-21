@@ -8,6 +8,17 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (twelfth pass):** **Late joiners could not play (D-020).** A real signup after
+> Week 1's slate opened saw a locked Game Board and sat at 500/Δ+0 while everyone else was at
+> 490/−10. `approvePlayer` credits the buy-in but only `slate.open` writes the `week_players`
+> snapshot and posts the ante, and `WagerArea` reads a missing snapshot as "closed" — yet §1
+> allows admission right up to the Week 1 deadline, so they are meant to play. Approval and
+> reactivation now call `admitToOpenWeek`, using the engine's own `houseLimit`/`isFelt`; the
+> week's median, active count and places tier stay fixed (§7), and it no-ops past the
+> deadline. The Pot side needed its own idempotency key — reusing `open:ante:pot` would have
+> been swallowed as a duplicate and broken conservation. Affected player backfilled:
+> **total 4,500 before and after, Pot 80→90, player 500→490, limit 160**, 9/9 snapshots.
+
 > **2026-08-21 (eleventh pass):** @mentions, chat cleared, and **the restore drill found a
 > real hole** (**D-019**). A scratch Supabase project (`TheAnte-Staging`, free) was used to
 > run the restore for real: the `0002` guard `bets_with_ticket_only` requires a bet to be

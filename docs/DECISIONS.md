@@ -527,3 +527,36 @@ round-tripping a body through the renderer.
 
 **4. Promo cleaned.** The owner's real heading and body kept verbatim; the test
 restaurant image and the placeholder "CTA Label" cleared.
+
+## D-020 — A player who joins after the slate opens could not play (2026-08-21)
+
+**Reported from a real signup.** A player admitted after Week 1's slate opened saw
+"The slate opens Tuesday at 6:00am ET" on the Game Board while everyone else was betting,
+and sat in the standings on 500 chips at Δ+0 while the rest showed 490 at −10.
+
+**Two things were missing, not one.** `approvePlayer` credits the 500-chip buy-in and
+stops there. `slate.open` is what writes a player's `week_players` row — their felt status
+and house limit for the week — and posts their ante. A player approved *after* slate open
+therefore had no snapshot, and `WagerArea` treats a missing snapshot as "closed".
+
+**This contradicted the rulebook, not just the UX.** §1: *"The roster locks at the Week 1
+deadline."* `admissionOpen` already implements that correctly — approvals are allowed right
+up to `week1_lock_at` — so admitting someone mid-week is legitimate and they are meant to
+play that week. The gap was that nothing then admitted them *to the week*.
+
+`approvePlayer` and `reactivatePlayer` now call `admitToOpenWeek`, which posts the ante and
+writes the snapshot using the engine's own `houseLimit` and `isFelt` rather than
+re-deriving the rule. The week's median, active count and places tier are **left exactly as
+snapshotted at slate open** — those are fixed for the week (§7). Past the deadline it does
+nothing: charging an ante for a week they could never have bet would take chips for nothing.
+
+**The Pot side needed its own idempotency key.** `slate.open` writes one aggregated Pot row
+per week under `open:ante:pot`. Reusing that key for a late admission would have been
+rejected by the unique index as a duplicate — **charging the player while the Pot went
+uncredited, breaking chip conservation**. Late admissions use
+`admit:ante:pot:<playerId>`; the player side keeps `open:ante`, so a later `slate.open`
+retry still cannot ante them twice.
+
+**Backfilled the affected player.** Conservation verified across the change: league total
+4,500 before and after, Pot 80 → 90, the player 500 → 490, house limit 160 matching every
+peer, and all nine approved players now hold a Week 1 snapshot.
