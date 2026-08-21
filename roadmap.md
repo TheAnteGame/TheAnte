@@ -8,6 +8,19 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (eighteenth pass):** **Accessibility pass (D-026)** — the owner has an
+> eighty-year-old player, so contrast was fixed to measured WCAG numbers rather than taste:
+> `text-low` 3.36 → 5.83:1, `text-mid` 7.87 → 9.99:1, **borders 1.38 → 3.02:1** (they were at
+> a third of the 1.4.11 floor, which is why nothing had definition), `loss` 3.89 → 4.51:1,
+> `gold-dim` 4.12 → 4.55:1. Unselected team buttons were **1.08:1** against their panel and now
+> carry a real border. Type floor raised 10–11px → 12px in 47 places. No new hue, no new token.
+>
+> **Head-to-head (D-027):** recommended AGAINST chip side bets — routes around the house
+> limit (§4), distorts the Pot (§7/§14), opens the only chip-transfer channel the engine does
+> not control, and turns a pool into a book (§9). Built the rivalry without the market instead:
+> `headToHead` records who out-gained who week by week, as a fourth view on the results page.
+> 118 tests.
+
 > **2026-08-21 (seventeenth pass):** **Ticker auto-feed stopped, sportsbook content refused
 > (D-025).** `feeds.sync` was pushing every league headline onto the rail unread — and eight
 > of the first 58 were DraftKings/FanDuel promos, on a product whose whole position is that

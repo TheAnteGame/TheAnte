@@ -60,7 +60,7 @@ export function ChatComposer({
   return (
     <div className="border-t border-[color:var(--color-border)]">
       {showLive && (
-        <p className="flex items-center gap-2 px-3 pt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-gold)]">
+        <p className="flex items-center gap-2 px-3 pt-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-gold)]">
           <span aria-hidden className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--color-gold)]" />
           {liveLabel}
         </p>

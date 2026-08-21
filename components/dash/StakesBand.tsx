@@ -141,7 +141,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
   // number readable over a gem, and what makes the band read as machined.
   const stat = (label: string, value: string) => (
     <div className="well chamfer px-3.5 py-2">
-      <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">{label}</span>
+      <span className="block text-[12px] font-semibold uppercase tracking-[0.18em] text-white/70">{label}</span>
       <span className="nums block font-[family-name:var(--font-display)] text-xl font-bold leading-tight text-white">{value}</span>
     </div>
   );
@@ -170,7 +170,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
           {weekLabel} {week.number}
         </span>
         <span
-          className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.3em]"
+          className="mt-1.5 text-[12px] font-semibold uppercase tracking-[0.3em]"
           style={{ color: v.bright, textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
         >
           {tierLabel}
@@ -183,7 +183,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       <div className="well well-gold chamfer flex items-center gap-3 px-3.5 py-2">
         <PokerChip tone="gold" size={30} className="gold-pulse shrink-0" />
         <div className="flex flex-col">
-          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">{potLabel}</span>
+          <span className="block text-[12px] font-semibold uppercase tracking-[0.18em] text-white/70">{potLabel}</span>
           <span
             className="nums block font-[family-name:var(--font-display)] text-xl font-bold leading-tight"
             style={{ color: "var(--color-tier-gold-bright)" }}

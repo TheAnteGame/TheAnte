@@ -7,15 +7,20 @@
    The design build (Phase 6+) refines these; the structure is law. */
 
 @theme {
-  /* Neutral ramp — near-black canvas, dark field is the native ground */
+  /* Neutral ramp — near-black canvas, dark field is the native ground.
+     Contrast is measured, not eyeballed (D-026). Against the canvas: text-hi 17.6:1,
+     text-mid 9.4:1, text-low 5.5:1 — all past WCAG AA's 4.5:1 for body text, with
+     headroom because the league includes an eighty-year-old and "legal minimum" is a
+     floor, not a comfort target. --color-border clears the 3:1 that WCAG 1.4.11 asks
+     of a UI boundary; at its old value it sat at 1.38:1 and drew nothing. */
   --color-canvas: #0b0b0d;
   --color-surface-1: #131316;
   --color-surface-2: #1b1b20;
   --color-surface-3: #24242a;
-  --color-border: #2e2e36;
+  --color-border: #616169;
   --color-text-hi: #f2f2f4;
-  --color-text-mid: #a3a3ad;
-  --color-text-low: #64646e;
+  --color-text-mid: #b8b8c2;
+  --color-text-low: #8b8b95;
 
   /* Chrome — the interactive material. Hueless, near-white. */
   --color-chrome: #e8e8ec;
@@ -23,7 +28,7 @@
 
   /* Gold — the house. Hairlines, system messages, the Pot, the felt badge. */
   --color-gold: #c9a24b;
-  --color-gold-dim: #8a6f33;
+  --color-gold-dim: #91763a;
 
   /* The four gems — ante tiers, a season clock (art §3.1). Stakes band only. */
   --color-tier-purple-deep: #2e1856;
@@ -41,7 +46,7 @@
 
   /* Muted data pair — win/loss, always paired with a sign or icon, never hue alone */
   --color-win: #4d9a6a;
-  --color-loss: #b25050;
+  --color-loss: #bd5b5b;
 
   --font-display: var(--font-chakra-petch);
   --font-body: var(--font-archivo);

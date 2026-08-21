@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/dashboard" className="mb-6 block px-2 font-[family-name:var(--font-display)] font-bold italic text-[color:var(--color-chrome)]">
           ANTE
         </Link>
-        <p className="mb-2 px-2 text-[10px] uppercase tracking-widest text-[color:var(--color-gold)]">Commissioner</p>
+        <p className="mb-2 px-2 text-[12px] uppercase tracking-widest text-[color:var(--color-gold)]">Commissioner</p>
         <ul className="space-y-1">
           {NAV.map(([href, label]) => (
             <li key={href}>

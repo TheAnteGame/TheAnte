@@ -49,7 +49,7 @@ export default async function Feeds() {
                 (!t.starts_at || t.starts_at <= now) && (!t.ends_at || t.ends_at > now);
               return (
                 <li key={t.id} className="flex items-center gap-3 text-sm">
-                  <span className={`w-14 text-[10px] uppercase tracking-wider ${t.source === "manual" ? "text-[color:var(--color-chrome)]" : "text-[color:var(--color-text-low)]"}`}>
+                  <span className={`w-14 text-[12px] uppercase tracking-wider ${t.source === "manual" ? "text-[color:var(--color-chrome)]" : "text-[color:var(--color-text-low)]"}`}>
                     {t.source}
                   </span>
                   <span className={live ? "text-[color:var(--color-text-hi)]" : "text-[color:var(--color-text-low)] line-through"}>
@@ -124,7 +124,7 @@ export default async function Feeds() {
           <ul className="space-y-1">
             {(recentFeed ?? []).map((f) => (
               <li key={f.id} className="flex items-center gap-3 text-sm">
-                <span className="w-10 text-[10px] uppercase text-[color:var(--color-text-low)]">{f.team_code ?? "all"}</span>
+                <span className="w-10 text-[12px] uppercase text-[color:var(--color-text-low)]">{f.team_code ?? "all"}</span>
                 <span className="text-[color:var(--color-text-mid)]">{f.title}</span>
                 <AdminForm action={hideFeedItem} submitLabel="Hide" danger inline>
                   <input type="hidden" name="itemId" value={f.id} />

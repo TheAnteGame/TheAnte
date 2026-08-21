@@ -53,7 +53,7 @@ export default async function SeasonClose() {
                 <td className={`${tdCls} nums`}>{i + 1}</td>
                 <td className={tdCls}>
                   {season.names.get(s.playerId)}
-                  {!s.eligible && <span className="ml-2 text-[10px] uppercase text-[color:var(--color-text-low)]">out</span>}
+                  {!s.eligible && <span className="ml-2 text-[12px] uppercase text-[color:var(--color-text-low)]">out</span>}
                 </td>
                 <td className={`${tdCls} nums font-semibold`}>{s.stack}</td>
                 <td className={`${tdCls} nums`}>{s.winningBets}</td>

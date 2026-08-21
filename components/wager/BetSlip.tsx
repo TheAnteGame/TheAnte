@@ -175,7 +175,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
 
   const stat = (label: string, value: string, accent?: boolean) => (
     <div className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{label}</span>
+      <span className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">{label}</span>
       <span className={`nums text-sm font-semibold ${accent ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-hi)]"}`}>
         {value}
       </span>
@@ -194,7 +194,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
         <div className="flex flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
           <div className="group relative">
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">
+              <span className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">
                 {copy.committedLabel}
               </span>
               <span className="nums text-sm font-semibold text-[color:var(--color-text-hi)]">
@@ -285,15 +285,15 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                   aria-label={label}
                   className={`chamfer flex flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${
                     active
-                      ? "chrome-face"
-                      : "bg-[color:var(--color-surface-2)] text-[color:var(--color-text-hi)] hover:bg-[color:var(--color-surface-3)]"
+                      ? "chrome-face border border-[color:var(--color-chrome)]"
+                      : "border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] text-[color:var(--color-text-hi)] hover:border-[color:var(--color-chrome-dim)] hover:bg-[color:var(--color-surface-3)]"
                   }`}
                 >
                   <span className="leading-tight">{team}</span>
                   {(spreadFor(side) || moneyFor(side)) && (
                     <span
                       title={copy.spreadNote}
-                      className={`nums flex items-center gap-1.5 text-[11px] font-normal ${
+                      className={`nums flex items-center gap-1.5 text-[12px] font-normal ${
                         active ? "text-[color:var(--color-canvas)]/55" : "text-[color:var(--color-text-low)]"
                       }`}
                     >
@@ -334,8 +334,8 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                 <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 sm:gap-4">
                   {sideBtn("away", g.away)}
                   <div className="flex flex-col items-center justify-center gap-0.5 px-1 text-center">
-                    <span className="nums text-[11px] text-[color:var(--color-text-low)]">{g.kickoff}</span>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--color-text-low)]">{copy.atLabel}</span>
+                    <span className="nums text-[12px] text-[color:var(--color-text-low)]">{g.kickoff}</span>
+                    <span className="text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-text-low)]">{copy.atLabel}</span>
                   </div>
                   {sideBtn("home", g.home)}
                 </div>

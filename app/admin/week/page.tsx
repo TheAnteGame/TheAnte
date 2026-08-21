@@ -60,8 +60,8 @@ export default async function WeekControl() {
                   <td className={`${tdCls} nums`}>{DateTime.fromISO(g.kickoff_at).setZone(ET).toFormat("ccc h:mma")}</td>
                   <td className={tdCls}>
                     {g.away_team} @ {g.home_team}
-                    {!g.on_slate && <span className="ml-2 text-[10px] uppercase no-underline">off-slate</span>}
-                    {g.void_reason && <span className="ml-2 text-[10px] uppercase text-[color:var(--color-gold)]">{g.void_reason}</span>}
+                    {!g.on_slate && <span className="ml-2 text-[12px] uppercase no-underline">off-slate</span>}
+                    {g.void_reason && <span className="ml-2 text-[12px] uppercase text-[color:var(--color-gold)]">{g.void_reason}</span>}
                   </td>
                   <td className={`${tdCls} nums`}>{g.spread_frozen ?? "—"}</td>
                   <td className={tdCls}>{g.status}</td>

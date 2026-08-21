@@ -100,11 +100,14 @@ export default async function WeekResults({ params }: { params: Promise<{ week: 
     }))
     .sort((a, b) => b.won - a.won);
 
+  const h2h = stats.h2hFor(state.player.id).map((r) => ({ ...r, name: stats.nameOf(r.opponentId) }));
+
   return chrome(
     <RevealBoard
       week={{ id: week.id, number: week.number, revealed_at: null }}
       playerId={state.player.id}
       season={season.length > 0 ? season : undefined}
+      h2h={h2h.length > 0 ? h2h : undefined}
     />,
   );
 }

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { leagueHighlights, playerTendencies, type StatBet, type StatTicket, type WeeklyGain } from "./league";
+import {
+  headToHead,
+  leagueHighlights,
+  playerTendencies,
+  type StatBet,
+  type StatTicket,
+  type WeeklyGain,
+} from "./league";
 
 const bet = (o: Partial<StatBet> & Pick<StatBet, "playerId" | "week">): StatBet => ({
   chips: 20, multiplier: 1, result: "won", isShove: false, team: "KC", ...o,
@@ -136,5 +143,44 @@ describe("leagueHighlights", () => {
   it("returns nothing at all before a week has settled", () => {
     const h = leagueHighlights([], []);
     expect(h).toEqual({ biggestWeek: null, bestPrice: null, coldestTake: null, hotHand: null });
+  });
+});
+
+describe("headToHead", () => {
+  const gains: WeeklyGain[] = [
+    { playerId: "me", week: 1, gain: 40 },
+    { playerId: "rival", week: 1, gain: 10 },
+    { playerId: "me", week: 2, gain: -20 },
+    { playerId: "rival", week: 2, gain: 5 },
+    { playerId: "me", week: 3, gain: 30 },
+    { playerId: "rival", week: 3, gain: 30 },
+    // Joined late — weeks 1 and 2 must not be scored against them.
+    { playerId: "latecomer", week: 3, gain: 90 },
+  ];
+
+  it("scores a week to whoever gained more", () => {
+    const [rival] = headToHead("me", gains).filter((r) => r.opponentId === "rival");
+    expect(rival).toMatchObject({ won: 1, lost: 1, tied: 1, weeks: 3 });
+  });
+
+  it("only counts weeks both players actually played", () => {
+    const late = headToHead("me", gains).find((r) => r.opponentId === "latecomer");
+    expect(late).toMatchObject({ won: 0, lost: 1, weeks: 1 });
+  });
+
+  it("never scores a player against themselves", () => {
+    expect(headToHead("me", gains).some((r) => r.opponentId === "me")).toBe(false);
+  });
+
+  it("is symmetric — my win is their loss", () => {
+    const mine = headToHead("me", gains).find((r) => r.opponentId === "rival")!;
+    const theirs = headToHead("rival", gains).find((r) => r.opponentId === "me")!;
+    expect(theirs.won).toBe(mine.lost);
+    expect(theirs.lost).toBe(mine.won);
+    expect(theirs.tied).toBe(mine.tied);
+  });
+
+  it("returns nothing for a player with no shared weeks", () => {
+    expect(headToHead("ghost", gains)).toEqual([]);
   });
 });

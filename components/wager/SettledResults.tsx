@@ -126,23 +126,23 @@ export async function SettledResults({
 
       <div className="grid grid-cols-2 gap-4 border-b border-[color:var(--color-border)] px-4 py-4 sm:grid-cols-4">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{deltaLabel}</p>
+          <p className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">{deltaLabel}</p>
           <p className={`nums text-xl font-semibold ${myDelta >= 0 ? "text-[color:var(--color-win)]" : "text-[color:var(--color-loss)]"}`}>
             {myDelta >= 0 ? `+${myDelta}` : `−${-myDelta}`}
           </p>
         </div>
         {potDelta > 0 && (
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{potLabel}</p>
+            <p className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">{potLabel}</p>
             <p className="nums text-xl font-semibold text-[color:var(--color-gold)]">+{potDelta}</p>
           </div>
         )}
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{stackLabel}</p>
+          <p className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">{stackLabel}</p>
           <p className="nums text-xl font-semibold text-[color:var(--color-text-hi)]">{standing?.stack ?? "—"}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{rankLabel}</p>
+          <p className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">{rankLabel}</p>
           <p className="nums text-xl font-semibold text-[color:var(--color-text-hi)]">{standing?.rank ?? "—"}</p>
         </div>
       </div>

@@ -95,7 +95,7 @@ export default async function Players() {
                 <tr key={p.id} className="border-b border-[color:var(--color-border)] align-top last:border-b-0">
                   <td className={`${tdCls} text-[color:var(--color-text-hi)]`}>
                     {p.first_name} {p.last_name}
-                    {p.is_muted && <span className="ml-2 text-[10px] uppercase text-[color:var(--color-gold)]">muted</span>}
+                    {p.is_muted && <span className="ml-2 text-[12px] uppercase text-[color:var(--color-gold)]">muted</span>}
                   </td>
                   <td className={tdCls}>
                     {p.email ?? "—"}

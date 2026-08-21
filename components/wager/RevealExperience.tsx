@@ -51,6 +51,9 @@ export interface RevealData {
     bestWeek: { week: number; gain: number } | null;
     favourite: { team: string; times: number } | null;
   }>;
+  /** Your record against every other player. No chips ride on it — see
+   *  lib/stats/league.ts headToHead for why that is deliberate. */
+  h2h?: Array<{ opponentId: string; name: string; won: number; lost: number; tied: number; weeks: number }>;
   copy: {
     interstitialTitle: string;
     interstitialSub: string;
@@ -67,6 +70,9 @@ export interface RevealData {
     seasonFolds: string;
     seasonBest: string;
     seasonBacks: string;
+    byH2hLabel: string;
+    h2hRecord: string;
+    h2hNote: string;
     foldedLabel: string;
     shoveLabel: string;
     paysLabel: string;
@@ -81,7 +87,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
   const { copy } = data;
   const seenKey = `ante-reveal-seen-w${data.weekNumber}`;
   const [act, setAct] = useState<Act | null>(null);
-  const [view, setView] = useState<"game" | "player" | "season">("game");
+  const [view, setView] = useState<"game" | "player" | "season" | "h2h">("game");
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -150,6 +156,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
               ["game", copy.byGameLabel],
               ["player", copy.byPlayerLabel],
               ...(data.season ? ([["season", copy.bySeasonLabel]] as const) : []),
+              ...(data.h2h && data.h2h.length > 0 ? ([["h2h", copy.byH2hLabel]] as const) : []),
             ] as const
           ).map(([v, label]) => (
             <button
@@ -169,7 +176,30 @@ export function RevealExperience({ data }: { data: RevealData }) {
         </div>
       </div>
 
-      {view === "season" && data.season ? (
+      {view === "h2h" && data.h2h ? (
+        <div>
+          <p className="px-4 pt-3 text-[12px] text-[color:var(--color-text-low)]">{copy.h2hNote}</p>
+          <ul>
+            {data.h2h.map((r) => (
+              <li
+                key={r.opponentId}
+                className="flex flex-wrap items-baseline gap-x-3 border-b border-[color:var(--color-border)] px-4 py-2.5 last:border-b-0"
+              >
+                <span className="font-semibold text-[color:var(--color-text-hi)]">{r.name}</span>
+                <span className="nums ml-auto font-[family-name:var(--font-display)] font-bold">
+                  <span className="text-[color:var(--color-win)]">{r.won}</span>
+                  <span className="text-[color:var(--color-text-low)]">–</span>
+                  <span className="text-[color:var(--color-loss)]">{r.lost}</span>
+                  {r.tied > 0 && <span className="text-[color:var(--color-text-low)]">–{r.tied}</span>}
+                </span>
+                <span className="text-[12px] text-[color:var(--color-text-low)]">
+                  {r.weeks} {copy.h2hRecord}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : view === "season" && data.season ? (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -178,7 +208,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
                   (h, i) => (
                     <th
                       key={h}
-                      className={`px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--color-text-low)] ${i > 0 ? "text-right" : ""}`}
+                      className={`px-4 py-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--color-text-low)] ${i > 0 ? "text-right" : ""}`}
                     >
                       {h}
                     </th>
@@ -194,7 +224,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
                 >
                   <td className="px-4 py-2 font-semibold text-[color:var(--color-text-hi)]">
                     {r.name}
-                    {r.isMe && <span className="ml-1 text-[10px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
+                    {r.isMe && <span className="ml-1 text-[12px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
                   </td>
                   <td className="nums px-4 py-2 text-right text-[color:var(--color-text-hi)]">
                     {r.won}–{r.lost}
@@ -262,7 +292,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
                             <li key={e.playerId} className="flex justify-between text-sm">
                               <span className={e.isShove ? "font-semibold text-[color:var(--color-gold)]" : "text-[color:var(--color-text-mid)]"}>
                                 {e.name}
-                                {e.isShove && <span className="ml-1 text-[10px] uppercase">{copy.shoveLabel}</span>}
+                                {e.isShove && <span className="ml-1 text-[12px] uppercase">{copy.shoveLabel}</span>}
                               </span>
                               <span className="nums text-[color:var(--color-text-hi)]">{e.chips}</span>
                             </li>
@@ -283,7 +313,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
               <div className="flex items-baseline gap-3">
                 <span className={`font-[family-name:var(--font-display)] font-semibold ${p.isShove ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-hi)]"}`}>
                   {p.name}
-                  {p.isMe && <span className="ml-1 text-[10px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
+                  {p.isMe && <span className="ml-1 text-[12px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
                 </span>
                 {p.isFold ? (
                   <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-low)]">{copy.foldedLabel}</span>

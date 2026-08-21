@@ -165,3 +165,44 @@ export function leagueHighlights(bets: StatBet[], gains: WeeklyGain[]): LeagueHi
     hotHand: hot,
   };
 }
+
+export interface HeadToHead {
+  opponentId: string;
+  /** Weeks this player out-gained the opponent. */
+  won: number;
+  lost: number;
+  tied: number;
+  weeks: number;
+}
+
+/** Your record against every other player, week by week (D-026).
+ *
+ *  No chips change hands and none ever will: this is the rivalry without the side
+ *  market. A peer-to-peer wager would route around the house limit §4 exists to
+ *  enforce, count toward the weekly gain the Pot is paid on (§7, §14), and open the
+ *  only chip-transfer channel the settlement engine does not control — which is
+ *  precisely what makes the ledger worth trusting. A record costs none of that.
+ *
+ *  Only weeks where BOTH players have a result count, so somebody who joined in
+ *  week 6 is not scored against weeks they could not play. */
+export function headToHead(playerId: string, gains: WeeklyGain[]): HeadToHead[] {
+  const mine = new Map(gains.filter((g) => g.playerId === playerId).map((g) => [g.week, g.gain]));
+  const opponents = [...new Set(gains.map((g) => g.playerId))].filter((id) => id !== playerId);
+
+  return opponents
+    .map((opponentId) => {
+      let won = 0;
+      let lost = 0;
+      let tied = 0;
+      for (const g of gains.filter((x) => x.playerId === opponentId)) {
+        const ours = mine.get(g.week);
+        if (ours === undefined) continue;
+        if (ours > g.gain) won++;
+        else if (ours < g.gain) lost++;
+        else tied++;
+      }
+      return { opponentId, won, lost, tied, weeks: won + lost + tied };
+    })
+    .filter((r) => r.weeks > 0)
+    .sort((a, b) => b.won - a.won || a.lost - b.lost);
+}

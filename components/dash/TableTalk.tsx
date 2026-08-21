@@ -64,7 +64,7 @@ export async function TableTalk({ playerId }: { playerId: string }) {
             ) : (
               <>
                 <span className="mr-2 font-semibold text-[color:var(--color-text-hi)]">{nameOf(m.player_id)}</span>
-                <span className="mr-2 text-[10px] text-[color:var(--color-text-low)]">
+                <span className="mr-2 text-[12px] text-[color:var(--color-text-low)]">
                   {DateTime.fromISO(m.created_at).setZone(ET).toFormat("ccc h:mma")}
                 </span>
                 <span className="break-words text-[color:var(--color-text-mid)]">

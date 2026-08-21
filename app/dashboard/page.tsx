@@ -76,7 +76,7 @@ export default async function Dashboard() {
             />
           </Link>
           <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.14em]">
+            <div className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.14em]">
               <Link
                 href="/guide"
                 className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
@@ -101,7 +101,7 @@ export default async function Dashboard() {
                 {state.player!.firstName ?? "\u2014"}
               </Link>
               <div className="well chamfer flex items-baseline gap-2 px-3 py-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
+                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
                   {rankLabel}
                 </span>
                 <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-text-hi)]">
@@ -113,7 +113,7 @@ export default async function Dashboard() {
                 <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-gold)]">
                   {standing?.stack ?? "\u2014"}
                 </span>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
+                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
                   {chipsLabel}
                 </span>
               </div>

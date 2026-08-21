@@ -738,3 +738,57 @@ generated facts: deadline, Pot, leader, waiting-on.
 the news box for a player with no favourite team, and there are currently none — so nobody
 had actually seen this in "Your Team". The filter closes it for the first player who joins
 without picking a team.
+
+## D-026 — Contrast and type raised to a measured standard (2026-08-21)
+
+**The owner reported dim text and undefined borders, and named the real standard: an
+eighty-year-old is playing, and if he can use it everyone can.** Every symptom mapped to a
+measurable failure, so this was fixed to numbers rather than to taste:
+
+| | Was | Now | Floor |
+|---|---|---|---|
+| `text-low` — footnotes, instructions, tooltips, timestamps | 3.36:1 | **5.83:1** | 4.5:1 |
+| `text-mid` — body copy and chat | 7.87:1 | **9.99:1** | 4.5:1 |
+| `--color-border` — every panel edge | 1.38:1 | **3.02:1** | 3:1 (WCAG 1.4.11) |
+| `loss` — your own red delta | 3.89:1 | **4.51:1** | 4.5:1 |
+| `gold-dim` — shove button, commissioner badge | 4.12:1 | **4.55:1** | 4.5:1 |
+
+The old border sat at **a third** of what WCAG asks of a UI boundary, which is exactly why
+areas read as having no definition. Unselected team buttons were at **1.08:1** against
+their own panel — effectively invisible — and now carry a real 3:1 border, with the
+selected side given a matching edge so the two differ only in fill.
+
+**The whole secondary ramp moved up rather than just clearing the minimum.** 4.5:1 is a
+floor, not a comfort target, and a legal pass on an unknown screen is not the brief.
+
+**Type floor raised 10–11px → 12px in 47 places.** Contrast does not rescue 10px
+uppercase tracked-out text; for the reader this is aimed at, size mattered as much.
+
+No hue was added and no token was invented — the palette is the same three materials, just
+legible. This *increases* compliance with the art direction's "state is contrast + weight,
+not hue" rather than bending it.
+
+## D-027 — Head-to-head records, and why not head-to-head betting (2026-08-21)
+
+**Asked to explore player-versus-player side bets after the reveal. Recommended against
+it, and the owner agreed.** Four reasons, in order of weight:
+
+1. **It routes around the house limit.** §4 is load-bearing — the rulebook records that a
+   flat one-quarter rule *"quietly compounded"* in simulation until the median cap fixed
+   it. An uncapped peer market re-opens that hole: the leader takes unlimited action off
+   whoever is willing.
+2. **It distorts the Pot.** The Pot pays the biggest weekly *stack gain* (§7, §14). Side
+   winnings would count toward it, so a Pot could be won on side action rather than on
+   reading the room — when §7 says outright that *"the multipliers are how you win Pots."*
+3. **It opens a chip-transfer channel.** Today the only way chips move between players is
+   the settlement engine, which is what makes the ledger trustworthy and conservation
+   meaningful. Two friends could dump a stack for a championship run and nothing could
+   distinguish it from a genuine bet.
+4. **It turns a pool into a book.** §9's "no cash surface, ever" is about what the product
+   *is*. Named individuals taking action against each other is a different thing.
+
+**Built instead: `headToHead` — the rivalry without the market.** Who out-gained who, week
+by week, computed from data already held, shown as a fourth view on the results page beside
+By game / By player / By season. Only weeks both players actually played are scored, so a
+late joiner is not judged on weeks they could not enter. Five tests, including that the
+record is symmetric — one player's win is the other's loss.

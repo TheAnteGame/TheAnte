@@ -89,7 +89,7 @@ export default async function Season() {
                   <span className={i === 0 && !out ? "font-semibold text-[color:var(--color-gold)]" : "text-[color:var(--color-text-hi)]"}>
                     {nameOf(id)}
                   </span>
-                  {out && <span className="ml-2 text-[10px] uppercase text-[color:var(--color-text-low)]">{outBadge}</span>}
+                  {out && <span className="ml-2 text-[12px] uppercase text-[color:var(--color-text-low)]">{outBadge}</span>}
                 </li>
               );
             })}

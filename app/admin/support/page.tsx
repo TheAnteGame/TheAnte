@@ -79,7 +79,7 @@ export default async function Support() {
           </div>
         ) : (
           <div className="mt-3 border-l-2 border-[color:var(--color-gold-dim)] pl-3">
-            <p className="text-[10px] uppercase tracking-wider text-[color:var(--color-gold)]">
+            <p className="text-[12px] uppercase tracking-wider text-[color:var(--color-gold)]">
               Answered{" "}
               {r.answered_at && DateTime.fromISO(r.answered_at).setZone(ET).toFormat("LLL d, h:mma 'ET'")} — emailed
             </p>

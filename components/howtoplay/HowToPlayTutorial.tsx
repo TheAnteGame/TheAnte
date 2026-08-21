@@ -220,7 +220,7 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
     glow?: boolean,
   ) => (
     <div ref={ref} className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{label}</span>
+      <span className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">{label}</span>
       <span
         className={`nums text-sm font-semibold text-[color:var(--color-text-hi)] ${glow ? anim("gold-pulse") : ""}`}
       >
@@ -260,7 +260,7 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
               <div
                 className={`mx-auto mt-5 max-w-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] p-3 text-left ${anim("card-in")}`}
               >
-                <p className="mb-2 text-[10px] uppercase tracking-widest text-[color:var(--color-text-low)]">
+                <p className="mb-2 text-[12px] uppercase tracking-widest text-[color:var(--color-text-low)]">
                   {MOCK_GAMES[0].away} at {MOCK_GAMES[0].home}
                 </p>
                 <div className="flex items-baseline justify-between">
@@ -321,13 +321,13 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
                   aria-pressed={active}
                   className={`chamfer flex flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${focusCls} ${
                     active
-                      ? "chrome-face"
-                      : "bg-[color:var(--color-surface-2)] text-[color:var(--color-text-hi)] hover:bg-[color:var(--color-surface-3)]"
+                      ? "chrome-face border border-[color:var(--color-chrome)]"
+                      : "border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] text-[color:var(--color-text-hi)] hover:border-[color:var(--color-chrome-dim)] hover:bg-[color:var(--color-surface-3)]"
                   }`}
                 >
                   <span className="leading-tight">{team}</span>
                   <span
-                    className={`nums flex items-center gap-1.5 text-[11px] font-normal ${
+                    className={`nums flex items-center gap-1.5 text-[12px] font-normal ${
                       active ? "text-[color:var(--color-canvas)]/55" : "text-[color:var(--color-text-low)]"
                     }`}
                   >
@@ -369,8 +369,8 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
                 >
                   {sideBtn("away", g.away)}
                   <div className="flex flex-col items-center justify-center gap-0.5 px-1 text-center">
-                    <span className="nums text-[11px] text-[color:var(--color-text-low)]">{g.kickoff}</span>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--color-text-low)]">
+                    <span className="nums text-[12px] text-[color:var(--color-text-low)]">{g.kickoff}</span>
+                    <span className="text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-text-low)]">
                       {copy.atLabel}
                     </span>
                   </div>

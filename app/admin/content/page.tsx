@@ -56,7 +56,7 @@ export default async function Content({ searchParams }: { searchParams: Promise<
 
       {/* Jump menu — the page is long, so it says up front what is on it. */}
       <nav aria-label="Jump to a section" className="mb-8 border border-[color:var(--color-border)] p-4">
-        <p className="mb-3 text-[10px] uppercase tracking-widest text-[color:var(--color-gold)]">Jump to</p>
+        <p className="mb-3 text-[12px] uppercase tracking-widest text-[color:var(--color-gold)]">Jump to</p>
         <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
           {ordered.map(([group, groupKeys]) => (
             <li key={group}>
@@ -78,8 +78,8 @@ export default async function Content({ searchParams }: { searchParams: Promise<
                 <h2 className="font-[family-name:var(--font-display)] text-sm font-bold uppercase text-[color:var(--color-chrome)]">
                   {info.title}
                 </h2>
-                <code className="text-[11px] text-[color:var(--color-text-low)]">{group}.*</code>
-                <a href="#top" className="ml-auto text-[11px] text-[color:var(--color-text-low)] underline-offset-4 hover:underline">
+                <code className="text-[12px] text-[color:var(--color-text-low)]">{group}.*</code>
+                <a href="#top" className="ml-auto text-[12px] text-[color:var(--color-text-low)] underline-offset-4 hover:underline">
                   Back to top
                 </a>
               </div>
@@ -95,7 +95,7 @@ export default async function Content({ searchParams }: { searchParams: Promise<
                   <div key={key} className="border-b border-[color:var(--color-border)] px-4 py-4 last:border-b-0">
                     <p className="mb-1.5 flex flex-wrap items-baseline gap-2">
                       <code className="text-xs text-[color:var(--color-text-low)]">{key}</code>
-                      {overridden && <span className="text-[10px] uppercase tracking-wider text-[color:var(--color-gold)]">edited</span>}
+                      {overridden && <span className="text-[12px] uppercase tracking-wider text-[color:var(--color-gold)]">edited</span>}
                     </p>
                     <AdminForm action={saveContent} submitLabel="Save">
                       <input type="hidden" name="key" value={key} />

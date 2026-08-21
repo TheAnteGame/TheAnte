@@ -56,7 +56,7 @@ export function LeaderboardTable({ rows, copy }: { rows: LbRow[]; copy: LbCopy }
   }, [rows, sortKey, desc]);
 
   const header = (key: SortKey | null, label: string, align = "text-right") => (
-    <th className={`${align} px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--color-text-low)]`}>
+    <th className={`${align} px-2 py-2 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--color-text-low)]`}>
       {key ? (
         <button
           type="button"

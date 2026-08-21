@@ -70,7 +70,7 @@ export default async function TickerAdmin() {
           </option>
         ))}
       </select>
-      <span className="flex items-center gap-2 text-[10px] text-[color:var(--color-text-low)]">
+      <span className="flex items-center gap-2 text-[12px] text-[color:var(--color-text-low)]">
         {TICKER_COLORS.map((c) => (
           <span
             key={c.value}
@@ -147,11 +147,11 @@ export default async function TickerAdmin() {
                   <span className="text-xs text-[color:var(--color-text-mid)]">
                     &ldquo;{contentDefaults[line.contentKey]}&rdquo;
                   </span>
-                  <span className="text-[10px] uppercase tracking-wider text-[color:var(--color-text-low)]">{line.when}</span>
+                  <span className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">{line.when}</span>
                 </label>
               ))}
             </div>
-            <p className="mt-2 text-[10px] text-[color:var(--color-text-low)]">
+            <p className="mt-2 text-[12px] text-[color:var(--color-text-low)]">
               The wording of these lines lives in Content under <code>ticker.*</code>.
             </p>
           </fieldset>

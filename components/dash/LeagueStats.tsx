@@ -59,7 +59,7 @@ export async function LeagueStats() {
         <ul className="flex flex-col">
           {rows.map((r) => (
             <li key={r.label} className="flex items-baseline gap-3 border-b border-[color:var(--color-border)] px-4 py-2.5 last:border-b-0">
-              <span className="w-24 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">
+              <span className="w-24 shrink-0 text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">
                 {r.label}
               </span>
               <span className="nums font-[family-name:var(--font-display)] font-bold text-[color:var(--color-gold)]">

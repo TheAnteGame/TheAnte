@@ -24,7 +24,7 @@ export function TickerSpeed({ initial }: { initial: number }) {
         onChange={(e) => setValue(Number(e.target.value))}
         className="w-full accent-[color:var(--color-gold)]"
       />
-      <span className="flex justify-between text-[10px] text-[color:var(--color-text-low)]">
+      <span className="flex justify-between text-[12px] text-[color:var(--color-text-low)]">
         <span>Faster ({MIN_SPEED}s)</span>
         <span>Slower ({MAX_SPEED}s)</span>
       </span>

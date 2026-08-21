@@ -13,11 +13,13 @@ export async function RevealBoard({
   week,
   playerId,
   season,
+  h2h,
 }: {
   week: { id: string; number: number; revealed_at: string | null };
   playerId: string;
   /** Season-to-date tendencies. Supplied on /results, omitted for a bare reveal. */
   season?: RevealData["season"];
+  h2h?: RevealData["h2h"];
 }) {
   const db = createUserClient();
 
@@ -128,6 +130,9 @@ export async function RevealBoard({
         ["seasonFolds", "reveal.season_folds"],
         ["seasonBest", "reveal.season_best"],
         ["seasonBacks", "reveal.season_backs"],
+        ["byH2hLabel", "reveal.by_h2h_label"],
+        ["h2hRecord", "reveal.h2h_record"],
+        ["h2hNote", "reveal.h2h_note"],
         ["foldedLabel", "reveal.folded_label"],
         ["shoveLabel", "reveal.shove_label"],
         ["paysLabel", "reveal.pays_label"],
@@ -143,6 +148,7 @@ export async function RevealBoard({
     players: playerData,
     shoves,
     season,
+    h2h,
     // The cast is why a missing key here type-checks and then renders undefined at the
     // top of the reveal; the list above is the only guard, so keep it in step with
     // RevealData["copy"].

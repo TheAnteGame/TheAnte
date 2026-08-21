@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import {
+  headToHead,
   leagueHighlights,
   playerTendencies,
   type LeagueHighlights,
@@ -22,6 +23,8 @@ export interface LeagueStats {
   tendencies: PlayerTendency[];
   highlights: LeagueHighlights;
   nameOf: (playerId: string) => string;
+  /** Your record against everyone else, week by week. */
+  h2hFor: (playerId: string) => ReturnType<typeof headToHead>;
 }
 
 export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats> {
@@ -43,6 +46,7 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
       tendencies: [],
       highlights: { biggestWeek: null, bestPrice: null, coldestTake: null, hotHand: null },
       nameOf,
+      h2hFor: () => [],
     };
   }
 
@@ -124,5 +128,6 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
     tendencies: playerTendencies(players.map((p) => p.id), bets, statTickets, gains),
     highlights: leagueHighlights(settledBets, settledGains),
     nameOf,
+    h2hFor: (id: string) => headToHead(id, settledGains),
   };
 }
