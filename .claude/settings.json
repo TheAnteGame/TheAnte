@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | grep -qE 'lib/engine/|lib/jobs/(settle|resettle|reveal|slateOpen|util)\\.ts|supabase/migrations/' && printf '%s' '{\"systemMessage\": \"Settlement / reveal / ledger code changed \\u2014 run the season torture test before calling this done:  supabase start  then  npm run torture:reset  (~6s).\", \"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"You just edited settlement, reveal, ledger, or engine code. Before reporting this work as finished, run the season torture test: `supabase start` (Docker must be running), then `npm run torture:reset`. It simulates a full 18-week, 25-player season against a real Supabase stack in about six seconds and asserts chip conservation, the blackout, and that a no-op re-settlement changes nothing. Per D-023 it is the only check that catches conservation and re-settlement bugs \\u2014 unit tests and the build cannot see them. Report the result honestly, including any failure.\"}}' || true",
+            "timeout": 10,
+            "statusMessage": "Checking whether the torture test is needed\u2026"
+          }
+        ]
+      }
+    ]
+  }
+}

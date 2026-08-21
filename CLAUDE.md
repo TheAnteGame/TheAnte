@@ -29,3 +29,26 @@ Two invariants are architecture, not features — never weaken them: the pre-rev
 blackout is enforced by Supabase RLS (no ledger writes, no public figure moves between
 ante posting and `revealed_at`), and chips are exactly conserved via an append-only
 ledger (stacks are SUM projections; conservation asserts after every settlement).
+
+## Before releasing anything that touches chips
+
+If a change reaches **settlement, the reveal, the ledger, `lib/engine/`, or a migration**,
+run the season torture test before calling the work done:
+
+```
+supabase start          # local stack; Docker must be running
+npm run torture:reset   # db reset + the full run, ~6 seconds
+```
+
+It plays a complete 18-week, 25-player season against a real Supabase stack — real RLS,
+real jobs — and asserts chip conservation, the blackout, and that a re-settlement with
+identical inputs changes nothing. Green prints `SEASON CLEAN`.
+
+**This is not optional and not covered by anything else.** D-023 was found by it and by
+nothing else: a commissioner correction silently moved ~8,000 chips out of the Pot while
+`npm test`, `npm run build` and total-conservation checks all stayed green, because the Pot
+absorbed the leak and the books still balanced. Unit tests cannot see that class of bug.
+
+A `PostToolUse` hook in `.claude/settings.json` raises this automatically when one of those
+files is edited. If the run fails, say so with the output — a failure here is a real defect,
+never a flaky test.

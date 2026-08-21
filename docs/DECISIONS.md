@@ -669,3 +669,36 @@ this class of bug.
 rather than **−5,995**. That also brings the marker back in line with §7's own description
 — "a few dozen chips, never exceeded a few hundred in simulation" — where it had been
 sitting thousands underwater from week 9 on.
+
+## D-024 — The torture test is enforced, not remembered (2026-08-21)
+
+D-023 was found by a test that had never been run, and a rule that lives only in a chat
+transcript is a rule that will be forgotten. Three layers, deliberately overlapping:
+
+1. **`npm run torture` / `npm run torture:reset`** — the incantation
+   (`tsx --conditions=react-server scripts/season-torture.mts`) is now a script, so nobody
+   has to remember it.
+2. **`CLAUDE.md`** — states the rule and, more importantly, *why*: `npm test`,
+   `npm run build` and total-conservation checks all stayed green through D-023, because
+   the Pot absorbed the leak and the books still balanced. Unit tests cannot see that class
+   of bug, so "the suite is green" is not evidence here.
+3. **A `PostToolUse` hook in `.claude/settings.json`** — fires on `Write|Edit|MultiEdit`
+   and, when the path is under `lib/engine/`, one of `lib/jobs/{settle,resettle,reveal,
+   slateOpen,util}.ts`, or `supabase/migrations/`, injects the instruction into the model's
+   context and shows the owner a one-line notice. Silent for every other file.
+
+The hook is committed to the project settings rather than local settings on purpose: the
+rule belongs to the repository, not to one machine.
+
+**Verified, not assumed.** The command was pipe-tested against both a matching and a
+non-matching payload, the stored JSON was validated with `jq -e`, and the hook was proven
+to fire end to end by editing `lib/jobs/util.ts` behind a sentinel — the instruction
+appeared in context and the sentinel file was written. The probe edit and the sentinel were
+then removed; `lib/jobs/util.ts` is byte-identical to HEAD.
+
+`util.ts` is in the watch list because `stacksByPlayer` lives there — the second half of
+D-023's fix — even though the file's name suggests nothing about chips.
+
+**Also:** the local reveal preview (`app/reveal-preview/`) is deleted. It had served its
+purpose, and it rendered fabricated tickets against real player names, which is not
+something to leave lying in a working tree.

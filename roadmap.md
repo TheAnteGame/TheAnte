@@ -8,6 +8,15 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (sixteenth pass):** The torture test is now enforced rather than remembered
+> (**D-024**). Added `npm run torture` / `torture:reset`, a CLAUDE.md section explaining why
+> a green `npm test` is not evidence for this class of bug, and a **PostToolUse hook** in
+> `.claude/settings.json` that fires on edits under `lib/engine/`,
+> `lib/jobs/{settle,resettle,reveal,slateOpen,util}.ts`, or `supabase/migrations/` and injects
+> the instruction into context. Hook verified end to end: pipe-tested both ways, validated
+> with `jq -e`, and proven to fire via a sentinel probe on `lib/jobs/util.ts` (probe and
+> sentinel removed; file byte-identical to HEAD). The local reveal preview is deleted.
+
 > **2026-08-21 (fifteenth pass):** **Ran the season torture test for the first time — it
 > found a Pot-draining bug in re-settlement (D-023).** 25 players, 18 weeks, real stack,
 > 5.7s. The test re-settles weeks 5–8 with NO data changed; that must be a no-op, but the
