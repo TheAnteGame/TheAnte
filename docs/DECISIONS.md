@@ -702,3 +702,39 @@ D-023's fix — even though the file's name suggests nothing about chips.
 **Also:** the local reveal preview (`app/reveal-preview/`) is deleted. It had served its
 purpose, and it rendered fabricated tickets against real player names, which is not
 something to leave lying in a working tree.
+
+## D-025 — The ticker stops carrying the wires, and sportsbook content is refused (2026-08-21)
+
+**The owner saw unwanted content on the rail and asked for it to stop.** `feeds.sync` was
+projecting every `league_ticker` headline straight into `ticker_items` (ADMIN §4.5.2), so
+whatever ESPN and CBS published went live unread.
+
+**It was worse than clutter.** Of the first 58 auto-added lines, **eight were sportsbook
+marketing** — "Use DraftKings promo code to get $150 in bonus bets" scrolling across a
+product whose entire position is that chips have no cash value, none ever. Rulebook §9 is
+categorical: *no cash surface, ever… nothing in the visual language should imply real
+money — this is what keeps it a pool.* An ad for real-money betting on the dashboard is
+the sharpest possible violation of that.
+
+**Three changes, smallest first:**
+
+1. **Auto-projection is now opt-in and off.** `ticker.auto_feed` defaults to false, with a
+   toggle on `/admin/ticker` that says why. The §4.5.2 capability still exists; it is just
+   no longer the default, because a wire feed is not curated.
+2. **Cash-surface content is refused at ingest** (`lib/cashSurface.ts`), so it reaches
+   neither the ticker nor the news box. Deliberately narrow: **"odds", "spread", "lines"
+   and "picks" are NOT matched** — they are ordinary football words and the bet slip shows
+   a spread and a moneyline itself. 12 tests cover both directions.
+3. **CBS Sports' NFL wire is disabled.** Seven of its twenty-nine items were betting
+   content against ESPN's one of twenty-six — a source problem, not a regex problem, and
+   escalating patterns to chase it would eventually eat real coverage. The 32 first-party
+   club feeds carry none of it.
+
+**State:** rail clear (0 visible ticker items), 7 ingested items hidden, nothing deleted —
+all 60 ticker rows and 785 feed items remain (§14). The rail still shows the league's own
+generated facts: deadline, Pot, leader, waiting-on.
+
+**Latent exposure that was worth checking rather than assuming:** league items only reach
+the news box for a player with no favourite team, and there are currently none — so nobody
+had actually seen this in "Your Team". The filter closes it for the first player who joins
+without picking a team.

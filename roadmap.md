@@ -8,6 +8,16 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (seventeenth pass):** **Ticker auto-feed stopped, sportsbook content refused
+> (D-025).** `feeds.sync` was pushing every league headline onto the rail unread — and eight
+> of the first 58 were DraftKings/FanDuel promos, on a product whose whole position is that
+> chips have no cash value (rulebook §9). Now: `ticker.auto_feed` defaults **off** with a
+> toggle on `/admin/ticker`; cash-surface content is refused at ingest via `lib/cashSurface.ts`
+> (narrow on purpose — "odds"/"spread"/"lines"/"picks" are NOT matched, 12 tests both ways);
+> and **CBS Sports' wire is disabled** (7 of 29 items betting content vs ESPN's 1 of 26 — a
+> source problem, not a regex problem). Rail is clear, 7 items hidden, nothing deleted. 113
+> tests. The rail still carries the league's own generated facts.
+
 > **2026-08-21 (sixteenth pass):** The torture test is now enforced rather than remembered
 > (**D-024**). Added `npm run torture` / `torture:reset`, a CLAUDE.md section explaining why
 > a green `npm test` is not evidence for this class of bug, and a **PostToolUse hook** in

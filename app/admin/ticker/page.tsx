@@ -40,6 +40,7 @@ export default async function TickerAdmin() {
         "ticker.speed_seconds",
         "ticker.accent_color",
         "ticker.text_color",
+        "ticker.auto_feed",
       ]),
     db
       .from("ticker_items")
@@ -51,6 +52,8 @@ export default async function TickerAdmin() {
 
   const settings = new Map((settingsRows ?? []).map((r) => [r.key, r.value]));
   const enabled = settings.get("ticker.enabled") !== false;
+  // Off unless explicitly turned on — a wire feed is not curated (D-025).
+  const autoFeed = settings.get("ticker.auto_feed") === true;
   const speed = typeof settings.get("ticker.speed_seconds") === "number" ? (settings.get("ticker.speed_seconds") as number) : DEFAULT_SPEED;
   const accent = (settings.get("ticker.accent_color") as string) ?? DEFAULT_ACCENT;
   const text = (settings.get("ticker.text_color") as string) ?? DEFAULT_TEXT;
@@ -94,6 +97,23 @@ export default async function TickerAdmin() {
           <label className="flex items-center gap-2 text-sm text-[color:var(--color-text-hi)]">
             <input type="checkbox" name="enabled" defaultChecked={enabled} className="accent-[color:var(--color-gold)]" />
             Show the ticker on the dashboard
+          </label>
+
+          <label className="flex items-start gap-2 text-sm text-[color:var(--color-text-hi)]">
+            <input
+              type="checkbox"
+              name="autoFeed"
+              defaultChecked={autoFeed}
+              className="mt-1 accent-[color:var(--color-gold)]"
+            />
+            <span>
+              Put league headlines on the rail automatically
+              <span className="mt-0.5 block text-xs text-[color:var(--color-text-low)]">
+                Off by default. The wires are not curated — sportsbook promos and betting odds come
+                through them, and this product does not carry a cash surface. Leave this off and post
+                what you want yourself.
+              </span>
+            </span>
           </label>
 
           <TickerSpeed initial={speed} />

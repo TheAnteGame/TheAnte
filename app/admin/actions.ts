@@ -478,6 +478,7 @@ export async function saveTickerSettings(fd: FormData): Promise<ActionResult> {
 
   const rows = [
     { key: "ticker.enabled", value: fd.get("enabled") === "on" },
+    { key: "ticker.auto_feed", value: fd.get("autoFeed") === "on" },
     { key: "ticker.speed_seconds", value: speed },
     { key: "ticker.accent_color", value: accent },
     { key: "ticker.text_color", value: text },

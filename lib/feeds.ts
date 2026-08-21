@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { JobOutcome } from "./jobs/util";
+import { isCashSurface } from "./cashSurface";
 
 // feeds.sync (ANTE-ADMIN §5): ingest RSS/Atom items from enabled sources every 15
 // minutes. League-ticker items are projected into ticker_items with source='feed';
@@ -53,14 +54,29 @@ export async function feedsSync(db: SupabaseClient): Promise<JobOutcome> {
   const { data: sources } = await db.from("feed_sources").select("*").eq("enabled", true);
   if (!sources || sources.length === 0) return { status: "skipped", detail: { reason: "no enabled sources" } };
 
+  // ADMIN §4.5.2 lets league headlines project straight onto the ticker. That is OFF by
+  // default (D-025): a wire feed is not curated, and eight of the first fifty-eight items
+  // it pushed were sportsbook promos — "get $150 in bonus bets" scrolling across a product
+  // whose whole position is that chips have no cash value, ever (rulebook §9). The
+  // commissioner can switch it on from the Ticker page, and owns what appears either way.
+  const { data: autoRow } = await db
+    .from("app_settings")
+    .select("value")
+    .eq("key", "ticker.auto_feed")
+    .maybeSingle();
+  const autoFeed = autoRow?.value === true;
+
   let ingested = 0;
+  let refused = 0;
   const errors: Array<{ source: string; error: string }> = [];
 
   for (const source of sources) {
     try {
       const res = await fetch(source.url, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const entries = parseFeed(await res.text()).slice(0, 25);
+      const all = parseFeed(await res.text()).slice(0, 25);
+      const entries = all.filter((e) => !isCashSurface(e.title));
+      refused += all.length - entries.length;
 
       for (const e of entries) {
         const { data: inserted, error } = await db
@@ -79,8 +95,9 @@ export async function feedsSync(db: SupabaseClient): Promise<JobOutcome> {
           .select("id");
         if (!error && inserted && inserted.length > 0) {
           ingested++;
-          // League-wide sources project into the ticker rail (ADMIN §4.5.2).
-          if (source.kind === "league_ticker") {
+          // League-wide sources project into the ticker rail (ADMIN §4.5.2), when the
+          // commissioner has asked for it.
+          if (autoFeed && source.kind === "league_ticker") {
             await db.from("ticker_items").insert({
               source: "feed",
               feed_item_id: inserted[0].id,
@@ -105,5 +122,8 @@ export async function feedsSync(db: SupabaseClient): Promise<JobOutcome> {
     }
   }
 
-  return { status: errors.length === sources.length ? "failed" : "succeeded", detail: { ingested, errors } };
+  return {
+    status: errors.length === sources.length ? "failed" : "succeeded",
+    detail: { ingested, refused, errors, tickerAutoFeed: autoFeed },
+  };
 }
