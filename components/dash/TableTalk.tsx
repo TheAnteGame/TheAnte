@@ -3,6 +3,7 @@ import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { ET } from "@/lib/time";
 import { ChatComposer } from "./ChatComposer";
+import { buildHandles, segmentBody } from "@/lib/chat/mentions";
 
 // Table Talk (ANTE-PLAYER §7): a real chat panel. System messages are distinct and
 // carry weight — they are the only place the commissioner's authority is visible.
@@ -26,6 +27,11 @@ export async function TableTalk({ playerId }: { playerId: string }) {
     getContent("dash.tabletalk.muted_notice"),
     getContent("dash.tabletalk.tombstone"),
   ]);
+
+  const { data: roster } = await db.from("players").select("id, first_name, last_name").eq("status", "approved");
+  const handles = buildHandles(
+    (roster ?? []).map((p) => ({ id: p.id, firstName: p.first_name, lastName: p.last_name })),
+  );
 
   const authorIds = [...new Set((messages ?? []).map((m) => m.player_id).filter(Boolean))] as string[];
   const { data: authors } = authorIds.length
@@ -61,7 +67,17 @@ export async function TableTalk({ playerId }: { playerId: string }) {
                 <span className="mr-2 text-[10px] text-[color:var(--color-text-low)]">
                   {DateTime.fromISO(m.created_at).setZone(ET).toFormat("ccc h:mma")}
                 </span>
-                <span className="break-words text-[color:var(--color-text-mid)]">{m.body}</span>
+                <span className="break-words text-[color:var(--color-text-mid)]">
+                  {segmentBody(m.body, handles).map((seg, i) =>
+                    seg.mention ? (
+                      <span key={i} className="font-semibold text-[color:var(--color-gold)]">
+                        {seg.text}
+                      </span>
+                    ) : (
+                      <span key={i}>{seg.text}</span>
+                    ),
+                  )}
+                </span>
               </>
             )}
           </li>
@@ -70,7 +86,12 @@ export async function TableTalk({ playerId }: { playerId: string }) {
       {muted ? (
         <p className="border-t border-[color:var(--color-border)] px-4 py-3 text-sm text-[color:var(--color-gold)]">{mutedText}</p>
       ) : (
-        <ChatComposer placeholder={placeholder} liveLabel={liveLabel} showLive={(mine ?? []).length === 0} />
+        <ChatComposer
+          placeholder={placeholder}
+          liveLabel={liveLabel}
+          showLive={(mine ?? []).length === 0}
+          handles={handles}
+        />
       )}
     </section>
   );

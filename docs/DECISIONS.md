@@ -486,3 +486,44 @@ The link is removed rather than left pointing at nothing, along with its now-orp
 rendered from a versioned file, which means a markdown renderer this project does not yet
 depend on. `rules.intro` (the one editable line, guarded in `saveContent`) is already
 reserved for it.
+
+## D-019 — @mentions, a cleared table, and a restore that could not restore bets (2026-08-21)
+
+**1. The restore drill found a real, silent hole.** A scratch Supabase project
+(`TheAnte-Staging`, free tier) was stood up to run the restore for real rather than in
+theory. The `0002` guards fire for the service role too — deliberately (ANTE-TECH §4.1) —
+and one of them, **`bets_with_ticket_only`, requires a bet to be inserted in the same
+transaction as its ticket**. A restore writes tickets, commits, then writes bets, so
+**every bet row would have been rejected**. Production holds zero bets today, so the tool
+would have looked healthy right up until the first real week and then failed exactly when
+it was needed.
+
+**Fixed by loading through Postgres directly** instead of the REST API. The restore now
+runs as **one transaction** with `session_replication_role = replica` — the standard way
+to load a dump: triggers and FK checks stand down for the load and are back at COMMIT.
+It all lands or none of it does, and a chip-total mismatch rolls the whole thing back.
+Confirmed on the scratch project in three steps: the guard rejected the bet, the same
+insert succeeded under `replica`, and the guard rejected it again after commit.
+
+This is the difference between a tested design and a tested execution, and it is why the
+drill was worth doing before Week 1 rather than during it.
+
+**2. Table Talk cleared of pre-season test chatter.** Twelve junk messages removed;
+the one real system announcement kept. `chat_messages` carries the same append-only guard,
+so this needed the same deliberate stand-down — **and the guard was verified back on
+afterwards** by attempting a delete and being refused. Hiding was rejected as the
+mechanism: hidden messages render as tombstones, and twelve "message removed" lines is a
+worse first impression than the test data was.
+
+**3. @mentions (`lib/chat/mentions.ts`).** Typing `@` in the composer opens the roster;
+picking a name inserts a handle; the posted message highlights it; and the player named
+gets an email. Handles are **derived, never stored** — first name where it is unique,
+first name plus last initial where it is not — by one function shared between the picker,
+the renderer and the notifier, so what you clicked, what you see, and who is told cannot
+disagree. Capped at five per message: a mail storm is not engagement. Names are public
+(§11 — the blackout covers picks, not people), so nothing here can leak a pick.
+Fourteen unit tests cover the handle collisions, prefix matching, punctuation, and
+round-tripping a body through the renderer.
+
+**4. Promo cleaned.** The owner's real heading and body kept verbatim; the test
+restaurant image and the placeholder "CTA Label" cleared.

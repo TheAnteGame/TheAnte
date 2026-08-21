@@ -244,6 +244,8 @@ export const contentDefaults: Record<string, string> = {
   "dash.support.sent_title": "Message sent",
   "dash.support.sent_body": "The Commissioner has been told there is a message waiting. When they answer, the reply comes to the email address on your profile \u2014 you do not need to check back here.",
   "dash.support.close_cta": "Done",
+  "notify.mention_subject": "ANTE \u2014 {author} mentioned you at the table",
+  "notify.mention": "{author} mentioned you in Table Talk:\n\n{message}\n\nAnswer them at https://theantegame.com/dashboard",
   "notify.backup_reminder_subject": "ANTE \u2014 your league backup is due",
   "notify.backup_reminder": "It has been {days} days since you last saved a copy of the league.\n\nOpen the Commissioner console, go to Backups, press \"Download current data\", then press \"I've got the file\" so this stops nagging you.\n\nThis is the only copy that survives losing the database, so it is worth the thirty seconds.",
   "notify.support_new_subject": "ANTE \u2014 new message from {player}",

@@ -8,6 +8,21 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (eleventh pass):** @mentions, chat cleared, and **the restore drill found a
+> real hole** (**D-019**). A scratch Supabase project (`TheAnte-Staging`, free) was used to
+> run the restore for real: the `0002` guard `bets_with_ticket_only` requires a bet to be
+> inserted in the same transaction as its ticket, so **every bet row would have been
+> rejected** — invisible today (zero bets) and catastrophic from Week 1 onward. The restore
+> now loads through Postgres directly as ONE transaction under
+> `session_replication_role = replica`, rolling back on a chip-total mismatch; verified in
+> three steps on the scratch project, including that the guard returns after COMMIT.
+> **Needs `--db-url` now** (Supabase → Settings → Database → connection string).
+> Table Talk cleared of 12 test messages (system announcement kept; append-only guard
+> verified back on afterwards). @mentions ship with a composer picker, highlighted
+> rendering, and an email to the person named — handles derived by one shared function,
+> capped at 5 per message, 14 new unit tests. Promo image + placeholder CTA cleared.
+> Typecheck/build/content-grep green, **83 tests** (was 69), lint at the 6 pre-existing.
+
 > **2026-08-21 — PUSHED TO PRODUCTION.** Commit `6a4edfe` (D-008 … D-018) is live at
 > https://theantegame.com. Verified after deploy: `/` 200 at 31KB, `/tex/*` 200,
 > `/guide` 307 (correct redirect when signed out), `/api/jobs/*` 401 (correctly gated),
