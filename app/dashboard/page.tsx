@@ -14,6 +14,7 @@ import { TableTalk } from "@/components/dash/TableTalk";
 import { NewsBox } from "@/components/dash/NewsBox";
 import { PromoBox } from "@/components/dash/PromoBox";
 import { SupportBox } from "@/components/dash/SupportBox";
+import { LeagueStats } from "@/components/dash/LeagueStats";
 import { PollRefresh } from "@/components/wager/PollRefresh";
 
 // The dashboard (ANTE-PLAYER §4): header, ticker, stakes band, then two columns —
@@ -152,6 +153,7 @@ export default async function Dashboard() {
             <div className="min-[900px]:hidden">
               <Leaderboard playerId={playerId} />
             </div>
+            <LeagueStats />
             <NewsBox playerId={playerId} />
             <PromoBox />
             <SupportBox />

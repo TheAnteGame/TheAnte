@@ -34,6 +34,23 @@ export interface RevealData {
     bets: Array<{ label: string; team: string; chips: number; pays: string | null }>;
   }>;
   shoves: Array<{ name: string; stake: number; team: string }>;
+  /** Season-to-date tendencies. Present on the results page, absent on a bare reveal.
+   *  Every column is a metric the season awards already judge (§12), shown live so
+   *  players can see all season what they are being measured on. */
+  season?: Array<{
+    playerId: string;
+    name: string;
+    isMe: boolean;
+    won: number;
+    lost: number;
+    winPct: number | null;
+    chalkShare: number | null;
+    bigPriceWins: number;
+    avgMultiplier: number | null;
+    folds: number;
+    bestWeek: { week: number; gain: number } | null;
+    favourite: { team: string; times: number } | null;
+  }>;
   copy: {
     interstitialTitle: string;
     interstitialSub: string;
@@ -42,6 +59,14 @@ export interface RevealData {
     shoveBeatBody: string;
     byGameLabel: string;
     byPlayerLabel: string;
+    bySeasonLabel: string;
+    seasonRecord: string;
+    seasonChalk: string;
+    seasonBigPrice: string;
+    seasonAvg: string;
+    seasonFolds: string;
+    seasonBest: string;
+    seasonBacks: string;
     foldedLabel: string;
     shoveLabel: string;
     paysLabel: string;
@@ -56,7 +81,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
   const { copy } = data;
   const seenKey = `ante-reveal-seen-w${data.weekNumber}`;
   const [act, setAct] = useState<Act | null>(null);
-  const [view, setView] = useState<"game" | "player">("game");
+  const [view, setView] = useState<"game" | "player" | "season">("game");
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -124,6 +149,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
             [
               ["game", copy.byGameLabel],
               ["player", copy.byPlayerLabel],
+              ...(data.season ? ([["season", copy.bySeasonLabel]] as const) : []),
             ] as const
           ).map(([v, label]) => (
             <button
@@ -143,7 +169,65 @@ export function RevealExperience({ data }: { data: RevealData }) {
         </div>
       </div>
 
-      {view === "game" ? (
+      {view === "season" && data.season ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                {[copy.byPlayerLabel, copy.seasonRecord, copy.seasonChalk, copy.seasonBigPrice, copy.seasonAvg, copy.seasonFolds, copy.seasonBest, copy.seasonBacks].map(
+                  (h, i) => (
+                    <th
+                      key={h}
+                      className={`px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--color-text-low)] ${i > 0 ? "text-right" : ""}`}
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {data.season.map((r) => (
+                <tr
+                  key={r.playerId}
+                  className={`border-t border-[color:var(--color-border)] ${r.isMe ? "bg-[color:var(--color-surface-1)]" : ""}`}
+                >
+                  <td className="px-4 py-2 font-semibold text-[color:var(--color-text-hi)]">
+                    {r.name}
+                    {r.isMe && <span className="ml-1 text-[10px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
+                  </td>
+                  <td className="nums px-4 py-2 text-right text-[color:var(--color-text-hi)]">
+                    {r.won}–{r.lost}
+                    {r.winPct !== null && <span className="ml-1 text-[color:var(--color-text-low)]">{r.winPct}%</span>}
+                  </td>
+                  <td className="nums px-4 py-2 text-right text-[color:var(--color-text-mid)]">
+                    {r.chalkShare === null ? "—" : `${Math.round(r.chalkShare * 100)}%`}
+                  </td>
+                  <td className="nums px-4 py-2 text-right text-[color:var(--color-text-mid)]">{r.bigPriceWins || "—"}</td>
+                  <td className="nums px-4 py-2 text-right text-[color:var(--color-text-mid)]">
+                    {r.avgMultiplier === null ? "—" : `${r.avgMultiplier.toFixed(2)}×`}
+                  </td>
+                  <td className="nums px-4 py-2 text-right text-[color:var(--color-text-mid)]">{r.folds || "—"}</td>
+                  <td className="nums px-4 py-2 text-right text-[color:var(--color-text-mid)]">
+                    {r.bestWeek ? `+${r.bestWeek.gain}` : "—"}
+                    {r.bestWeek && <span className="ml-1 text-[color:var(--color-text-low)]">w{r.bestWeek.week}</span>}
+                  </td>
+                  <td className="px-4 py-2 text-right text-[color:var(--color-text-mid)]">
+                    {r.favourite ? (
+                      <>
+                        {r.favourite.team}
+                        <span className="ml-1 text-[color:var(--color-text-low)]">×{r.favourite.times}</span>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : view === "game" ? (
         <ul>
           {data.games.map((g, i) => (
             <li key={g.id} className="card-in border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0" style={{ animationDelay: `${i * 60}ms` }}>

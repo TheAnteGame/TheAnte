@@ -591,3 +591,43 @@ importing it (that assembly lives inside a server component that queries the dat
 it carried its own copy of the same bug and had to be fixed in both places. The harness is
 **deliberately never committed**: it renders fabricated tickets against real player names,
 which on a public URL would read as leaked picks.
+
+## D-022 — Results page, live season tendencies, and League Stats (2026-08-21)
+
+**1. The reveal moved out of the 62% column.** The board is fifteen games wide with two
+sides and every player's chips; it never fitted beside Table Talk. The Game Board slot now
+shows the ambush — a gold **"The room is open"** card — and the whole sequence, interstitial
+and shove beat included, plays at full width on **`/results/[week]`**. The card, not the
+page, is the moment; splitting one beat across two pages would have cost the drama that §7
+says to spend the budget on.
+
+**2. Results is a header link, and it never lands empty.** It resolves to the most recent
+**revealed** week, never the current one — during the blackout the live week has no results,
+and a link that dead-ends every Tuesday to Thursday reads as broken.
+
+**3. Season tendencies reuse the awards, they do not invent statistics.** The owner asked
+for insight into who bets what and how consistently. `lib/engine/awards.ts` already computes
+exactly that, because the **season awards** (§12) are built on it: the Chalk Eater's share
+of chips on the popular side, the Contrarian's wins at 2.00× or better, best week, folds.
+Those are now computed live from Week 1 (`lib/stats/league.ts`) and shown as a **By season**
+view beside By game and By player.
+
+Surfacing the awards rather than inventing metrics means a player sees all season exactly
+what they are being judged on at the end of it, in the rulebook's own vocabulary. The
+table answers the question the game actually turns on: who fades the room and who rides it.
+
+**4. League Stats sits between Table Talk and Your Team.** Four figures: biggest week, best
+price cashed, coldest take, hot hand.
+
+**Two constraints shaped it.** It reads **settled weeks only**, so it sits perfectly still
+between the ante and the reveal (§6) — the same rule the standings view follows. And the
+unflattering stat is aimed at the **matchup, not a player**: the owner suggested a weekly
+"biggest loser", but §9 is deliberate that nobody is eliminated and the felt is a badge, so
+a named weekly loser is the one thing on this dashboard that could make somebody quit.
+"Coldest take" names the team the most people lost on, which is funnier and costs nobody.
+
+**A note on a latent trap.** `RevealBoard` builds its copy object through
+`Object.fromEntries(...) as unknown as RevealData["copy"]`. That cast means a missing content
+key type-checks and then renders `undefined` on the page — adding the season labels was
+silently incomplete until caught by hand. The list is now the only guard and is commented
+as such.

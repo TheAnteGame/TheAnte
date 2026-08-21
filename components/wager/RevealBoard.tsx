@@ -12,9 +12,12 @@ import { RevealExperience, type RevealData } from "./RevealExperience";
 export async function RevealBoard({
   week,
   playerId,
+  season,
 }: {
   week: { id: string; number: number; revealed_at: string | null };
   playerId: string;
+  /** Season-to-date tendencies. Supplied on /results, omitted for a bare reveal. */
+  season?: RevealData["season"];
 }) {
   const db = createUserClient();
 
@@ -117,6 +120,14 @@ export async function RevealBoard({
         ["shoveBeatBody", "reveal.shove_beat_body"],
         ["byGameLabel", "reveal.by_game_label"],
         ["byPlayerLabel", "reveal.by_player_label"],
+        ["bySeasonLabel", "reveal.by_season_label"],
+        ["seasonRecord", "reveal.season_record"],
+        ["seasonChalk", "reveal.season_chalk"],
+        ["seasonBigPrice", "reveal.season_big_price"],
+        ["seasonAvg", "reveal.season_avg"],
+        ["seasonFolds", "reveal.season_folds"],
+        ["seasonBest", "reveal.season_best"],
+        ["seasonBacks", "reveal.season_backs"],
         ["foldedLabel", "reveal.folded_label"],
         ["shoveLabel", "reveal.shove_label"],
         ["paysLabel", "reveal.pays_label"],
@@ -131,6 +142,10 @@ export async function RevealBoard({
     games: gameData,
     players: playerData,
     shoves,
+    season,
+    // The cast is why a missing key here type-checks and then renders undefined at the
+    // top of the reveal; the list above is the only guard, so keep it in step with
+    // RevealData["copy"].
     copy: Object.fromEntries(copyEntries) as unknown as RevealData["copy"],
   };
 

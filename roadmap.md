@@ -8,6 +8,19 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (fourteenth pass):** Results page + live season tendencies + League Stats
+> (**D-022**). The reveal's 15-game board no longer squeezes into the dashboard's 62% column:
+> the Game Board slot shows a gold "The room is open" card and the whole sequence plays at
+> full width on `/results/[week]`, with a week selector. A **Results** link joins How to Play
+> and Tutorial and resolves to the most recent *revealed* week so it never dead-ends during
+> the blackout. New **By season** view surfaces the §12 award metrics live from Week 1 —
+> chalk %, 2.00×+ wins, avg multiplier, folds, best week, most-backed team — reusing tested
+> engine logic rather than inventing statistics. **League Stats** box added between Table Talk
+> and Your Team (biggest week, best price, coldest take, hot hand), reading settled weeks only
+> so it stays frozen through the blackout, with the negative stat aimed at the matchup rather
+> than a named player per §9's tone. New pure module `lib/stats/league.ts` with **14 tests**
+> (97 total). Typecheck/build/content-grep green; lint at the 6 pre-existing errors.
+
 > **2026-08-21 (thirteenth pass):** **The reveal misreported shove payouts (D-021).** Previewing
 > the reveal against a realistic Week 1 put a 490-chip shove on the board at **2.50×** when
 > §8 says a shove always pays even money — the shove beat directly above it even said "even

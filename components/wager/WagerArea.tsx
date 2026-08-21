@@ -4,8 +4,8 @@ import { getContent } from "@/lib/content/getContent";
 import { ET } from "@/lib/time";
 import { BetSlip, type SlipCopy } from "./BetSlip";
 import { PollRefresh } from "./PollRefresh";
-import { RevealBoard } from "./RevealBoard";
 import { SettledResults } from "./SettledResults";
+import Link from "next/link";
 
 // The wager area: one slot, five states (ANTE-PLAYER §5.1). This phase renders
 // Closed / Open / Submitted; Revealed and Settled get their real treatments in
@@ -47,7 +47,29 @@ export async function WagerArea({ playerId }: { playerId: string }) {
   }
 
   if (week.phase === "revealed") {
-    return <RevealBoard week={week} playerId={playerId} />;
+    // The board is 15 games wide and never fitted this 62% column. The card is the
+    // moment; the sequence and the table play full-width on /results (D-022).
+    const [title, body, cta] = await Promise.all([
+      getContent("dash.wager.revealed_title"),
+      getContent("dash.wager.revealed_body"),
+      getContent("dash.wager.revealed_cta"),
+    ]);
+    return (
+      <Titled heading={heading}>
+        <div className="flex flex-col items-start gap-3">
+          <h3 className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase italic leading-none tracking-tight text-[color:var(--color-gold)] sm:text-4xl">
+            {title}
+          </h3>
+          <p className="max-w-md leading-relaxed text-[color:var(--color-text-mid)]">{body}</p>
+          <Link
+            href={`/results/${week.number}`}
+            className="chamfer chrome-face mt-1 px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide"
+          >
+            {cta}
+          </Link>
+        </div>
+      </Titled>
+    );
   }
 
   if (week.phase === "settled") {
