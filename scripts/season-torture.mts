@@ -348,12 +348,20 @@ async function main() {
     // ── Mid-season correction: re-settle week 5 after week 8 (the cascade) ─────
     if (week === 8) {
       preFingerprint = await ticketFingerprint();
+      const b1 = await balances();
       const cascade = await resettleFromWeek(service, 5, "torture-test cascade");
       check(cascade.status === "succeeded", `re-settlement cascade (${JSON.stringify(cascade.detail)})`);
       const b2 = await balances();
       check(b2.total === N * 500, `post-cascade CONSERVATION: ${b2.total}`);
       check((await ticketFingerprint()) === preFingerprint, "post-cascade tickets byte-identical (acceptance 28)");
-      console.log(`        ↺ re-settled weeks 5–8, conservation held, tickets untouched`);
+      // Nothing changed — no corrected score, no edited game. Replaying identical
+      // inputs must land on identical numbers, so every stack and the Pot must be
+      // exactly where they were. Total conservation alone cannot see this: the Pot
+      // absorbs any leak and the total still balances.
+      check(b2.pot === b1.pot, `post-cascade POT UNCHANGED on a no-op re-settle: ${b1.pot} → ${b2.pot}`);
+      const moved = [...b1.stacks.entries()].filter(([id, v]) => b2.stacks.get(id) !== v);
+      check(moved.length === 0, `post-cascade STACKS UNCHANGED on a no-op re-settle: ${moved.length} moved`);
+      console.log(`        ↺ re-settled weeks 5–8, pot ${b1.pot} → ${b2.pot}, ${moved.length} stacks moved`);
     }
   }
 

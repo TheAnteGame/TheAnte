@@ -8,6 +8,21 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-21 (fifteenth pass):** **Ran the season torture test for the first time — it
+> found a Pot-draining bug in re-settlement (D-023).** 25 players, 18 weeks, real stack,
+> 5.7s. The test re-settles weeks 5–8 with NO data changed; that must be a no-op, but the
+> Pot went −367 → −8,773 and 10 stacks moved. It passed anyway, because it only asserted
+> total conservation and the Pot absorbs the leak. Any commissioner correction (§13) would
+> have moved thousands of chips out of the Pot — meaning nobody wins a Pot for the rest of
+> the season, with every screen still reconciling. Two causes: re-settlement reversed all
+> weeks before replaying any (so week 5 awarded a Pot holding weeks 6–8's money), and
+> `stacksByPlayer` summed the whole ledger so a replay read balances from weeks that had not
+> happened yet. Reverse+replay now interleave per week, and settlement passes `asOfWeek`.
+> Added the missing assertion. Now: `pot −367 → −367, 0 stacks moved`; season ends at pot=1
+> instead of −5,995, and the marker matches §7's "a few hundred" again.
+>
+> Sidebar reordered per owner: Table Talk, promo, League Stats, Your Team, Need a Human.
+
 > **2026-08-21 (fourteenth pass):** Results page + live season tendencies + League Stats
 > (**D-022**). The reveal's 15-game board no longer squeezes into the dashboard's 62% column:
 > the Game Board slot shows a gold "The room is open" card and the whole sequence plays at

@@ -92,7 +92,9 @@ export async function settleWeekRecord(
   }));
 
   // Stacks: preAnte = current minus this week's ledger delta; atReveal = current.
-  const stacks = await stacksByPlayer(db);
+  // Scoped to this week and earlier: a re-settlement replays history, and history
+  // did not include the weeks that come after it (D-023).
+  const stacks = await stacksByPlayer(db, week.number);
   const weekEntries = await fetchAllRows<{ player_id: string | null; amount: number }>((from, to) =>
     db.from("ledger_entries").select("player_id, amount").eq("week_id", week.id).order("id").range(from, to),
   );

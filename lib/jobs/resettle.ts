@@ -28,8 +28,19 @@ export async function resettleFromWeek(
   }
 
   const runTag = `-r${randomUUID().slice(0, 8)}`;
+  const results: Array<{ week: number; status: string }> = [];
 
-  // Phase 1 — reverse every unreversed settlement entry, all weeks, atomically per week.
+  // Reverse and replay ONE WEEK AT A TIME, in order.
+  //
+  // Reversing every week up front and only then replaying looks equivalent and is not:
+  // the Pot is awarded from its own live balance (§7), and reversing weeks 6–8 puts
+  // their swept chips back into it before week 5 replays. Week 5 then awards a Pot
+  // holding three later weeks' money — in the torture test, −3,842 became −11,783 and
+  // roughly 7,900 chips left the Pot on a re-settlement that changed nothing at all.
+  //
+  // Total conservation still balances when that happens, because the Pot absorbs the
+  // difference, which is exactly why it went unnoticed. Each week must replay against
+  // the Pot balance it actually saw, so the two phases interleave.
   for (const week of weeks) {
     const entries = await fetchAllRows<{ id: string; player_id: string | null; kind: string; amount: number; idempotency_key: string | null }>(
       (f, t) => db.from("ledger_entries").select("id, player_id, kind, amount, idempotency_key").eq("week_id", week.id).like("idempotency_key", "settle%").order("id").range(f, t),
@@ -66,12 +77,9 @@ export async function resettleFromWeek(
       .from("weeks")
       .update({ phase: "revealed", settled_at: null, pot_swept: null, pot_awarded: null, marker: 0 })
       .eq("id", week.id);
-  }
 
-  // Phase 2 — replay in order. Each week reads stacks from the (now-reversed)
-  // ledger, so corrections cascade exactly as the season would have.
-  const results: Array<{ week: number; status: string }> = [];
-  for (const week of weeks) {
+    // Replay immediately, before the next week is reversed, so this week sees the
+    // stacks and the Pot exactly as it did the first time.
     const { data: fresh } = await db.from("weeks").select("*").eq("id", week.id).single();
     const outcome = await settleWeekRecord(db, fresh, runTag);
     results.push({ week: week.number, status: outcome.status });

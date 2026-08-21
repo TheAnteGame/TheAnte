@@ -631,3 +631,41 @@ a named weekly loser is the one thing on this dashboard that could make somebody
 key type-checks and then renders `undefined` on the page — adding the season labels was
 silently incomplete until caught by hand. The list is now the only guard and is commented
 as such.
+
+## D-023 — A commissioner correction silently drained the Pot (2026-08-21)
+
+**Found by running the season torture test**, which had never been run: it needs a local
+Supabase stack and Docker was not up. With Docker running and the images cached it takes
+**5.7 seconds** — 25 players, 18 weeks, real RLS, real jobs.
+
+**It passed, and it was hiding a serious bug.** The test re-settles weeks 5–8 **with no
+data changed** — no corrected score, no edited game — and asserted only that total chips
+were conserved. Total conservation held at 12,500 throughout. The Pot went from **−367 to
+−8,773**, and ten of twenty-five stacks moved, on a replay that should have changed
+nothing. The Pot absorbing the difference is exactly why the total still balanced and the
+suite stayed green.
+
+Left in, any use of the commissioner's correction power (§13) would have moved thousands
+of chips out of the Pot. The Pot funds the weekly prize, so the practical effect is
+**nobody wins a Pot for the rest of the season** — while every screen still reconciles.
+
+**Two causes, both about replaying history against the present.**
+
+1. **Ordering.** Re-settlement reversed *every* week's settlement up front and only then
+   replayed. Reversing weeks 6–8 returned their swept chips to the Pot before week 5
+   replayed, so week 5 awarded a Pot holding three later weeks' money: −3,842 became
+   −11,783. Reversing and replaying now interleave, one week at a time, in order.
+
+2. **Scope.** `stacksByPlayer` sums the whole ledger, so a replayed week read stacks and a
+   Pot balance from weeks that had not happened yet. It now takes an optional `asOfWeek`
+   and settlement passes the week being settled. Forward settlement is unaffected — later
+   weeks do not exist — but a replay now sees exactly the state it saw the first time.
+
+**The assertion that was missing is now in the test:** a re-settlement with identical
+inputs must leave the Pot and every stack untouched. Total conservation alone cannot see
+this class of bug.
+
+**Result:** `pot −367 → −367, 0 stacks moved`, and the simulated season ends at **pot = 1**
+rather than **−5,995**. That also brings the marker back in line with §7's own description
+— "a few dozen chips, never exceeded a few hundred in simulation" — where it had been
+sitting thousands underwater from week 9 on.

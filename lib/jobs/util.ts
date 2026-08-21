@@ -60,11 +60,27 @@ export async function postSystemMessage(db: SupabaseClient, body: string): Promi
 
 /** Current stacks — SUM over the append-only ledger. Nothing reads a stack column,
  *  because there isn't one (ANTE-TECH §1). Paged: the ledger outgrows PostgREST's
- *  1,000-row cap mid-season at 25 players — the torture test caught this. */
-export async function stacksByPlayer(db: SupabaseClient): Promise<Map<string, number>> {
-  const rows = await fetchAllRows<{ player_id: string | null; amount: number }>((from, to) =>
-    db.from("ledger_entries").select("player_id, amount").order("id").range(from, to),
-  );
+ *  1,000-row cap mid-season at 25 players — the torture test caught this.
+ *
+ *  `asOfWeek` scopes the sum to weeks at or before that number, plus season-level rows
+ *  that carry no week (the buy-in). Settling forward never needs it — later weeks do
+ *  not exist yet — but a RE-SETTLEMENT does: replaying week 5 must see the stacks and
+ *  the Pot as week 5 saw them, not as they stand after weeks 6–8 have already settled.
+ *  Without it a correction awards a Pot swollen by later antes and pays players their
+ *  later balances (D-023). */
+export async function stacksByPlayer(db: SupabaseClient, asOfWeek?: number): Promise<Map<string, number>> {
+  let weekIds: string[] | null = null;
+  if (asOfWeek !== undefined) {
+    const { data } = await db.from("weeks").select("id").lte("number", asOfWeek);
+    weekIds = (data ?? []).map((w) => w.id);
+  }
+  const rows = await fetchAllRows<{ player_id: string | null; amount: number }>((from, to) => {
+    const q = db.from("ledger_entries").select("player_id, amount");
+    // `or` keeps the season-level buy-in rows, which carry no week_id at all.
+    return (weekIds === null ? q : q.or(`week_id.is.null,week_id.in.(${weekIds.join(",")})`))
+      .order("id")
+      .range(from, to);
+  });
   const stacks = new Map<string, number>();
   let pot = 0;
   for (const e of rows) {
