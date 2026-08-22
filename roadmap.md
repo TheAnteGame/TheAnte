@@ -8,6 +8,144 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-22 (twenty-third pass):** **Late admission proven and hardened (D-034).**
+> Owner requirement: anyone approved must be able to bet Week 1 immediately. The
+> mechanism already existed (D-020's admitToOpenWeek — ante + frozen-median limit +
+> snapshot on approval/reactivation) but nothing tested it, and the session had been
+> advising "close the roster before slate open" as if it didn't. Now: (1) extracted to
+> `lib/jobs/admit.ts` so the torture test can exercise the REAL path; (2) the torture
+> season admits **Wes L. mid-week 4** — snapshot asserted, limit 160 from the frozen
+> median, same ante, double-admit no-op, submits through the real RPC, conservation
+> 12,500 → 13,000 exact; and **Nora Q. after week 10's deadline** — no snapshot, no
+> ante, **no phantom fold**, reveal unstalled, dealt in at week 11, conservation
+> 13,500 exact. (3) Fixed the real edge that second case exposed: revealCheck's
+> waiting list and revealDeadline's auto-folds were scoped to ALL approved players —
+> a post-deadline approval would stall the last-ticket reveal and then be folded into
+> a week they were never dealt into, dodging the ante and staining their record.
+> Both now scope to week_players ∩ approved. (4) Migration **0018**: waiting_on view
+> scoped the same way (needs applying to prod — 10-line create-or-replace view).
+> Reset-script guidance corrected. SEASON CLEAN at 13,500; 137 tests; build/grep green.
+>
+> Season reset EXECUTED against prod earlier today (editor variant, verified: 1 player,
+> 500 chips, preseason, all 7 guards re-proven by live probe).
+
+> **2026-08-22 (twenty-second pass):** **Table Talk usability (D-033).** Messages ran
+> together — now a hairline divider between messages (border token, col-reverse-aware:
+> `li+li` border-b so the newest at the bottom stays clean) with evened padding. New
+> circled **?** in the panel header (`ChatHelp.tsx`, client) opens a popover explaining
+> @mentions (picker, email, 5-per-message cap) and emoji entry (OS shortcuts) — all
+> copy under new `dash.tabletalk.help_*` keys. New **emoji strip**: 🙂 button beside
+> send opens 8 fixed league-register emojis, caret-position insert with refocus
+> (verified: insert at caret 0 mid-text, focus retained). Mentions and native emoji
+> already existed (D-019) — this pass just tells players so. TableTalk takes the
+> LOCAL-PREVIEW `dbOverride` like the other harnessed components; new harness at
+> `/mock-preview/tabletalk`. Prod chat NOT yet cleared — the reset script already
+> deletes chat_messages, owner deciding whether to wait for the reset or clear sooner.
+> 137 tests, build/content-grep green, lint 5 pre-existing errors.
+
+> **2026-08-22 (twenty-first pass):** **Tutorial rebuilt to the owner's wireframes
+> (D-032).** User testing found the five-step overlay flow confusing; the owner supplied
+> new copy (used verbatim, two agreed accuracy fixes: "every few weeks", "gains the most
+> chips") and wireframes. Now EIGHT self-contained cards — text left, step visual right,
+> chip marker on the top edge, stacked text-first on mobile: 1 Pick'em Pool (interactive
+> mini board, Next locked until a chip lands), 2 Big Reveal (sample board, fake names),
+> 3 Weekly Payout (two worked examples: crowd 0.50× +15 vs underdog 2.50× +75),
+> 4 Winning the Week (90 Total Pot → 590 Your Stack), 5 Season Champion (sample final
+> leaderboard), 6 Going for Broke (felt slide 500→180→45→1), 7 Other Game Plays (Shove +
+> Folding boxes, drafted copy approved), 8 You're All Set (Learn More → /rules, /guide,
+> new tab so gate progress survives). All copy under new howto.s{1-8}_* + viz keys;
+> samples render from consts through {expr} so the content grep stays authoritative.
+> Old five-step keys removed; reduced-motion moved to useSyncExternalStore (lint baseline
+> DOWN 6→5 errors). Dev-only harness at /mock-preview/tutorial; all 8 cards captured in
+> docs/preview-shots/tutorial-step*.png, desktop + mobile verified. 137 tests,
+> build/content-grep green.
+
+> **2026-08-22 (twentieth pass):** **The rail was crowning a leader who did not exist
+> (D-031).** `standings` ranks with `rank() over (order by stack desc)`, so when the room
+> is level **every player is rank 1** — and the ticker read rank-1 with `limit(1)`, taking
+> whichever row the planner returned first. On a preseason board of 25 players holding
+> exactly 500 it announced one of them as leading. Nobody led. New pure
+> `lib/ticker/leader.ts` (7 tests): a name goes on the rail only when one player is clear
+> of the field, otherwise `ticker.leader_tied` says so out loud. Also fixes a second bug in
+> the old query — filtering `status` *after* `limit(1)` could drop a real leader and show
+> nothing.
+>
+> **The chip numbers themselves were never wrong.** Every surface — ticker, Leaderboard,
+> dashboard header, settled panel, admin roster — projects from the ledger (`standings` is
+> `SUM(ledger_entries)`; the admin page pages the ledger and sums it). The ante posts at
+> slate open, so an open Week 1 board correctly reads **490, with 250 in the Pot**. That is
+> now *asserted* rather than assumed: the torture test checks the standings view against
+> the ledger for every player every week, read through RLS as a player. A stale or
+> mis-joined view would show a wrong stack on the dashboard with conservation still
+> perfect, and nothing before this caught that class of bug.
+>
+> **Contrast raised again (D-030).** D-026 measured every token against the *canvas*, but
+> almost nothing sits on the canvas — the 12px labels live on panels, and surface-3 is
+> 2.3× lighter, costing about a third of every ratio. Re-measured on the worst ground each
+> token actually lands on: `text-low` 4.57 → **6.40**, `text-mid` 7.84 → **9.97**, `border`
+> 2.51 → **3.38** (it was *under* WCAG 1.4.11's 3:1 on panels). `text-low` was the one that
+> mattered — it carries the small uppercase labels at the type size least able to afford
+> a barely-AA ratio.
+>
+> **Phone + code fields** carried no border at all, just a fill a shade off the canvas —
+> the homepage's primary action had no edge to find on a dim monitor. Both now take a
+> neutral rule at 7.5:1. Placeholder is `Enter phone number` (was a fake number that read
+> as prefilled input).
+>
+> **Team tiles (D-030):** new `.team-tile` — a 7.5:1 rule at rest (brighter than the system
+> border *because* they are interactive), and hover adds light rather than hue: chrome
+> border, lifted surface, ring + soft outward glow on the same upper-left rig. Suppressed
+> under `@media (hover: none)` so a tap does not leave an unselected tile lit. Selected
+> stays unmistakably louder — near-white chrome face, verified side by side.
+>
+> `TORTURE_STOP_AFTER_OPEN=1` leaves the local DB on a genuine open board (antes posted,
+> real slate, no tickets) — the one league state the full run never left behind, and the
+> only way to look at the betting board at all. 131 tests. Typecheck/build/content-grep/
+> torture green; lint at the 6 pre-existing errors.
+
+> **2026-08-22 (nineteenth pass):** **Ran a full mock season and screenshotted the two
+> moments nobody had seen** — the reveal and the post-week payout. The season torture test
+> now seeds real matchups (circle-method rotation over the 32 teams, was `KC @ BAL` for
+> every game all season) and ordinary player names, so a board is legible; results are
+> byte-identical, still `SEASON CLEAN`, 12,500 conserved.
+>
+> **Found and fixed a launch blocker (D-028): the dashboard and the results page 500 from
+> Week 9.** `gatherLeagueStats` filtered bets by `.in("ticket_id", [every ticket of the
+> season])`; PostgREST carries that list in the URL, so at **215 tickets it returns HTTP
+> 414** — 25 players × 9 weeks. Measured exactly: 210 ids OK (7,837 chars), 220 ids 414
+> (8,207). It takes down `/results/[week]` **and the dashboard's League Stats box**, i.e.
+> every player's home screen, mid-season, with no prior symptom. Chunked at 150 via a new
+> `chunk()` helper in `lib/db/fetchAll.ts`. League-size dependent: 12 players ≈ Wk 17,
+> 20 ≈ Wk 11, 25 ≈ Wk 9, 30 ≈ Wk 8.
+>
+> **The Pot now shows its working (D-029).** Nothing anywhere answered "how did Frank win
+> the week?" — the settled panel named the winner and the amount and stopped. New
+> `lib/stats/potMath.ts` (pure, 6 tests, cross-checked against `settleWeek` itself rather
+> than hand-written expectations) plus `components/wager/PotMath.tsx`: the whole room
+> ranked by week gain, ante included, with the split arithmetic spelled out ("25 playing,
+> 3 places paid: 50% / 33% / 17%. The Pot held 953. 952 paid out. 1 could not be split
+> evenly, so it rolls"). Award **amounts are read from `pot_awards`**, never re-derived, so
+> the panel cannot contradict the ledger. Renders under the settled dashboard state and on
+> `/results/[week]`. Settlement now writes the previously-unused `weeks.pot_before` (the
+> Pot's balance at award time) — display only, no chip movement; the panel withholds the
+> pool line rather than guess for weeks settled before it existed.
+>
+> **Price study (`scripts/price-study.mts`)** answers the owner's contrarian-equilibrium
+> worry: the board flattens when the room **agrees**, not when it spreads out. A unanimous
+> game pays 1.00× to everyone (§5 — no other side, no ratio), so all-chalk and all-contrarian
+> are the same failure. With realistic disagreement, **~29% of players in a 20-player room
+> hit at least one 2.50× every week (~6 people) and ~53% hit ≥2.00×**. Betting *fewer*
+> games raises big prices (5 games → 6.8% of bets at cap; 15 games → 4.2%), so spreading out
+> does not flatten anything. Note: the rulebook appendix claims 18–22% of bets hit the cap;
+> these mixes give 3–7%, reaching 12–15% only when a stubborn minority holds out. Worth
+> reconciling before quoting the appendix at players.
+>
+> Local preview harness at `app/mock-preview/[week]/` — dev-gated (404s in production) and
+> still behind Clerk; reads the local torture season through a signed player JWT so the
+> screens render exactly as a player sees them, RLS included. `scripts/preview-shots.mts`
+> captures the beats to PNG. 124 tests. Typecheck/build/content-grep green; lint at the 6
+> pre-existing errors.
+
 > **2026-08-21 (eighteenth pass):** **Accessibility pass (D-026)** — the owner has an
 > eighty-year-old player, so contrast was fixed to measured WCAG numbers rather than taste:
 > `text-low` 3.36 → 5.83:1, `text-mid` 7.87 → 9.99:1, **borders 1.38 → 3.02:1** (they were at
