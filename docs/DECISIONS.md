@@ -792,3 +792,82 @@ by week, computed from data already held, shown as a fourth view on the results 
 By game / By player / By season. Only weeks both players actually played are scored, so a
 late joiner is not judged on weeks they could not enter. Five tests, including that the
 record is symmetric — one player's win is the other's loss.
+
+---
+
+## D-028 — Chunk every season-growing `.in()` filter (2026-08-22)
+
+PostgREST carries `in.(...)` filters in the request line; ~215 UUIDs crosses the
+~8KB limit and returns HTTP 414 — which a 25-player league reaches in Week 9,
+taking down `/results/[week]` and the dashboard's League Stats box. Any id list
+whose length grows with the season must go through `chunk()` in `lib/db/fetchAll.ts`
+(150 per request). Week-scoped lists are fine unchunked.
+
+## D-029 — The Pot shows its working (2026-08-22)
+
+"How did Frank win the week?" is answered on-screen: `lib/stats/potMath.ts`
+re-derives the §7 award ordering (tested against `settleWeek` itself, never against
+hand-written expectations) and `PotMath.tsx` renders the whole room ranked by week
+gain, ante included. Award amounts are always read from `pot_awards`, never
+re-derived — the panel cannot contradict the ledger. Settlement records
+`weeks.pot_before` (the Pot's balance at award time) for the "The Pot held N" line.
+
+## D-030 — Contrast is measured on the surface it sits on (2026-08-22)
+
+D-026 measured tokens against the canvas, but the small type lives on panels
+2.3× lighter. Re-measured on the worst real ground: `text-low` → 6.40:1,
+`text-mid` → 9.97:1, `border` → 3.38:1 (it was below WCAG 1.4.11's 3:1 on
+panels). Interactive team tiles carry a brighter rule than the system border
+*because* they are pressable, with a light-not-hue hover suppressed on touch.
+
+## D-031 — A tie is not a leader (2026-08-22)
+
+`standings` ranks with `rank()`, so a level room makes EVERY player rank 1, and
+the ticker's `limit(1)` crowned whichever row the planner returned. `leaderFrom`
+(`lib/ticker/leader.ts`) puts a name on the rail only when one player is clear of
+the field; ties are announced as ties. The torture test asserts the rail's claim
+against the ledger every week.
+
+## D-032 — Tutorial is eight owner-authored cards (2026-08-22)
+
+User testing found the five-step overlay flow confusing. Rebuilt to the owner's
+wireframes: eight self-contained cards, copy verbatim (two agreed accuracy fixes:
+"every few weeks", "gains the most chips"), interactive press-to-raise board on
+step 1 with Next locked until a chip lands. All copy under `howto.s{1-8}_*` keys.
+
+## D-033 — Table Talk affordances are disclosed, not added (2026-08-22)
+
+@mentions (D-019) and native emoji already worked; nothing told players. A `?`
+popover in the panel header explains both, an eight-emoji strip sits by the send
+button, and messages get hairline dividers. No new message semantics.
+
+## D-034 — The roster locks at the Week 1 deadline, not at slate open (2026-08-22)
+
+`admitToOpenWeek` (extracted to `lib/jobs/admit.ts` so the torture test exercises
+the real path) deals every approval and reactivation into the currently open week:
+same ante, limit from the frozen median. Approved after the deadline means next
+week's player — no snapshot, no ante, no phantom fold: the reveal's waiting list,
+the auto-folds, and the `waiting_on` view (migration 0018) all scope to dealt-in
+players. Proven in the torture season with a mid-week joiner (conservation exact
+through 25→26→27 players) and a post-deadline joiner.
+
+## D-035 — Week 1 opens on the commissioner's command (2026-08-22)
+
+The owner's call, twice over: (a) `slateOpenEarly` + an admin "Open the week now"
+button open the next week's window immediately — the Thursday deadline does not
+move; (b) while admission is open (`week1_lock_at` null/future), `revealCheck`
+holds §6's last-ticket reveal so ONLY the deadline reveals — otherwise a growing
+roster's first N submitters would open the room early and lock every later joiner
+out. (c) §1's eight-player floor on season activation is now a recommendation in
+the confirm dialog, not a gate — the first approved player can bet Week 1.
+
+## D-036 — Post-review hardening before launch (2026-08-22)
+
+From the pre-launch code review: `/rules` now exists (the tutorial linked to it;
+rendered from the repo's rulebook markdown, traced into the Vercel bundle);
+reveal-gating reads throw on error instead of silently emptying the waiting list
+(a transient DB error could have revealed the room early); `/mock-preview` gets a
+segment-level production 404 so a future harness page cannot ship service-role
+reads; the torture test's leader assertion calls the real `leaderFrom` (the first
+version was vacuously true). Deferred, tracked: admitToOpenWeek's felt-edge
+branches, canReveal's global-count wedge, PotMath's gain map after re-settlement.

@@ -194,7 +194,10 @@ export async function settleWeekRecord(
       // The Pot's balance at the moment the award was computed — after this week's
       // returns, payouts and felt floors, before a chip of it was handed out. Display
       // only (it is what "the Pot held N" means on the settled screen); the ledger
-      // remains the sole authority for chips. Column existed unused until now.
+      // remains the sole authority for chips. NOTE: slate.open also writes this column
+      // at week creation with pre-ante semantics — this settlement write is the one
+      // that must win, and any week settled by code older than this line still carries
+      // the slate-open figure (review D-036).
       pot_before: result.potAfter + potAwarded,
       marker: result.potAfter < 0 ? -result.potAfter : 0,
     })

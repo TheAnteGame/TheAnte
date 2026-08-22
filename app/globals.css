@@ -518,3 +518,36 @@ textarea {
     animation: none;
   }
 }
+
+/* ── The rulebook page (D-036) ─────────────────────────────────────────────────
+   Rendered markdown gets the same measured ramp as the app. Nothing clever: the
+   document is the product's constitution and reads best set plainly. */
+.rulebook { color: var(--color-text-mid); line-height: 1.65; }
+.rulebook h1, .rulebook h2, .rulebook h3 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  color: var(--color-chrome);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 1.6em 0 0.5em;
+  line-height: 1.2;
+}
+.rulebook h1 { font-size: 1.6rem; margin-top: 0; }
+.rulebook h2 { font-size: 1.25rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3em; }
+.rulebook h3 { font-size: 1.05rem; color: var(--color-gold); }
+.rulebook p, .rulebook li { margin: 0.55em 0; }
+.rulebook ul, .rulebook ol { padding-left: 1.4em; }
+.rulebook li::marker { color: var(--color-gold-dim); }
+.rulebook strong { color: var(--color-text-hi); }
+.rulebook em { color: var(--color-text-hi); }
+.rulebook a { color: var(--color-gold); text-decoration: underline; text-underline-offset: 3px; }
+.rulebook hr { border: 0; border-top: 1px solid var(--color-border); margin: 2em 0; }
+.rulebook blockquote {
+  border-left: 2px solid var(--color-gold-dim);
+  margin: 1em 0;
+  padding: 0.2em 0 0.2em 1em;
+  color: var(--color-text-mid);
+}
+.rulebook code { color: var(--color-text-hi); background: var(--color-surface-2); padding: 0.1em 0.35em; }
+.rulebook table { border-collapse: collapse; margin: 1em 0; width: 100%; display: block; overflow-x: auto; }
+.rulebook th, .rulebook td { border: 1px solid var(--color-border); padding: 0.4em 0.7em; text-align: left; }
+.rulebook th { color: var(--color-text-hi); background: var(--color-surface-2); }

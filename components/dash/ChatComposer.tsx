@@ -167,10 +167,10 @@ export function ChatComposer({
                 <button
                   key={e}
                   type="button"
-                  onMouseDown={(ev) => {
-                    ev.preventDefault();
-                    insertEmoji(e);
-                  }}
+                  // click, not mousedown: Enter/Space dispatch click, so the strip
+                  // works from the keyboard; mousedown only stops the focus steal.
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => insertEmoji(e)}
                   className="px-1 text-lg leading-none hover:scale-110"
                 >
                   {e}

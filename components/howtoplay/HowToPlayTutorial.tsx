@@ -329,7 +329,9 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-center gap-1" aria-hidden>
         {copy.steps.map((s, i) => (
-          <span key={s.title} className={`h-1 w-6 chamfer ${i <= step ? "bg-[color:var(--color-gold)]" : "bg-[color:var(--color-surface-3)]"}`} />
+          // Index key on purpose: titles are commissioner-editable content, and two
+          // steps given the same title would otherwise collide as React keys.
+          <span key={i} className={`h-1 w-6 chamfer ${i <= step ? "bg-[color:var(--color-gold)]" : "bg-[color:var(--color-surface-3)]"}`} />
         ))}
       </div>
       <p className="text-center text-xs text-[color:var(--color-text-low)]">

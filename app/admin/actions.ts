@@ -11,7 +11,6 @@ import { emailPlayer } from "@/lib/notify/templates";
 import { getContent } from "@/lib/content/getContent";
 import { takeSnapshot } from "@/lib/backup/snapshot";
 import { admitToOpenWeek } from "@/lib/jobs/admit";
-import { fetchAllRows } from "@/lib/db/fetchAll";
 
 // Every mutating admin action re-checks the commissioner (ANTE-ADMIN §2), writes
 // audit_log, and mirrors public corrections to Table Talk (§13). The closed set of

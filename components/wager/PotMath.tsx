@@ -129,7 +129,14 @@ export async function PotMath({
       getContent("potmath.room_label"),
     ]);
 
-  const placeMark = ["1st", "2nd", "3rd", "4th", "5th"];
+  // Correct English ordinals all the way down the room — a 25-seat league renders
+  // 21st/22nd/23rd, not "21th".
+  const ord = (n: number) => {
+    const rem100 = n % 100;
+    if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+    const suffix = { 1: "st", 2: "nd", 3: "rd" }[n % 10] ?? "th";
+    return `${n}${suffix}`;
+  };
 
   return (
     <section aria-label={heading} className="panel">
@@ -166,7 +173,7 @@ export async function PotMath({
                   paid ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-low)]"
                 }`}
               >
-                {s.place !== null ? (placeMark[s.place - 1] ?? `${s.place}th`) : "—"}
+                {s.place !== null ? ord(s.place) : "—"}
               </span>
 
               <span className={isMe ? "font-semibold text-[color:var(--color-text-hi)]" : "text-[color:var(--color-text-hi)]"}>

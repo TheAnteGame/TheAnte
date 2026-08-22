@@ -1,3 +1,5 @@
 # Deliberate exceptions for the content grep (acceptance test 8).
 # JSX operator fragment, not copy:
 0 && committed
+# Ordinal helper's comparison operators in PotMath, not copy:
+= 11 && rem100

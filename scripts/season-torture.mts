@@ -55,6 +55,7 @@ const { settleCurrentWeek } = await import("../lib/jobs/settle");
 const { resettleFromWeek } = await import("../lib/jobs/resettle");
 const { admitToOpenWeek } = await import("../lib/jobs/admit");
 const { houseLimit } = await import("../lib/engine/core");
+const { leaderFrom } = await import("../lib/ticker/leader");
 
 const service: SupabaseClient = createClient(API_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
@@ -482,7 +483,7 @@ async function main() {
     // asserting, since a silently empty standings view renders an em-dash, not an error.
     const { data: standingRows } = await asPlayer(subs[0])
       .from("standings")
-      .select("player_id, stack, rank, status");
+      .select("player_id, first_name, last_name, stack, rank, status");
     const viewRows = standingRows ?? [];
     check(viewRows.length > 0, `week ${week} standings view returned nothing`);
     for (const r of viewRows) {
@@ -492,14 +493,25 @@ async function main() {
         `week ${week} STANDINGS DRIFT for ${r.player_id}: view ${r.stack} ≠ ledger ${truth}`,
       );
     }
-    // And the rail's claim about who leads must match those same numbers (§4.5.3).
+    // And the rail's claim about who leads must be the REAL rail code's claim,
+    // checked against the ledger. (The first version of this assert re-derived the
+    // leader inline with the same predicate it then tested — vacuously true on every
+    // input. Review D-036 replaced it with the actual leaderFrom call.)
     const live = viewRows.filter((r) => r.status === "approved");
     const topStack = Math.max(...live.map((r) => Number(r.stack)));
-    const atTop = live.filter((r) => Number(r.stack) === topStack);
-    check(
-      atTop.length === 1 || atTop.every((r) => Number(r.stack) === topStack),
-      `week ${week} leader computation disagrees with the ledger`,
-    );
+    const atTopCount = live.filter((r) => Number(r.stack) === topStack).length;
+    const rail = leaderFrom(viewRows);
+    if (atTopCount === 1) {
+      check(
+        rail.kind === "leader" && rail.stack === topStack,
+        `week ${week} rail says ${JSON.stringify(rail)} but the ledger has one leader at ${topStack}`,
+      );
+    } else {
+      check(
+        rail.kind === "tied" && rail.stack === topStack && rail.count === atTopCount,
+        `week ${week} rail says ${JSON.stringify(rail)} but the ledger has ${atTopCount} tied at ${topStack}`,
+      );
+    }
 
     const feltCount = (snaps ?? []).filter((s) => s.felt).length;
     console.log(

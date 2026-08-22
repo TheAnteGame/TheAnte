@@ -50,12 +50,21 @@ export async function revealCheck(db: SupabaseClient): Promise<JobOutcome> {
   // "In this week" means dealt in — has a slate-open (or late-admit, D-020) snapshot.
   // A player approved between the deadline and the reveal has no snapshot: they are
   // next week's player, not someone the room waits on or folds (D-034).
-  const { data: active } = await db.from("players").select("id").eq("status", "approved");
-  const { data: dealt } = await db.from("week_players").select("player_id").eq("week_id", week.id);
-  const dealtIn = new Set((dealt ?? []).map((d) => d.player_id));
-  const { data: tickets } = await db.from("tickets").select("player_id").eq("week_id", week.id);
-  const submitted = new Set((tickets ?? []).map((t) => t.player_id));
-  const waiting = (active ?? []).filter((p) => dealtIn.has(p.id) && !submitted.has(p.id));
+  // Errors THROW here rather than falling through: a transient failure on any of
+  // these reads used to yield null data, an empty waiting list, and an early reveal
+  // with unsubmitted players still sealed — an irreversible blackout break. A thrown
+  // error just means the 2-minute cron tries again.
+  const [activeR, dealtR, ticketsR] = await Promise.all([
+    db.from("players").select("id").eq("status", "approved"),
+    db.from("week_players").select("player_id").eq("week_id", week.id),
+    db.from("tickets").select("player_id").eq("week_id", week.id),
+  ]);
+  for (const r of [activeR, dealtR, ticketsR]) {
+    if (r.error) throw new Error(`reveal-check read failed: ${r.error.message}`);
+  }
+  const dealtIn = new Set((dealtR.data ?? []).map((d) => d.player_id));
+  const submitted = new Set((ticketsR.data ?? []).map((t) => t.player_id));
+  const waiting = (activeR.data ?? []).filter((p) => dealtIn.has(p.id) && !submitted.has(p.id));
 
   if (waiting.length > 0) {
     return { status: "skipped", detail: { reason: `waiting on ${waiting.length}` } };
@@ -74,12 +83,17 @@ export async function revealDeadline(db: SupabaseClient): Promise<JobOutcome> {
   // and you still owe the ante — no reopening, no "my phone died" (§3). Scoped to
   // dealt-in players: a fold on someone who was never in the week would dodge the
   // ante the fold rule exists to collect, and stain their record with it (D-034).
-  const { data: active } = await db.from("players").select("id").eq("status", "approved");
-  const { data: dealt } = await db.from("week_players").select("player_id").eq("week_id", week.id);
-  const dealtIn = new Set((dealt ?? []).map((d) => d.player_id));
-  const { data: tickets } = await db.from("tickets").select("player_id").eq("week_id", week.id);
-  const submitted = new Set((tickets ?? []).map((t) => t.player_id));
-  const folds = (active ?? [])
+  const [activeR, dealtR, ticketsR] = await Promise.all([
+    db.from("players").select("id").eq("status", "approved"),
+    db.from("week_players").select("player_id").eq("week_id", week.id),
+    db.from("tickets").select("player_id").eq("week_id", week.id),
+  ]);
+  for (const r of [activeR, dealtR, ticketsR]) {
+    if (r.error) throw new Error(`reveal-deadline read failed: ${r.error.message}`);
+  }
+  const dealtIn = new Set((dealtR.data ?? []).map((d) => d.player_id));
+  const submitted = new Set((ticketsR.data ?? []).map((t) => t.player_id));
+  const folds = (activeR.data ?? [])
     .filter((p) => dealtIn.has(p.id) && !submitted.has(p.id))
     .map((p) => ({ week_id: week.id, player_id: p.id, is_fold: true, total_chips: 0 }));
 
