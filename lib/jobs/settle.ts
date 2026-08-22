@@ -183,13 +183,19 @@ export async function settleWeekRecord(
     await db.from("players").update({ shove_used_week: null }).eq("id", playerId);
   }
 
+  const potAwarded = result.potAwards.reduce((s, a) => s + a.amount, 0);
   const { error: wErr } = await db
     .from("weeks")
     .update({
       phase: "settled",
       settled_at: new Date().toISOString(),
       pot_swept: result.swept,
-      pot_awarded: result.potAwards.reduce((s, a) => s + a.amount, 0),
+      pot_awarded: potAwarded,
+      // The Pot's balance at the moment the award was computed — after this week's
+      // returns, payouts and felt floors, before a chip of it was handed out. Display
+      // only (it is what "the Pot held N" means on the settled screen); the ledger
+      // remains the sole authority for chips. Column existed unused until now.
+      pot_before: result.potAfter + potAwarded,
       marker: result.potAfter < 0 ? -result.potAfter : 0,
     })
     .eq("id", week.id);

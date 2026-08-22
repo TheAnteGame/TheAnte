@@ -22,3 +22,15 @@ export async function fetchAllRows<T>(
     if (!data || data.length < pageSize) return out;
   }
 }
+
+// PostgREST filters travel in the URL, so a `.in("id", [...])` list of UUIDs blows the
+// ~8KB request-line limit and returns 414 long before it returns rows: 215 uuids is the
+// ceiling, which a 25-player league reaches in Week 9. Chunk any id list whose length
+// grows with the season. Week-scoped lists (one week of tickets) are fine unchunked.
+export const IN_CHUNK = 150;
+
+export function chunk<T>(items: T[], size = IN_CHUNK): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}

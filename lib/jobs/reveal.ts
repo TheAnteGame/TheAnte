@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { revealEntries } from "@/lib/engine";
+import { canReveal, revealEntries } from "@/lib/engine";
 import type { EngineTicket } from "@/lib/engine";
 import { emailAllApproved } from "@/lib/notify/templates";
 import { postSystemMessage, type JobOutcome } from "./util";
@@ -31,10 +31,31 @@ export async function revealCheck(db: SupabaseClient): Promise<JobOutcome> {
   const week = await currentOpenWeek(db);
   if (!week) return { status: "skipped", detail: { reason: "no open week" } };
 
+  // D-035: while admission is OPEN the roster can still grow, and §6's "last ticket
+  // lands" trigger would fire the moment everyone *currently* approved is in —
+  // revealing the room days early and locking every later joiner out of the week.
+  // So while the roster is forming, only the deadline reveals; the instant-reveal
+  // resumes for good once week1_lock_at passes. Weeks 2–18 are unaffected: the
+  // lock is always in the past by then.
+  const { data: season } = await db
+    .from("seasons")
+    .select("week1_lock_at")
+    .order("year", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!season?.week1_lock_at || new Date(season.week1_lock_at) > new Date()) {
+    return { status: "skipped", detail: { reason: "roster still forming — the deadline reveals (D-035)" } };
+  }
+
+  // "In this week" means dealt in — has a slate-open (or late-admit, D-020) snapshot.
+  // A player approved between the deadline and the reveal has no snapshot: they are
+  // next week's player, not someone the room waits on or folds (D-034).
   const { data: active } = await db.from("players").select("id").eq("status", "approved");
+  const { data: dealt } = await db.from("week_players").select("player_id").eq("week_id", week.id);
+  const dealtIn = new Set((dealt ?? []).map((d) => d.player_id));
   const { data: tickets } = await db.from("tickets").select("player_id").eq("week_id", week.id);
   const submitted = new Set((tickets ?? []).map((t) => t.player_id));
-  const waiting = (active ?? []).filter((p) => !submitted.has(p.id));
+  const waiting = (active ?? []).filter((p) => dealtIn.has(p.id) && !submitted.has(p.id));
 
   if (waiting.length > 0) {
     return { status: "skipped", detail: { reason: `waiting on ${waiting.length}` } };
@@ -50,12 +71,16 @@ export async function revealDeadline(db: SupabaseClient): Promise<JobOutcome> {
   }
 
   // Auto-fold everyone who missed Thursday noon. Submit nothing and you are folded,
-  // and you still owe the ante — no reopening, no "my phone died" (§3).
+  // and you still owe the ante — no reopening, no "my phone died" (§3). Scoped to
+  // dealt-in players: a fold on someone who was never in the week would dodge the
+  // ante the fold rule exists to collect, and stain their record with it (D-034).
   const { data: active } = await db.from("players").select("id").eq("status", "approved");
+  const { data: dealt } = await db.from("week_players").select("player_id").eq("week_id", week.id);
+  const dealtIn = new Set((dealt ?? []).map((d) => d.player_id));
   const { data: tickets } = await db.from("tickets").select("player_id").eq("week_id", week.id);
   const submitted = new Set((tickets ?? []).map((t) => t.player_id));
   const folds = (active ?? [])
-    .filter((p) => !submitted.has(p.id))
+    .filter((p) => dealtIn.has(p.id) && !submitted.has(p.id))
     .map((p) => ({ week_id: week.id, player_id: p.id, is_fold: true, total_chips: 0 }));
 
   if (folds.length > 0) {
@@ -72,6 +97,16 @@ async function fireReveal(db: SupabaseClient, week: OpenWeek, autoFolded = 0): P
     .select("id, player_id, is_fold, is_shove, committed_stake, pending_refund")
     .eq("week_id", week.id);
   if (tErr) throw new Error(`tickets read failed: ${tErr.message}`);
+
+  // Both callers converge here, so the empty-room bar is checked once. revealCheck
+  // reaches this point whenever its waiting list is empty — and an empty roster makes
+  // that list empty too, which is how a room with nobody in it used to open itself.
+  const { count: activePlayers } = await db
+    .from("players")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "approved");
+  const ready = canReveal({ activePlayers: activePlayers ?? 0, tickets: (ticketRows ?? []).length });
+  if (!ready.ok) return { status: "skipped", detail: { reason: ready.reason, week: week.number } };
 
   const { data: betRows, error: bErr } = await db
     .from("bets")

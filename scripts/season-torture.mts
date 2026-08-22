@@ -53,8 +53,27 @@ const { openWeekCore } = await import("../lib/jobs/slateOpen");
 const { revealDeadline, revealCheck } = await import("../lib/jobs/reveal");
 const { settleCurrentWeek } = await import("../lib/jobs/settle");
 const { resettleFromWeek } = await import("../lib/jobs/resettle");
+const { admitToOpenWeek } = await import("../lib/jobs/admit");
+const { houseLimit } = await import("../lib/engine/core");
 
 const service: SupabaseClient = createClient(API_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
+// The real 32, as seeded by migration 0004 — used to build varied weekly matchups.
+const NFL_TEAMS = [
+  "ARI","ATL","BAL","BUF","CAR","CHI","CIN","CLE","DAL","DEN","DET","GB","HOU","IND",
+  "JAX","KC","LA","LAC","LV","MIA","MIN","NE","NO","NYG","NYJ","PHI","PIT","SEA","SF",
+  "TB","TEN","WAS",
+];
+
+// Ordinary names, so a reveal board reads like a real room rather than Player0 T.
+// Purely cosmetic — nothing in the engine or the asserts touches these.
+const TEST_NAMES: Array<[string, string]> = [
+  ["Frank","Mullen"],["Dee","Okafor"],["Hal","Brennan"],["Rosa","Petrakis"],["Sam","Whitlock"],
+  ["Nina","Vasquez"],["Curt","Delaney"],["Ada","Fenwick"],["Marv","Sorensen"],["Pia","Nakamura"],
+  ["Gus","Ferraro"],["Ivy","Castellan"],["Ray","Hollins"],["Tess","Aguirre"],["Otto","Brandt"],
+  ["Jo","Ellsworth"],["Vic","Ramirez"],["Lena","Pruitt"],["Cal","Whitfield"],["Bea","Tanaka"],
+  ["Moe","Kirkland"],["Ines","Duarte"],["Walt","Considine"],["Ruth","Ellery"],["Ned","Salvatore"],
+];
 
 // ── Deterministic chaos ──────────────────────────────────────────────────────────
 let seedState = 20260817;
@@ -147,10 +166,10 @@ async function main() {
       .insert({
         clerk_user_id: sub,
         status: "approved",
-        first_name: `Player${i}`,
-        last_name: `T${i}`,
+        first_name: TEST_NAMES[i % TEST_NAMES.length][0],
+        last_name: TEST_NAMES[i % TEST_NAMES.length][1],
         email: null,
-        favorite_team: "KC",
+        favorite_team: NFL_TEAMS[i % NFL_TEAMS.length],
         profile_complete: true,
         joined_at: new Date().toISOString(),
       })
@@ -170,6 +189,36 @@ async function main() {
   const { data: seasonRow } = await service.from("seasons").select("*").eq("year", 2026).single();
   console.log(`Seeded ${N} players. Conservation baseline: ${(await balances()).total} (expect ${N * 500}).\n`);
 
+  // D-034: mid-season admissions. Creates the player exactly as approvePlayer does —
+  // approved row, 500 buy-in — then the caller decides whether admitToOpenWeek deals
+  // them into the current week. Pushed onto the roster so conservation and the
+  // submission loop track them from that moment on.
+  async function approveLatecomer(first: string, last: string, sub: string): Promise<string> {
+    const { data, error } = await service
+      .from("players")
+      .insert({
+        clerk_user_id: sub,
+        status: "approved",
+        first_name: first,
+        last_name: last,
+        email: null,
+        favorite_team: NFL_TEAMS[(playerIds.length * 7) % NFL_TEAMS.length],
+        profile_complete: true,
+        joined_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(`latecomer seed failed: ${error.message}`);
+    await service.from("ledger_entries").insert({
+      player_id: data.id,
+      kind: "buy_in",
+      amount: 500,
+      reason: "Buy-in — torture latecomer",
+      idempotency_key: "buy-in",
+    });
+    return data.id;
+  }
+
   const shoveWeekByPlayer = new Map<string, number>();
   let preFingerprint = "";
 
@@ -180,13 +229,26 @@ async function main() {
     const opensAt = new Date(Date.now() - 60_000);
     const deadlineAt = new Date(Date.now() + 3600_000);
     const gameCount = week === 1 || week === 12 ? 15 : 16; // the Wednesday holes (§3)
+    // Real, varied matchups: every team plays once a week, pairings rotate by week
+    // (the circle method). One team code for the whole league made every reveal row
+    // read "KC @ BAL", which hides side-labelling bugs and makes the board unreadable.
+    const rotate = (w: number): Array<[string, string]> => {
+      const fixed = NFL_TEAMS[0];
+      const ring = NFL_TEAMS.slice(1);
+      const off = (w - 1) % ring.length;
+      const r = [...ring.slice(off), ...ring.slice(0, off)];
+      const pairs: Array<[string, string]> = [[fixed, r[0]]];
+      for (let i = 1; i < NFL_TEAMS.length / 2; i++) pairs.push([r[i], r[ring.length - i]]);
+      return w % 2 === 0 ? pairs.map(([a, b]) => [b, a] as [string, string]) : pairs;
+    };
+    const pairs = rotate(week);
     const games = Array.from({ length: gameCount }, (_, i) => ({
       externalId: `2026_${String(week).padStart(2, "0")}_G${i}`,
       espnId: null,
       season: 2026,
       week,
-      awayTeam: "KC",
-      homeTeam: "BAL",
+      awayTeam: pairs[i % pairs.length][0],
+      homeTeam: pairs[i % pairs.length][1],
       kickoffAt: new Date(deadlineAt.getTime() + (i + 1) * 60_000),
     }));
     const open = await openWeekCore(
@@ -210,9 +272,54 @@ async function main() {
     check(rerun.status === "skipped", `week ${week} double slate-open skipped`);
     check((await balances()).total === before.total, `week ${week} double-open moved no chips`);
 
+    // Stop here on request, leaving a genuine OPEN week on the board: antes posted, a
+    // real slate, no tickets. That is the one league state the full run never leaves
+    // behind, and it is the only way to look at the betting board (BetSlip) at all.
+    if (process.env.TORTURE_STOP_AFTER_OPEN === String(week)) {
+      const b0 = await balances();
+      console.log(
+        `\nStopped after week ${week} slate open — board is OPEN, ${N} players anted, stacks at ${
+          [...b0.stacks.values()][0]
+        }, pot ${b0.pot}.`,
+      );
+      console.log(failures === 0 ? "✅ OPEN BOARD READY" : `✕ ${failures} failure(s)`);
+      process.exit(failures === 0 ? 0 : 1);
+    }
+
     const { data: weekRow } = await service.from("weeks").select("*").eq("number", week).single();
     const { data: gameRows } = await service.from("games").select("id, external_id, on_slate").eq("week_id", weekRow.id);
     const slateGames = (gameRows ?? []).filter((g) => g.on_slate);
+    // ── D-034 A: approved MID-WEEK, pre-deadline → dealt into THIS week ────────
+    // Runs before the snapshot read and before the blackout window opens, exactly
+    // where a real approval lands: the ante is part of the week's opening batch.
+    if (week === 4) {
+      const wesId = await approveLatecomer("Wes", "Latimer", "test_late_wes");
+      await admitToOpenWeek(service, wesId);
+      const { data: wesSnap } = await service
+        .from("week_players").select("*").eq("week_id", weekRow.id).eq("player_id", wesId).maybeSingle();
+      check(!!wesSnap, `week ${week} latecomer has a week_players snapshot`);
+      const expectedLimit = houseLimit(500 - weekRow.ante, weekRow.median_snapshot);
+      check(
+        Number(wesSnap?.house_limit) === expectedLimit,
+        `week ${week} latecomer limit ${wesSnap?.house_limit} ≠ ${expectedLimit} (frozen median §4)`,
+      );
+      check(wesSnap?.felt === false, `week ${week} latecomer wrongly felt`);
+      const { data: wesAnte } = await service
+        .from("ledger_entries").select("amount").eq("player_id", wesId).eq("week_id", weekRow.id).eq("kind", "ante");
+      check(
+        (wesAnte ?? []).length === 1 && Number(wesAnte![0].amount) === -weekRow.ante,
+        `week ${week} latecomer ante wrong: ${JSON.stringify(wesAnte)}`,
+      );
+      // Double-admit must be a no-op — an approval retry cannot ante them twice.
+      await admitToOpenWeek(service, wesId);
+      const { data: anteTwice } = await service
+        .from("ledger_entries").select("id").eq("player_id", wesId).eq("kind", "ante").eq("week_id", weekRow.id);
+      check((anteTwice ?? []).length === 1, `week ${week} double-admit posted a second ante`);
+      playerIds.push(wesId);
+      subs.push("test_late_wes");
+      console.log(`        ➕ mid-week admit: Wes L. dealt into week ${week}, ante paid, limit ${wesSnap?.house_limit}`);
+    }
+
     const { data: snaps } = await service.from("week_players").select("*").eq("week_id", weekRow.id);
     const snapOf = new Map((snaps ?? []).map((s) => [s.player_id, s]));
 
@@ -222,7 +329,7 @@ async function main() {
     const folded: number[] = [];
     let shoves = 0;
 
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < playerIds.length; i++) {
       const pid = playerIds[i];
       const snap = snapOf.get(pid)!;
       if (rand() < 0.06) {
@@ -280,10 +387,10 @@ async function main() {
 
       // ── Blackout probes (sampled): a rival sees nothing, and nothing moved ───
       if (i % 9 === 0) {
-        const rival = asPlayer(subs[(i + 1) % N]);
+        const rival = asPlayer(subs[(i + 1) % playerIds.length]);
         const { data: foreignTickets } = await rival.from("tickets").select("id, player_id").eq("week_id", weekRow.id);
         check(
-          (foreignTickets ?? []).every((t) => t.player_id === playerIds[(i + 1) % N]),
+          (foreignTickets ?? []).every((t) => t.player_id === playerIds[(i + 1) % playerIds.length]),
           `week ${week} BLACKOUT: rival saw a foreign ticket after player ${i} submitted`,
         );
         const nowPot = (await balances()).pot;
@@ -303,13 +410,38 @@ async function main() {
 
     // ── Deadline: auto-fold + reveal (real job; deadline flipped to the past) ───
     await service.from("weeks").update({ deadline_at: new Date(Date.now() - 1000).toISOString() }).eq("id", weekRow.id);
+
+    // ── D-034 B: approved AFTER the deadline → next week's player, full stop ────
+    // No snapshot, no ante, and — the part the reveal must get right — no phantom
+    // auto-fold and no stalled reveal waiting on someone who cannot submit.
+    let postDeadlineId: string | null = null;
+    if (week === 10) {
+      postDeadlineId = await approveLatecomer("Nora", "Quist", "test_late_nora");
+      await admitToOpenWeek(service, postDeadlineId);
+      const { data: noraSnap } = await service
+        .from("week_players").select("player_id").eq("week_id", weekRow.id).eq("player_id", postDeadlineId);
+      check((noraSnap ?? []).length === 0, `week ${week} post-deadline admit created a snapshot`);
+      const { data: noraLedger } = await service
+        .from("ledger_entries").select("id").eq("player_id", postDeadlineId).eq("kind", "ante");
+      check((noraLedger ?? []).length === 0, `week ${week} post-deadline admit charged an ante`);
+      playerIds.push(postDeadlineId);
+      subs.push("test_late_nora");
+      console.log(`        ➕ post-deadline admit: Nora Q. holds 500, joins at week ${week + 1}`);
+    }
+
     const revealOutcome = await revealDeadline(service);
     check(revealOutcome.status === "succeeded", `week ${week} reveal (${JSON.stringify(revealOutcome.detail)})`);
+
+    if (postDeadlineId) {
+      const { data: phantom } = await service
+        .from("tickets").select("id").eq("week_id", weekRow.id).eq("player_id", postDeadlineId);
+      check((phantom ?? []).length === 0, `week ${week} post-deadline joiner was phantom-folded`);
+    }
 
     // Post-reveal: RLS opens — a player sees every ticket.
     const anyone = asPlayer(subs[0]);
     const { data: allTickets } = await anyone.from("tickets").select("id").eq("week_id", weekRow.id);
-    check((allTickets ?? []).length === N, `week ${week} post-reveal ticket visibility (${allTickets?.length}/${N})`);
+    check((allTickets ?? []).length === (snaps ?? []).length, `week ${week} post-reveal ticket visibility (${allTickets?.length}/${(snaps ?? []).length})`);
 
     // ── Scores + settlement (real job; conservation asserts inside) ────────────
     for (const g of slateGames) {
@@ -337,8 +469,37 @@ async function main() {
 
     // ── Weekly conservation, straight SQL truth ────────────────────────────────
     const b = await balances();
-    check(b.total === N * 500, `week ${week} CONSERVATION: ${b.total} ≠ ${N * 500}`);
+    check(b.total === playerIds.length * 500, `week ${week} CONSERVATION: ${b.total} ≠ ${playerIds.length * 500}`);
     check([...b.stacks.values()].every((s) => s >= 1), `week ${week} a stack fell below 1`);
+
+    // ── The number the player actually READS ───────────────────────────────────
+    // Conservation can hold while the screen still lies: every chip figure in the app
+    // comes from the standings view, not from this script's sum. Assert the view agrees
+    // with the ledger for every player, every week — a stale or mis-joined view would
+    // show a wrong stack on the dashboard with the books perfectly balanced.
+    // Read it the way the app does: through RLS, as a player. The service role fails
+    // ante.is_approved() and would silently get zero rows — which is itself worth
+    // asserting, since a silently empty standings view renders an em-dash, not an error.
+    const { data: standingRows } = await asPlayer(subs[0])
+      .from("standings")
+      .select("player_id, stack, rank, status");
+    const viewRows = standingRows ?? [];
+    check(viewRows.length > 0, `week ${week} standings view returned nothing`);
+    for (const r of viewRows) {
+      const truth = b.stacks.get(r.player_id) ?? 0;
+      check(
+        Number(r.stack) === truth,
+        `week ${week} STANDINGS DRIFT for ${r.player_id}: view ${r.stack} ≠ ledger ${truth}`,
+      );
+    }
+    // And the rail's claim about who leads must match those same numbers (§4.5.3).
+    const live = viewRows.filter((r) => r.status === "approved");
+    const topStack = Math.max(...live.map((r) => Number(r.stack)));
+    const atTop = live.filter((r) => Number(r.stack) === topStack);
+    check(
+      atTop.length === 1 || atTop.every((r) => Number(r.stack) === topStack),
+      `week ${week} leader computation disagrees with the ledger`,
+    );
 
     const feltCount = (snaps ?? []).filter((s) => s.felt).length;
     console.log(
@@ -352,7 +513,7 @@ async function main() {
       const cascade = await resettleFromWeek(service, 5, "torture-test cascade");
       check(cascade.status === "succeeded", `re-settlement cascade (${JSON.stringify(cascade.detail)})`);
       const b2 = await balances();
-      check(b2.total === N * 500, `post-cascade CONSERVATION: ${b2.total}`);
+      check(b2.total === playerIds.length * 500, `post-cascade CONSERVATION: ${b2.total}`);
       check((await ticketFingerprint()) === preFingerprint, "post-cascade tickets byte-identical (acceptance 28)");
       // Nothing changed — no corrected score, no edited game. Replaying identical
       // inputs must land on identical numbers, so every stack and the Pot must be

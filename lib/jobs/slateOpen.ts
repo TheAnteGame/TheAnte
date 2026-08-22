@@ -31,6 +31,30 @@ export async function slateOpen(db: SupabaseClient): Promise<JobOutcome> {
   return openWeekCore(db, season, weekNumber, feed, { opensAt, deadlineAt });
 }
 
+/** D-035 — open the next week's betting window NOW instead of at its Tuesday 6am
+ *  anchor. Same feed, same deadline (Thursday noon stays in stone), same core —
+ *  the ONLY thing that moves is opens_at. Built for Week 1: the owner wants every
+ *  newly approved player walking out of the tutorial onto a live board, however
+ *  early they join. Guarded by its caller (commissioner action, typed reason). */
+export async function slateOpenEarly(db: SupabaseClient): Promise<JobOutcome> {
+  const { data: season } = await db.from("seasons").select("*").eq("status", "active").maybeSingle();
+  if (!season) return { status: "skipped", detail: { reason: "no active season" } };
+
+  const weekNumber = (season.current_week ?? 0) + 1;
+  if (weekNumber > 18) return { status: "skipped", detail: { reason: "season is over (§14)" } };
+
+  const feed = await fetchNflverseWeek(season.year, weekNumber);
+  const firstKick = feed.games.reduce((min, g) => (g.kickoffAt < min ? g.kickoffAt : min), feed.games[0].kickoffAt);
+  const { deadlineAt } = weekAnchors(firstKick);
+
+  const now = nowET().toJSDate();
+  if (now >= deadlineAt) {
+    return { status: "skipped", detail: { reason: `week ${weekNumber}'s deadline has already passed` } };
+  }
+
+  return openWeekCore(db, season, weekNumber, feed, { opensAt: now, deadlineAt });
+}
+
 /** The core of slate.open, with the feed and anchors injected. Production always
  *  arrives here through slateOpen (real feed, real Tuesdays); the season torture
  *  test drives it directly so 18 weeks can run in minutes against a real database.

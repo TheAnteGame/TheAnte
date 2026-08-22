@@ -10,7 +10,7 @@ export const contentDefaults: Record<string, string> = {
   "home.intro_body":
     "A season-long NFL chip pool. Everyone starts with 500. Nobody sees a pick until everyone is locked in. Biggest stack on the last Sunday wins.",
   "home.phone_label": "Phone number",
-  "home.phone_placeholder": "(555) 555-0100",
+  "home.phone_placeholder": "Enter phone number",
   "home.phone_cta": "Send code",
   "home.code_prompt": "Enter the six-digit code we texted you.",
   "home.legal_line": "Chips have no cash value. None. Ever.",
@@ -34,7 +34,7 @@ export const contentDefaults: Record<string, string> = {
 
   // How-to-play tutorial (gate between profile complete and dashboard)
   "howto.heading": "How this works",
-  "howto.intro": "Five steps, two minutes, no chips move. Then you're in the room.",
+  "howto.intro": "Eight steps, two minutes, no chips move. Then you're in the room.",
   "howto.step_label": "Step {step} of {total}",
   "howto.next_cta": "Next",
   "howto.back_cta": "Back",
@@ -52,18 +52,65 @@ export const contentDefaults: Record<string, string> = {
 
 
 
-  "howto.table_title": "Everyone starts even",
-  "howto.table_body": "You have 500 chips. So does everyone else. Every week costs you an ante \u2014 10 chips to start \u2014 and all of those antes go into the Pot. Biggest stack on the last Sunday of the season wins.",
-  "howto.bet_title": "Press a team to back it",
-  "howto.bet_body": "Every game has two sides. Press the team you like. Press it again to raise \u2014 10, 20, 30, 40, 50 \u2014 and one more press takes the bet back off the table. Try it on any game below.",
-  "howto.edge_title": "Here is the real game",
-  "howto.edge_body": "You do not get paid by the odds. You get paid by how many people were against you, divided by how many were with you. Back the team everyone else backs and you win almost nothing. Be the only one on your side and be right, and you get up to two and a half times your bet. So do not hunt for the safe pick. Hunt for the game where you think the room is wrong.",
-  "howto.reveal_title": "Nobody sees a thing until everyone is in",
-  "howto.reveal_body": "Until the last ticket lands you cannot see one pick \u2014 not a team, not a chip, not even a count. Then the room opens and every ticket in the league turns over at once, and you find out whether you were alone on your side or standing with the crowd.",
-  "howto.pot_title": "The Pot goes to the biggest week",
-  "howto.pot_body": "Every ante sits in the Pot, and at the end of the week the whole thing goes to whoever gained the most chips. Playing it safe keeps you alive. Being different is how you win Pots.",
-  "howto.ready_title": "That's it",
-  "howto.ready_body": "Four tiers, one season, nobody eliminated. Take your seat.",
+  // The eight steps — owner's copy verbatim (2026-08-22 rewrite; wireframes in the
+  // session record). Two accuracy fixes agreed with the owner: "every few weeks" (the
+  // ante tiers are week ranges, not game counts) and "gains the most chips" (the Pot
+  // pays the biggest weekly GAIN, not the biggest stack \u2014 the distinction people argue).
+  "howto.s1_title": "It's a Pick'em Pool",
+  "howto.s1_sub": "But Weighted",
+  "howto.s1_body":
+    "Every week you'll pick at least 5 games to wager on. Select the teams you think will win. Add more chips (weight) to teams you're more confident in. Select a team here to stack chips.",
+  "howto.s2_title": "The Big Reveal",
+  "howto.s2_sub": "Each Week",
+  "howto.s2_body":
+    "Once everyone has made their picks, the game board reveals everyone's picks in a single view. See who bet on what games and teams to see how you'll stack up over the weekend.",
+  "howto.s3_title": "The Weekly Payout",
+  "howto.s3_sub": "For Most",
+  "howto.s3_body":
+    "If your weekly bets followed the crowd, your payout is much less. Select underdogs, sleepers and less popular games with the right weight (chips) and your payout multiplies.",
+  "howto.s4_title": "Winning the Week",
+  "howto.s4_sub": "The Pot",
+  "howto.s4_body":
+    "The player who gains the most chips for the week wins the weekly pot. Every week, each player will ante automatically. The ante goes up every few weeks; we start at 10 (one chip).",
+  "howto.s5_title": "Season Champion",
+  "howto.s5_sub": "There's One",
+  "howto.s5_body":
+    "You start the season with 500 chips. Betting aggressively or more conservatively changes the strategy. The player with the most chips at the end of week 18 is crowned champion.",
+  "howto.s6_title": "Going for Broke",
+  "howto.s6_sub": "The Felt",
+  "howto.s6_body":
+    "The game is designed to keep people playing all season without going absolutely broke. Complete details about how this works can be found in the Rule Book; open to everyone.",
+  "howto.s7_title": "Other Game Plays",
+  "howto.s7_sub": "Like Poker",
+  "howto.s7_body":
+    "Two moves borrowed from the card table. Both live on your ticket every week \u2014 and like everything else, the room only finds out at the reveal.",
+  "howto.s8_title": "You're All Set",
+  "howto.s8_sub": "Let's Play",
+  "howto.s8_body":
+    "This tutorial covered the basics to get everyone playing. For those that would like the full rule book, it is available at all times in the top-right of the website. Enjoy.",
+
+  // Step visuals \u2014 labels for the sample boards and worked examples.
+  "howto.viz_sample_note": "Sample \u2014 fake players, fake games",
+  "howto.ex_crowd_title": "Follow the crowd",
+  "howto.ex_crowd_line": "You and 5 others take KC. 3 take BUF. KC wins.",
+  "howto.ex_crowd_result": "30 chips at 0.50\u00d7 pays +15",
+  "howto.ex_dog_title": "Find the underdog",
+  "howto.ex_dog_line": "You alone take JAX. 4 take TEN. JAX wins.",
+  "howto.ex_dog_result": "30 chips at 2.50\u00d7 pays +75",
+  "howto.viz_pot_total": "Total Pot",
+  "howto.viz_your_stack": "Your Stack",
+  "howto.viz_winner": "Winner",
+  "howto.viz_champion_note": "Final stacks after Week 18",
+  "howto.viz_felt_note": "A cold season never zeroes out \u2014 the last chip is protected, and you're still dealt in every week.",
+  "howto.shove_title": "The Shove",
+  "howto.shove_body":
+    "Once a season you can push your entire stack onto one game. One team, everything you have. A shove always pays even money: win and you double, lose and you're on the felt.",
+  "howto.fold_title": "Folding",
+  "howto.fold_body":
+    "Don't like the slate? Fold. You sit the week out, pay only the ante, and keep the rest of your stack. A fold never wins the Pot \u2014 but it never loses big either.",
+  "howto.learn_more": "Learn more",
+  "howto.link_rules": "Gamebook \u2014 the rules",
+  "howto.link_guide": "How to Play \u2014 plain English",
 
   // Dashboard
   "dash.commissioner_link_label": "Commissioner",
@@ -168,6 +215,7 @@ export const contentDefaults: Record<string, string> = {
   "ticker.marker": "The Pot is carrying a {marker}-chip marker",
   "ticker.reveal": "The room is open — every ticket is live",
   "ticker.leader": "{name} leads with {stack}",
+  "ticker.leader_tied": "{count} players tied at the top on {stack} \u2014 nobody leads yet",
 
   // Promo box (fields editable in the admin console)
   "promo.heading": "",
@@ -244,11 +292,37 @@ export const contentDefaults: Record<string, string> = {
   "settled.won_label": "Won",
   "settled.lost_label": "Lost",
   "settled.returned_label": "Returned",
+
+  // The Pot explained (§7/§14) — the one number the room argues about.
+  "potmath.heading": "How Week {week} was won",
+  "potmath.rule":
+    "The Pot goes to the biggest chip gain of the week — winnings minus losses, with your ante counted against you. Not the biggest stack. Not the most bets right.",
+  "potmath.places": "{players} playing, {places} places paid: {split}.",
+  "potmath.places_unpaid": "{players} playing. The split would have been {split}.",
+  "potmath.one_place": "{players} playing, one place paid.",
+  "potmath.pool": "The Pot held {pool}.",
+  "potmath.paid": "{awarded} paid out.",
+  "potmath.rolled": "{rolled} could not be split evenly, so it rolls to next week.",
+  "potmath.rolled_all": "Nothing was paid, so all of it rolls.",
+  "potmath.marker": "The Pot is under water by {marker}. Nobody wins one until it is paid back.",
+  "potmath.gain_label": "Week gain",
+  "potmath.took_label": "Took",
+  "potmath.folded_label": "Folded — not eligible",
+  "potmath.split_note": "Place {place} split {ways} ways.",
+  "potmath.you": "You",
+  "potmath.room_label": "The room",
   "dash.tabletalk.heading": "Table Talk",
   "dash.tabletalk.live_label": "Chat with the league",
   "dash.tabletalk.placeholder": "Say it to the whole room…",
   "dash.tabletalk.muted_notice": "You're muted until {expiry}. You can read, and you can still bet.",
   "dash.tabletalk.tombstone": "— a message was hidden by the Commissioner —",
+  "dash.tabletalk.help_aria": "How Table Talk works",
+  "dash.tabletalk.help_title": "How Table Talk works",
+  "dash.tabletalk.help_mentions":
+    "Type @ and a name to call somebody out \u2014 pick from the list that pops up. They get an email pointing them back to the room. Five mentions per message, tops.",
+  "dash.tabletalk.help_emoji":
+    "Emojis work everywhere: tap the \ud83d\ude42 by the send button, or use your keyboard \u2014 Ctrl+\u2318+Space on a Mac, Win+. on Windows, the emoji key on your phone.",
+  "dash.tabletalk.emoji_aria": "Add an emoji",
   "dash.news.heading": "Your team",
   "dash.news.source_label": "Source",
   "dash.news.empty": "Quiet day. Nothing worth reading.",

@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchAllRows } from "@/lib/db/fetchAll";
+import { chunk, fetchAllRows } from "@/lib/db/fetchAll";
 import {
   headToHead,
   leagueHighlights,
@@ -65,18 +65,24 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
   const ticketById = new Map(tickets.map((t) => [t.id, t]));
   const gameById = new Map(games.map((g) => [g.id, g]));
 
-  const betRows =
-    tickets.length === 0
-      ? []
-      : await fetchAllRows<{ ticket_id: string; game_id: string; side: string; chips: number; multiplier: number | null; result: string | null }>(
-          (f, t) =>
-            db
-              .from("bets")
-              .select("ticket_id, game_id, side, chips, multiplier, result")
-              .in("ticket_id", tickets.map((x) => x.id))
-              .order("id")
-              .range(f, t),
-        );
+  // Chunked: the ticket-id list grows every week, and PostgREST carries `in.(...)` in
+  // the URL — unchunked this 414s from Week 9 of a 25-player season, taking the results
+  // page and the dashboard's League Stats box down with it.
+  type BetRow = { ticket_id: string; game_id: string; side: string; chips: number; multiplier: number | null; result: string | null };
+  const betRows: BetRow[] = (
+    await Promise.all(
+      chunk(tickets.map((x) => x.id)).map((ids) =>
+        fetchAllRows<BetRow>((f, t) =>
+          db
+            .from("bets")
+            .select("ticket_id, game_id, side, chips, multiplier, result")
+            .in("ticket_id", ids)
+            .order("id")
+            .range(f, t),
+        ),
+      ),
+    )
+  ).flat();
 
   const bets: StatBet[] = betRows.flatMap((b) => {
     const t = ticketById.get(b.ticket_id);
