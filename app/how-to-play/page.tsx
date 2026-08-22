@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
 import { acceptHowToPlay } from "@/app/actions/player";
-import { HowToPlayTutorial } from "@/components/howtoplay/HowToPlayTutorial";
+import { HowToPlayTutorial, type StepCopy } from "@/components/howtoplay/HowToPlayTutorial";
 
 // The how-to-play gate (inserted between profile completion and the dashboard): a
-// mandatory, interactive click-through tutorial. Every string here is content-managed
-// like the rest of the player app — see lib/content/defaults.ts's howto.* keys.
+// mandatory click-through tutorial — eight cards to the owner's 2026-08-22 wireframes.
+// Every string here is content-managed like the rest of the player app — see
+// lib/content/defaults.ts's howto.* keys.
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,14 @@ export default async function HowToPlay({
   const replaying = replay === "1" && dest === "/dashboard";
   if (dest !== "/how-to-play" && !replaying) redirect(dest);
 
+  const steps: StepCopy[] = await Promise.all(
+    Array.from({ length: 8 }, async (_, i) => ({
+      title: await getContent(`howto.s${i + 1}_title`),
+      sub: await getContent(`howto.s${i + 1}_sub`),
+      body: await getContent(`howto.s${i + 1}_body`),
+    })),
+  );
+
   const [
     logoAlt,
     heading,
@@ -36,21 +45,25 @@ export default async function HowToPlay({
     skipCta,
     acceptCta,
     errorGeneric,
-    tableTitle,
-    tableBody,
-    betTitle,
-    betBody,
-    edgeTitle,
-    edgeBody,
-    revealTitle,
-    revealBody,
-    potTitle,
-    potBody,
-    readyTitle,
-    readyBody,
-    anteLabel,
-    limitLabel,
-    potLabel,
+    sampleNote,
+    exCrowdTitle,
+    exCrowdLine,
+    exCrowdResult,
+    exDogTitle,
+    exDogLine,
+    exDogResult,
+    potTotalLabel,
+    yourStackLabel,
+    winnerLabel,
+    championNote,
+    feltNote,
+    shoveTitle,
+    shoveBody,
+    foldTitle,
+    foldBody,
+    learnMoreLabel,
+    linkRules,
+    linkGuide,
     atLabel,
   ] = await Promise.all([
     getContent("home.logo_alt"),
@@ -62,21 +75,25 @@ export default async function HowToPlay({
     getContent("howto.skip_cta"),
     getContent("howto.accept_cta"),
     getContent("howto.error_generic"),
-    getContent("howto.table_title"),
-    getContent("howto.table_body"),
-    getContent("howto.bet_title"),
-    getContent("howto.bet_body"),
-    getContent("howto.edge_title"),
-    getContent("howto.edge_body"),
-    getContent("howto.reveal_title"),
-    getContent("howto.reveal_body"),
-    getContent("howto.pot_title"),
-    getContent("howto.pot_body"),
-    getContent("howto.ready_title"),
-    getContent("howto.ready_body"),
-    getContent("band.ante_label"),
-    getContent("dash.wager.limit_label"),
-    getContent("band.pot_label"),
+    getContent("howto.viz_sample_note"),
+    getContent("howto.ex_crowd_title"),
+    getContent("howto.ex_crowd_line"),
+    getContent("howto.ex_crowd_result"),
+    getContent("howto.ex_dog_title"),
+    getContent("howto.ex_dog_line"),
+    getContent("howto.ex_dog_result"),
+    getContent("howto.viz_pot_total"),
+    getContent("howto.viz_your_stack"),
+    getContent("howto.viz_winner"),
+    getContent("howto.viz_champion_note"),
+    getContent("howto.viz_felt_note"),
+    getContent("howto.shove_title"),
+    getContent("howto.shove_body"),
+    getContent("howto.fold_title"),
+    getContent("howto.fold_body"),
+    getContent("howto.learn_more"),
+    getContent("howto.link_rules"),
+    getContent("howto.link_guide"),
     getContent("dash.wager.at_label"),
   ]);
 
@@ -104,21 +121,26 @@ export default async function HowToPlay({
             backCta,
             skipCta,
             acceptCta,
-            tableTitle,
-            tableBody,
-            betTitle,
-            betBody,
-            edgeTitle,
-            edgeBody,
-            revealTitle,
-            revealBody,
-            potTitle,
-            potBody,
-            readyTitle,
-            readyBody,
-            anteLabel,
-            limitLabel,
-            potLabel,
+            steps,
+            sampleNote,
+            exCrowdTitle,
+            exCrowdLine,
+            exCrowdResult,
+            exDogTitle,
+            exDogLine,
+            exDogResult,
+            potTotalLabel,
+            yourStackLabel,
+            winnerLabel,
+            championNote,
+            feltNote,
+            shoveTitle,
+            shoveBody,
+            foldTitle,
+            foldBody,
+            learnMoreLabel,
+            linkRules,
+            linkGuide,
             atLabel,
           }}
         />

@@ -9,11 +9,14 @@ import { getContent } from "@/lib/content/getContent";
 export async function SettledResults({
   week,
   playerId,
+  dbOverride,
 }: {
   week: { id: string; number: number; pot_awarded: number | null; marker: number };
   playerId: string;
+  /** LOCAL PREVIEW ONLY — dev harness injects a service client. Never set in app code. */
+  dbOverride?: ReturnType<typeof createUserClient>;
 }) {
-  const db = createUserClient();
+  const db = dbOverride ?? createUserClient();
 
   const [{ data: myTicket }, { data: entries }, { data: awards }, { data: standing }] = await Promise.all([
     db

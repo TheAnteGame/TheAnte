@@ -15,22 +15,29 @@ import type { Handle } from "@/lib/chat/mentions";
 // Typing "@" opens the roster (D-019). Handles come from the server so the picker,
 // the highlighting and the email all agree on who "@Robert" is.
 
+// Fixed strip, league register — one tap for the desktop users who never find the OS
+// emoji shortcut. Data, not copy: the content grep ignores non-letter JSX.
+const EMOJIS = ["🏈", "🔥", "😂", "💀", "🤝", "🎉", "😤", "🧊"];
+
 export function ChatComposer({
   placeholder,
   liveLabel,
   showLive,
   handles,
+  emojiAria,
 }: {
   placeholder: string;
   liveLabel: string;
   showLive: boolean;
   handles: Handle[];
+  emojiAria: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [value, setValue] = useState("");
   const [query, setQuery] = useState<string | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   // The "@word" immediately before the caret, if there is one.
   const readQuery = (text: string, caret: number) => {
@@ -43,6 +50,18 @@ export function ChatComposer({
     query === null
       ? []
       : handles.filter((h) => h.handle.toLowerCase().startsWith(query.toLowerCase())).slice(0, 6);
+
+  const insertEmoji = (emoji: string) => {
+    const el = inputRef.current;
+    const caret = el?.selectionStart ?? value.length;
+    const next = value.slice(0, caret) + emoji + value.slice(caret);
+    setValue(next);
+    setEmojiOpen(false);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(caret + emoji.length, caret + emoji.length);
+    });
+  };
 
   const insert = (handle: string) => {
     const el = inputRef.current;
@@ -128,6 +147,35 @@ export function ChatComposer({
           {showLive && (
             <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
               <span className="shine-loop absolute inset-0 bg-[linear-gradient(115deg,transparent_35%,rgba(201,162,75,0.28)_50%,transparent_65%)]" />
+            </span>
+          )}
+        </span>
+
+        <span className="relative">
+          <button
+            type="button"
+            onClick={() => setEmojiOpen((o) => !o)}
+            aria-label={emojiAria}
+            aria-expanded={emojiOpen}
+            className="chamfer h-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] px-3 text-sm hover:border-[color:var(--color-chrome-dim)] hover:bg-[color:var(--color-surface-3)]"
+          >
+            <span aria-hidden>🙂</span>
+          </button>
+          {emojiOpen && (
+            <span className="absolute bottom-full right-0 z-30 mb-1 flex gap-1 border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] p-1.5 shadow-lg">
+              {EMOJIS.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onMouseDown={(ev) => {
+                    ev.preventDefault();
+                    insertEmoji(e);
+                  }}
+                  className="px-1 text-lg leading-none hover:scale-110"
+                >
+                  {e}
+                </button>
+              ))}
             </span>
           )}
         </span>

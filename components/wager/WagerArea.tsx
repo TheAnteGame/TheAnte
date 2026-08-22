@@ -4,6 +4,7 @@ import { getContent } from "@/lib/content/getContent";
 import { ET } from "@/lib/time";
 import { BetSlip, type SlipCopy } from "./BetSlip";
 import { PollRefresh } from "./PollRefresh";
+import { PotMath } from "./PotMath";
 import { SettledResults } from "./SettledResults";
 import Link from "next/link";
 
@@ -24,8 +25,15 @@ function Titled({ heading, children }: { heading: string; children: React.ReactN
   );
 }
 
-export async function WagerArea({ playerId }: { playerId: string }) {
-  const db = createUserClient();
+export async function WagerArea({
+  playerId,
+  dbOverride,
+}: {
+  playerId: string;
+  /** LOCAL PREVIEW ONLY — dev harness injects its own client. Never set in app code. */
+  dbOverride?: ReturnType<typeof createUserClient>;
+}) {
+  const db = dbOverride ?? createUserClient();
 
   const { data: week } = await db
     .from("weeks")
@@ -73,7 +81,14 @@ export async function WagerArea({ playerId }: { playerId: string }) {
   }
 
   if (week.phase === "settled") {
-    return <SettledResults week={week} playerId={playerId} />;
+    // Your result first, then how the Pot was decided — the second answers the question
+    // the first always provokes ("how did they win it?").
+    return (
+      <div className="flex flex-col gap-4">
+        <SettledResults week={week} playerId={playerId} dbOverride={dbOverride} />
+        <PotMath week={week} playerId={playerId} dbOverride={dbOverride} />
+      </div>
+    );
   }
 
   // Open week: has this player already submitted?

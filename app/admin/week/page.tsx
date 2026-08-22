@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
 import { ET } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
-import { correctGame, forceReveal, resettle, runSettlement } from "../actions";
+import { correctGame, forceReveal, openWeekEarly, resettle, runSettlement } from "../actions";
 import { Section, inputCls, thCls, tdCls } from "@/components/admin/ui";
 
 // Week control (ANTE-ADMIN §4.2). Manual overrides are the ONLY game-data writes
@@ -24,10 +24,29 @@ export default async function WeekControl() {
     .maybeSingle();
 
   if (!week) {
+    const { data: season } = await db.from("seasons").select("status").order("year", { ascending: false }).limit(1).maybeSingle();
     return (
       <div>
         <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Week control</h1>
-        <p className="text-sm text-[color:var(--color-text-mid)]">No week yet. slate.open creates Week 1 once the season is active.</p>
+        <p className="text-sm text-[color:var(--color-text-mid)]">No week yet. slate.open creates Week 1 on its Tuesday once the season is active.</p>
+        {season?.status === "active" ? (
+          <Section title="Open the week early (D-035)">
+            <p className="mb-3 text-sm text-[color:var(--color-text-mid)]">
+              Opens the next week&apos;s board now instead of Tuesday 6:00am ET. The Thursday-noon deadline does not move,
+              and while admission is open only the deadline reveals — early tickets stay sealed however few players are in.
+            </p>
+            <AdminForm
+              action={openWeekEarly}
+              submitLabel="Open the week now"
+              confirmText="Open the next week's board immediately? The deadline stays Thursday noon. This cannot be un-opened."
+              inline
+            >
+              <input name="reason" placeholder="typed reason (required)" required className={`${inputCls} w-64`} aria-label="Reason" />
+            </AdminForm>
+          </Section>
+        ) : (
+          <p className="mt-2 text-sm text-[color:var(--color-text-low)]">Activate the season first (Settings) — §1&apos;s eight-player floor applies.</p>
+        )}
       </div>
     );
   }

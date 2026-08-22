@@ -8,19 +8,30 @@
 
 @theme {
   /* Neutral ramp — near-black canvas, dark field is the native ground.
-     Contrast is measured, not eyeballed (D-026). Against the canvas: text-hi 17.6:1,
-     text-mid 9.4:1, text-low 5.5:1 — all past WCAG AA's 4.5:1 for body text, with
-     headroom because the league includes an eighty-year-old and "legal minimum" is a
-     floor, not a comfort target. --color-border clears the 3:1 that WCAG 1.4.11 asks
-     of a UI boundary; at its old value it sat at 1.38:1 and drew nothing. */
+     Contrast is measured, not eyeballed (D-026, raised again in D-030).
+     D-026 measured against the CANVAS, but almost nothing sits on the canvas: the
+     small 12px labels live on panels, and surface-3 is 2.3x lighter than the canvas,
+     which cost roughly a third of every ratio. Measured on the worst ground each
+     token actually lands on (surface-3 #24242a):
+
+        token       canvas   surface-3      was (surface-3)
+        text-hi      17.59       13.80      unchanged
+        text-mid     12.71        9.97      7.84
+        text-low      8.15        6.40      4.57   ← 12px type at barely-AA
+        border        4.31        3.38      2.51   ← under WCAG 1.4.11's 3:1
+
+     text-low is the one that mattered: it carries the small uppercase labels, and at
+     4.57 on a panel it was scraping AA at the type size least able to afford it.
+     The league includes an eighty-year-old and "legal minimum" is a floor, not a
+     comfort target. The ramp still reads as three distinct steps. */
   --color-canvas: #0b0b0d;
   --color-surface-1: #131316;
   --color-surface-2: #1b1b20;
   --color-surface-3: #24242a;
-  --color-border: #616169;
+  --color-border: #75757e;
   --color-text-hi: #f2f2f4;
-  --color-text-mid: #b8b8c2;
-  --color-text-low: #8b8b95;
+  --color-text-mid: #cfcfd8;
+  --color-text-low: #a6a6b0;
 
   /* Chrome — the interactive material. Hueless, near-white. */
   --color-chrome: #e8e8ec;
@@ -204,6 +215,46 @@ td.nums,
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: var(--color-text-low);
   cursor: not-allowed;
+}
+
+/* ── The team tile (D-030) ─────────────────────────────────────────────────────
+   The two sides of a game are the only thing on the board a player presses, and at
+   rest they were a fill barely off their panel behind a 2.8:1 rule — on a dim
+   monitor, thirty tiles with no edges. They get a brighter rule than the system
+   border precisely because they are interactive: 7.5:1 on surface-2, still neutral
+   grey, still clearly below the selected state's near-white chrome face.
+
+   Hover adds light rather than another colour — a ring plus a soft outward glow,
+   from the same upper-left rig as everything else. Selected is unmistakably louder,
+   so definition at rest never competes with the state that matters. */
+.team-tile {
+  border: 1px solid var(--color-text-low);
+  background-color: var(--color-surface-2);
+  transition:
+    border-color 0.16s ease-out,
+    box-shadow 0.16s ease-out,
+    background-color 0.16s ease-out;
+}
+.team-tile:hover {
+  border-color: var(--color-chrome);
+  background-color: var(--color-surface-3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 0 0 1px rgba(232, 232, 236, 0.28),
+    0 0 18px -4px rgba(232, 232, 236, 0.34);
+}
+.team-tile:focus-visible {
+  outline: 2px solid var(--color-chrome);
+  outline-offset: 1px;
+}
+/* Pointer-driven glow only: on touch, :hover sticks after the tap and would leave a
+   tile lit that is not selected. */
+@media (hover: none) {
+  .team-tile:hover {
+    border-color: var(--color-text-low);
+    background-color: var(--color-surface-2);
+    box-shadow: none;
+  }
 }
 
 /* Gold is light, not ink. A hairline brightens where the beam crosses it. */

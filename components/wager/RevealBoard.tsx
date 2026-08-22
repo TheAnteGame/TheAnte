@@ -14,14 +14,17 @@ export async function RevealBoard({
   playerId,
   season,
   h2h,
+  dbOverride,
 }: {
   week: { id: string; number: number; revealed_at: string | null };
   playerId: string;
+  /** LOCAL PREVIEW ONLY — dev harness injects a service client. Never set in app code. */
+  dbOverride?: ReturnType<typeof createUserClient>;
   /** Season-to-date tendencies. Supplied on /results, omitted for a bare reveal. */
   season?: RevealData["season"];
   h2h?: RevealData["h2h"];
 }) {
-  const db = createUserClient();
+  const db = dbOverride ?? createUserClient();
 
   const [{ data: tickets }, { data: games }, { data: players }] = await Promise.all([
     db

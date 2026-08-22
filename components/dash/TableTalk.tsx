@@ -3,16 +3,24 @@ import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { ET } from "@/lib/time";
 import { ChatComposer } from "./ChatComposer";
+import { ChatHelp } from "./ChatHelp";
 import { buildHandles, segmentBody } from "@/lib/chat/mentions";
 
 // Table Talk (ANTE-PLAYER §7): a real chat panel. System messages are distinct and
 // carry weight — they are the only place the commissioner's authority is visible.
 // Hidden messages render as tombstones, never gaps (ADMIN §4.3).
 
-export async function TableTalk({ playerId }: { playerId: string }) {
-  const db = createUserClient();
+export async function TableTalk({
+  playerId,
+  dbOverride,
+}: {
+  playerId: string;
+  /** LOCAL PREVIEW ONLY — dev harness injects its own client. Never set in app code. */
+  dbOverride?: ReturnType<typeof createUserClient>;
+}) {
+  const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, tombstone] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, tombstone, helpAria, helpTitle, helpMentions, helpEmoji, emojiAria] = await Promise.all([
     db
       .from("chat_messages")
       .select("id, player_id, body, is_system, hidden_at, hidden_reason, created_at")
@@ -26,6 +34,11 @@ export async function TableTalk({ playerId }: { playerId: string }) {
     getContent("dash.tabletalk.live_label"),
     getContent("dash.tabletalk.muted_notice"),
     getContent("dash.tabletalk.tombstone"),
+    getContent("dash.tabletalk.help_aria"),
+    getContent("dash.tabletalk.help_title"),
+    getContent("dash.tabletalk.help_mentions"),
+    getContent("dash.tabletalk.help_emoji"),
+    getContent("dash.tabletalk.emoji_aria"),
   ]);
 
   const { data: roster } = await db.from("players").select("id, first_name, last_name").eq("status", "approved");
@@ -51,12 +64,15 @@ export async function TableTalk({ playerId }: { playerId: string }) {
 
   return (
     <section aria-label={heading} className="panel flex min-h-0 flex-col">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
-        {heading}
-      </h2>
-      <ul className="flex max-h-[32rem] min-h-[9rem] flex-col-reverse gap-2 overflow-y-auto px-4 py-3">
+      <div className="panel-head flex items-center justify-between px-4 py-3">
+        <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+          {heading}
+        </h2>
+        <ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} />
+      </div>
+      <ul className="flex max-h-[32rem] min-h-[9rem] flex-col-reverse overflow-y-auto px-4 py-2 [&>li+li]:border-b [&>li+li]:border-[color:var(--color-border)]">
         {(messages ?? []).map((m) => (
-          <li key={m.id} className="text-sm">
+          <li key={m.id} className="py-2 text-sm">
             {m.hidden_at ? (
               <span className="italic text-[color:var(--color-text-low)]">{tombstone}</span>
             ) : m.is_system ? (
@@ -91,6 +107,7 @@ export async function TableTalk({ playerId }: { playerId: string }) {
           liveLabel={liveLabel}
           showLive={(mine ?? []).length === 0}
           handles={handles}
+          emojiAria={emojiAria}
         />
       )}
     </section>

@@ -125,7 +125,8 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
         }}
       >
         <p className="text-sm text-[color:var(--color-text-mid)]">{copy.codePrompt}</p>
-        <div className="chamfer flex w-full bg-[color:var(--color-surface-2)] focus-within:outline-2 focus-within:outline-[color:var(--color-chrome)]">
+        {/* Same rule as the phone field below — the six-digit box needs an edge too. */}
+        <div className="chamfer flex w-full border border-[color:var(--color-text-low)] bg-[color:var(--color-surface-2)] focus-within:outline-2 focus-within:outline-[color:var(--color-chrome)]">
           <input
             ref={codeRef}
             value={code}
@@ -171,7 +172,10 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
       <label htmlFor="phone" className="sr-only">
         {copy.phoneLabel}
       </label>
-      <div className="chamfer flex w-full bg-[color:var(--color-surface-2)] focus-within:outline-2 focus-within:outline-[color:var(--color-chrome)]">
+      {/* The field carried no border at all — just a fill a shade off the canvas, which
+          on a dim monitor left the primary action on the homepage with no edge to find.
+          A neutral-grey rule at 7.5:1 on this surface gives it one. */}
+      <div className="chamfer flex w-full border border-[color:var(--color-text-low)] bg-[color:var(--color-surface-2)] focus-within:outline-2 focus-within:outline-[color:var(--color-chrome)]">
         <input
           id="phone"
           type="tel"

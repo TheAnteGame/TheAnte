@@ -5,6 +5,7 @@ import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
 import { gatherLeagueStats } from "@/lib/stats/gather";
+import { PotMath } from "@/components/wager/PotMath";
 import { RevealBoard } from "@/components/wager/RevealBoard";
 
 // The results page (D-022). The reveal's table is 15 games wide and never fitted the
@@ -103,11 +104,17 @@ export default async function WeekResults({ params }: { params: Promise<{ week: 
   const h2h = stats.h2hFor(state.player.id).map((r) => ({ ...r, name: stats.nameOf(r.opponentId) }));
 
   return chrome(
-    <RevealBoard
-      week={{ id: week.id, number: week.number, revealed_at: null }}
-      playerId={state.player.id}
-      season={season.length > 0 ? season : undefined}
-      h2h={h2h.length > 0 ? h2h : undefined}
-    />,
+    <>
+      <RevealBoard
+        week={{ id: week.id, number: week.number, revealed_at: null }}
+        playerId={state.player.id}
+        season={season.length > 0 ? season : undefined}
+        h2h={h2h.length > 0 ? h2h : undefined}
+      />
+      {/* Only a settled week has a Pot to explain; a revealed-but-unplayed week has none. */}
+      {week.settled && (
+        <PotMath week={{ id: week.id, number: week.number, pot_awarded: null }} playerId={state.player.id} />
+      )}
+    </>,
   );
 }

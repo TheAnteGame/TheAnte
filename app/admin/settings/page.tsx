@@ -46,7 +46,7 @@ export default async function Settings() {
             <AdminForm
               action={activateSeason}
               submitLabel="Activate season"
-              confirmText={`Move the 2026 season to ACTIVE? Requires ${MIN_PLAYERS}+ approved players. Once active, every rule constant locks until the offseason (§13).`}
+              confirmText={`Move the 2026 season to ACTIVE? The rulebook recommends ${MIN_PLAYERS}+ players for a competitive pool, but any roster size activates. Once active, every rule constant locks until the offseason (§13).`}
               inline
             />
           )}

@@ -10,7 +10,7 @@ import { TICKER_COLORS, clampSpeed } from "@/lib/ticker/style";
 import { emailPlayer } from "@/lib/notify/templates";
 import { getContent } from "@/lib/content/getContent";
 import { takeSnapshot } from "@/lib/backup/snapshot";
-import { houseLimit, isFelt } from "@/lib/engine";
+import { admitToOpenWeek } from "@/lib/jobs/admit";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 
 // Every mutating admin action re-checks the commissioner (ANTE-ADMIN §2), writes
@@ -70,7 +70,7 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
   // at the WEEK 1 DEADLINE, not at slate open (rulebook §1). Without this they hold a
   // stack but have no week_players row, and their game board reads as closed while
   // everyone else bets (D-020).
-  await admitToOpenWeek(ctx, playerId);
+  await admitToOpenWeek(ctx.db, playerId);
 
   await writeAudit(ctx, "player.approve", "player", playerId, "Application approved; buy-in credited", {
     isPublic: true,
@@ -84,67 +84,6 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
   }
   revalidatePath("/admin/players");
   return { ok: true };
-}
-
-/** Give a late-admitted player the same week snapshot and the same ante everyone else
- *  already paid. The week's median, active count and places tier stay exactly as they
- *  were snapshotted at slate open — those are fixed for the week (§7). */
-async function admitToOpenWeek(ctx: NonNullable<Awaited<ReturnType<typeof getCommissioner>>>, playerId: string) {
-  const { data: week } = await ctx.db
-    .from("weeks")
-    .select("id, number, ante, median_snapshot, deadline_at")
-    .eq("phase", "open")
-    .order("number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!week) return;
-  // Past the deadline there is nothing to join: the reveal is next, and charging an
-  // ante for a week they could never have bet would be taking chips for nothing.
-  if (new Date(week.deadline_at) <= new Date()) return;
-
-  const entries = await fetchAllRows<{ amount: number }>((f, t) =>
-    ctx.db.from("ledger_entries").select("amount").eq("player_id", playerId).order("id").range(f, t),
-  );
-  const stackPreAnte = entries.reduce((sum, e) => sum + Number(e.amount), 0);
-  const ante = week.ante;
-  const felt = isFelt(stackPreAnte, ante);
-
-  if (!felt) {
-    // Player side keys on open:ante so a later slate.open retry cannot ante them twice.
-    // The Pot side needs its OWN key: slate.open writes one aggregated pot row per week
-    // under open:ante:pot, and reusing that key here would be rejected as a duplicate —
-    // charging the player while the Pot went uncredited, breaking conservation.
-    const { error } = await ctx.db.from("ledger_entries").insert([
-      {
-        player_id: playerId,
-        week_id: week.id,
-        kind: "ante",
-        amount: -ante,
-        reason: `Week ${week.number} ante`,
-        idempotency_key: "open:ante",
-      },
-      {
-        player_id: null,
-        week_id: week.id,
-        kind: "ante",
-        amount: ante,
-        reason: `Week ${week.number} — Pot side of ante (admitted after slate open)`,
-        idempotency_key: `admit:ante:pot:${playerId}`,
-      },
-    ]);
-    if (error && !error.message.includes("duplicate key")) throw new Error(error.message);
-  }
-
-  await ctx.db.from("week_players").upsert(
-    {
-      week_id: week.id,
-      player_id: playerId,
-      stack_pre_ante: stackPreAnte,
-      felt,
-      house_limit: felt ? stackPreAnte : houseLimit(stackPreAnte - ante, week.median_snapshot ?? stackPreAnte - ante),
-    },
-    { onConflict: "week_id,player_id" },
-  );
 }
 
 export async function rejectPlayer(fd: FormData): Promise<ActionResult> {
@@ -254,7 +193,7 @@ export async function reactivatePlayer(fd: FormData): Promise<ActionResult> {
 
   // Same gap as a late approval: back in the league mid-week means back in THIS week,
   // or the board stays shut until the next slate opens (D-020).
-  await admitToOpenWeek(ctx, playerId);
+  await admitToOpenWeek(ctx.db, playerId);
 
   await writeAudit(ctx, "player.reactivate", "player", playerId, "Reactivated", {
     isPublic: true,
@@ -346,6 +285,30 @@ export async function correctGame(fd: FormData): Promise<ActionResult> {
 
 /** §13: permitted as settlement-job recovery — after the deadline, never before.
  *  The phase guard is in the job itself; acceptance test 9 covers the early case. */
+/** D-035 — open the next week's window now instead of Tuesday 6am. The deadline
+ *  stays the standard Thursday noon; §6's last-ticket reveal is held by revealCheck
+ *  while admission is open, so an early window cannot reveal early. */
+export async function openWeekEarly(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const reason = str(fd, "reason");
+  if (!reason) return fail("Opening a week early demands a typed reason (§4.2)");
+
+  const { slateOpenEarly } = await import("@/lib/jobs/slateOpen");
+  const outcome = await slateOpenEarly(ctx.db);
+  if (outcome.status !== "succeeded") {
+    return fail(`Could not open the week: ${JSON.stringify(outcome.detail)}`);
+  }
+  const weekNo = (outcome.detail as { week?: number } | undefined)?.week ?? "?";
+
+  await writeAudit(ctx, "week.open_early", "week", String(weekNo), reason, {
+    isPublic: true,
+    publicLine: `The Week ${weekNo} board is open — bet whenever you're ready. The Thursday deadline stands.`,
+  });
+  revalidatePath("/admin/week");
+  return { ok: true };
+}
+
 export async function forceReveal(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
@@ -618,14 +581,14 @@ export async function hideFeedItem(fd: FormData): Promise<ActionResult> {
 
 // ── Settings (§4.8) ────────────────────────────────────────────────────────────
 
-/** The season cannot move to active below 8 approved players (§1, acceptance 15). */
+/** §1's eight-player floor was a hard gate here until the owner removed it (D-035,
+ *  2026-08-22): the season activates at any roster size, so the very first approved
+ *  player can bet Week 1 the moment it is opened. Eight remains the rulebook's
+ *  RECOMMENDATION for a competitive pool — the confirm dialog still says so — but
+ *  the commissioner decides, not the code. */
 export async function activateSeason(): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
-  const { count } = await ctx.db.from("players").select("id", { count: "exact", head: true }).eq("status", "approved");
-  if ((count ?? 0) < 8) {
-    return fail(`The season needs 8 approved players to start — the room has ${count ?? 0} (§1). Below that, pick distributions are pure noise.`);
-  }
   const { error } = await ctx.db.from("seasons").update({ status: "active" }).eq("status", "preseason");
   if (error) return fail(error.message);
   await writeAudit(ctx, "season.activate", "season", "2026", "Season moved to active", {

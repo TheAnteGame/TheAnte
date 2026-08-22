@@ -286,7 +286,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                   className={`chamfer flex flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${
                     active
                       ? "chrome-face border border-[color:var(--color-chrome)]"
-                      : "border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] text-[color:var(--color-text-hi)] hover:border-[color:var(--color-chrome-dim)] hover:bg-[color:var(--color-surface-3)]"
+                      : "team-tile text-[color:var(--color-text-hi)]"
                   }`}
                 >
                   <span className="leading-tight">{team}</span>

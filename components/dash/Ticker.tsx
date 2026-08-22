@@ -5,6 +5,7 @@ import { getContent } from "@/lib/content/getContent";
 import { ET } from "@/lib/time";
 import { TickerMarquee, type TickerItem } from "./TickerMarquee";
 import { DEFAULT_ACCENT, DEFAULT_SPEED, DEFAULT_TEXT, clampSpeed, colorCss } from "@/lib/ticker/style";
+import { leaderFrom } from "@/lib/ticker/leader";
 
 // The blended rail (ADMIN §0, §4.5): one ordered list a player never has to parse —
 // manual posts, system league facts, and feed headlines. Stored rows (manual/feed)
@@ -86,14 +87,18 @@ export async function Ticker() {
       system.push({ text: await getContent("ticker.reveal"), priority: 2 });
     }
     if (sysOn("leader")) {
-      const { data: top } = await db.from("standings").select("first_name, last_name, stack, status").eq("rank", 1).limit(1);
-      const leader = (top ?? []).find((t) => t.status === "approved");
-      if (leader) {
+      // Every row, not rank-1: on a level board rank() makes EVERYONE rank 1, and
+      // limit(1) then picked an arbitrary player to crown. See lib/ticker/leader.ts.
+      const { data: rows } = await db.from("standings").select("first_name, last_name, stack, status");
+      const state = leaderFrom(rows ?? []);
+      if (state.kind === "leader") {
         system.push({
-          text: await getContent("ticker.leader", {
-            name: `${leader.first_name ?? ""} ${(leader.last_name ?? "").slice(0, 1)}.`.trim(),
-            stack: leader.stack ?? 0,
-          }),
+          text: await getContent("ticker.leader", { name: state.name, stack: state.stack }),
+          priority: 0,
+        });
+      } else if (state.kind === "tied") {
+        system.push({
+          text: await getContent("ticker.leader_tied", { count: state.count, stack: state.stack }),
           priority: 0,
         });
       }

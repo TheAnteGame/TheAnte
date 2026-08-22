@@ -22,7 +22,12 @@ const SYSTEM_LINES: Array<{ key: string; label: string; contentKey: string; when
   { key: "pot", label: "Pot size", contentKey: "ticker.pot", when: "Always, once a week exists" },
   { key: "marker", label: "Marker carried", contentKey: "ticker.marker", when: "Only when the Pot carries a marker" },
   { key: "reveal", label: "Reveal fired", contentKey: "ticker.reveal", when: "For 6 hours after the reveal" },
-  { key: "leader", label: "Current leader", contentKey: "ticker.leader", when: "Always, once standings exist" },
+  {
+    key: "leader",
+    label: "Current leader",
+    contentKey: "ticker.leader",
+    when: "Once one player is clear of the field. While the room is level it uses ticker.leader_tied instead — a tie is not a leader.",
+  },
 ];
 
 export default async function TickerAdmin() {
