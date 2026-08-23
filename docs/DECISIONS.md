@@ -871,3 +871,13 @@ segment-level production 404 so a future harness page cannot ship service-role
 reads; the torture test's leader assertion calls the real `leaderFrom` (the first
 version was vacuously true). Deferred, tracked: admitToOpenWeek's felt-edge
 branches, canReveal's global-count wedge, PotMath's gain map after re-settlement.
+
+## D-037 — The rulebook is a surface, not a file (2026-08-23)
+
+/rules renders the versioned rulebook in sections split on its own ## headings,
+with a menu that rides the scroll (sticky rail wide, jump list on phones). The
+tutorial's Gamebook link and a new Rule Book button at the bottom of /guide both
+land there. On the dashboard, a "Quick answers" panel under the leaderboard takes
+the ten questions the room actually asks — payouts, the ante, the Pot, the shove,
+the felt — as an expandable Q&A in the rulebook's voice (faq.* content keys),
+every answer deferring to /rules as the authority.

@@ -15,6 +15,7 @@ import { NewsBox } from "@/components/dash/NewsBox";
 import { PromoBox } from "@/components/dash/PromoBox";
 import { SupportBox } from "@/components/dash/SupportBox";
 import { LeagueStats } from "@/components/dash/LeagueStats";
+import { RuleBookQA } from "@/components/dash/RuleBookQA";
 import { PollRefresh } from "@/components/wager/PollRefresh";
 
 // The dashboard (ANTE-PLAYER §4): header, ticker, stakes band, then two columns —
@@ -146,12 +147,18 @@ export default async function Dashboard() {
             <div className="hidden min-[900px]:block">
               <Leaderboard playerId={playerId} />
             </div>
+            <div className="hidden min-[900px]:block">
+              <RuleBookQA />
+            </div>
           </div>
           <div className="flex min-w-0 flex-col gap-6">
             <TableTalk playerId={playerId} />
             {/* Mobile order (§4): wager, table talk, leaderboard, news, promo, support. */}
             <div className="min-[900px]:hidden">
               <Leaderboard playerId={playerId} />
+            </div>
+            <div className="min-[900px]:hidden">
+              <RuleBookQA />
             </div>
             {/* Owner's order: the promo rides with the chat at the top, and simply is
                 not rendered when no heading is set, so nothing collapses to a gap.

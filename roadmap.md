@@ -8,6 +8,14 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-23 (twenty-fourth pass):** **The rulebook became a surface (D-037).**
+> /rules now renders in sections with a scroll-tracking menu (sticky rail on wide
+> screens, collapsible jump list on phones; scroll-spy verified live). /guide gains a
+> Rule Book button beside the tutorial CTA. New "Quick answers" panel under the
+> dashboard leaderboard: ten expandable Q&As in the rulebook's voice (native details,
+> no client JS, faq.* content keys), closing with a link to /rules. Content-grep,
+> tests, build green.
+
 > **2026-08-22 (twenty-third pass):** **Late admission proven and hardened (D-034).**
 > Owner requirement: anyone approved must be able to bet Week 1 immediately. The
 > mechanism already existed (D-020's admitToOpenWeek — ante + frozen-median limit +

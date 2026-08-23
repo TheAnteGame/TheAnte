@@ -123,6 +123,7 @@ export const contentDefaults: Record<string, string> = {
   "guide.intro": "ANTE is a season-long football pool. You bet chips on NFL games. The biggest stack on the last Sunday wins. Here is the whole thing in plain English.",
   "guide.back_cta": "Back to the game board",
   "guide.tutorial_cta": "Run the tutorial again",
+  "guide.rules_cta": "The Rule Book",
   "guide.rules_note": "This page is the short version. The rulebook is the real thing, and it wins any argument.",
   "guide.start_title": "You start with 500 chips",
   "guide.start_body": "Everyone in the league starts with the same 500 chips. Nobody can buy more. Chips are just points \u2014 they are never worth money. The season runs from Week 1 to Week 18.",
@@ -215,6 +216,41 @@ export const contentDefaults: Record<string, string> = {
   "ticker.marker": "The Pot is carrying a {marker}-chip marker",
   "ticker.reveal": "The room is open — every ticket is live",
   "ticker.leader": "{name} leads with {stack}",
+  // Rulebook Q&A on the dashboard (D-037) — the ten questions the room actually
+  // asks. Answers compress the rulebook, never contradict it; §-precision lives at
+  // /rules and every answer defers there.
+  "faq.heading": "Quick answers",
+  "faq.more": "The full rulebook settles everything \u2192",
+  "faq.q1": "How do I win the season?",
+  "faq.a1":
+    "Biggest stack after the Week 18 games settle. Ties break by most winning bets, then most Pots won, then fewest folds, then one public card draw.",
+  "faq.q2": "Why did my stack drop before I bet anything?",
+  "faq.a2":
+    "The ante. Every week costs one \u2014 10 chips to start, rising to 30 by season's end \u2014 posted automatically when the slate opens. Every ante goes into the Pot.",
+  "faq.q3": "How much can I bet?",
+  "faq.q4": "How do payouts work?",
+  "faq.a3":
+    "10 to 50 chips per game, in tens, on at least 5 games. The week's total is capped at one third of your stack or one third of the league's middle stack \u2014 whichever is smaller.",
+  "faq.a4":
+    "Head counts, not odds: the people against you divided by the people with you, counting yourself. Alone against four pays 2.50\u00d7 \u2014 the cap. Riding with the crowd pays a fraction \u2014 the floor is 0.25\u00d7. Nobody on the other side pays even money.",
+  "faq.q5": "When do I see everyone's picks?",
+  "faq.a5":
+    "At the reveal: the moment the last ticket lands, or Thursday noon ET \u2014 whichever comes first. Until then you see nothing. Not a pick, not a chip, not a count.",
+  "faq.q6": "Can I change my ticket after submitting?",
+  "faq.a6": "No. Not you, not the Commissioner, not for any reason. Submitted is stone.",
+  "faq.q7": "What happens if I skip a week?",
+  "faq.a7":
+    "You're folded automatically at the deadline. You still pay the ante, and a fold can never win the Pot.",
+  "faq.q8": "Who wins the weekly Pot?",
+  "faq.a8":
+    "Whoever GAINS the most chips that week, ante included \u2014 not the biggest stack. Every ante in the league is in it, and in bigger leagues it pays more places.",
+  "faq.q9": "What's the shove?",
+  "faq.a9":
+    "Once a season you can push your entire stack onto one game. It always pays even money: win and you double, lose and you're on the felt.",
+  "faq.q10": "Can I go broke and get knocked out?",
+  "faq.a10":
+    "No. Nobody is eliminated \u2014 your last chip is protected, you're dealt into every week, and on the felt you bet 1-chip slips until you climb back.",
+
   "ticker.leader_tied": "{count} players tied at the top on {stack} \u2014 nobody leads yet",
 
   // Promo box (fields editable in the admin console)
