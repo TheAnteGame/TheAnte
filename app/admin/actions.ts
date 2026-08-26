@@ -71,10 +71,10 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
   // everyone else bets (D-020).
   await admitToOpenWeek(ctx.db, playerId);
 
-  await writeAudit(ctx, "player.approve", "player", playerId, "Application approved; buy-in credited", {
-    isPublic: true,
-    publicLine: `${p.first_name ?? "A new player"} ${(p.last_name ?? "").slice(0, 1)}. has a seat. 500 chips, dead even with everybody.`,
-  });
+  // Audited, not announced (D-038): an arrivals feed in Table Talk crowded out the
+  // thing the panel is for — the room's own conversation — and told nobody anything
+  // the standings do not already show.
+  await writeAudit(ctx, "player.approve", "player", playerId, "Application approved; buy-in credited");
   if (p.email) {
     await send("email", "player.approved", p.email, {
       subject: "ANTE — you're in",
@@ -300,10 +300,9 @@ export async function openWeekEarly(fd: FormData): Promise<ActionResult> {
   }
   const weekNo = (outcome.detail as { week?: number } | undefined)?.week ?? "?";
 
-  await writeAudit(ctx, "week.open_early", "week", String(weekNo), reason, {
-    isPublic: true,
-    publicLine: `The Week ${weekNo} board is open — bet whenever you're ready. The Thursday deadline stands.`,
-  });
+  // Audited, not announced (D-038): the board being open is self-evident from the
+  // board.
+  await writeAudit(ctx, "week.open_early", "week", String(weekNo), reason);
   revalidatePath("/admin/week");
   return { ok: true };
 }
@@ -590,10 +589,8 @@ export async function activateSeason(): Promise<ActionResult> {
   if (!ctx) return fail("No seat");
   const { error } = await ctx.db.from("seasons").update({ status: "active" }).eq("status", "preseason");
   if (error) return fail(error.message);
-  await writeAudit(ctx, "season.activate", "season", "2026", "Season moved to active", {
-    isPublic: true,
-    publicLine: "The 2026 season is live. The first slate opens Tuesday 6:00am ET. Good luck — most of you will need it.",
-  });
+  // Audited, not announced (D-038): if you are reading Table Talk, the season is live.
+  await writeAudit(ctx, "season.activate", "season", "2026", "Season moved to active");
   revalidatePath("/admin/settings");
   return { ok: true };
 }

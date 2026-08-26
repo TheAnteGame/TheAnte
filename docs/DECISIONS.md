@@ -881,3 +881,25 @@ land there. On the dashboard, a "Quick answers" panel under the leaderboard take
 the ten questions the room actually asks — payouts, the ante, the Pot, the shove,
 the felt — as an expandable Q&A in the rulebook's voice (faq.* content keys),
 every answer deferring to /rules as the authority.
+
+## D-038 — Table Talk is for the room, not the machine (2026-08-23)
+
+Three automated announcements retired: season activated, week board opened, and
+"X has a seat" on every approval. They were audited events being mirrored into a
+small panel, crowding out the conversation the panel exists for and telling nobody
+anything the standings did not already show. All three still write to the audit
+log — they are simply no longer announced. Kept public per §13: commissioner
+corrections, deactivations with their evidence, mutes, season close, handoff.
+
+Message dividers became long dashes (`.chat-list > li + li`, a repeating-linear
+gradient rather than a border, so the dash length is ours). A solid hairline read
+as a table grid; conversation wants a softer separator. In `flex-col-reverse` the
+rule sits on the BOTTOM edge of the DOM-later item — that is what lands it between
+two messages and leaves the newest one clean against the composer.
+
+The homepage gem got its light back: the dark veil over the facets was heaviest at
+the perimeter (0.97), hiding the cut exactly where no type needed protecting. It
+now holds the centre for legibility (0.90) and opens toward the edges (0.62). The
+invitation also wears the season's current tier — purple, red, teal, gold on the
+§2 week ranges, the same clock the stakes band keeps — so the front door changes
+with the season. Preseason shows purple, the tier Week 1 opens on.

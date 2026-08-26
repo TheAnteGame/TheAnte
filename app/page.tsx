@@ -2,6 +2,8 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
+import { serviceDb } from "@/lib/jobs/util";
+import { tierForWeek } from "@/lib/engine";
 import { PhoneSignIn } from "@/components/PhoneSignIn";
 import { Facets } from "@/components/ui/Facets";
 
@@ -14,6 +16,18 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const state = await getPlayerState();
   if (state) redirect(routeFor(state));
+
+  // The invitation wears the season's current gem (D-038), the same clock the stakes
+  // band keeps: purple through Week 4, then red, teal, gold. Preseason stays purple —
+  // the tier Week 1 will open on. Week number is a public fact, not blackout data.
+  const { data: season } = await serviceDb()
+    .from("seasons")
+    .select("current_week, status")
+    .order("year", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const tier =
+    season?.status === "active" && season.current_week ? tierForWeek(season.current_week) : "purple";
 
   const [heading, body, phoneLabel, phonePlaceholder, phoneCta, codePrompt, verifyCta, resendLabel, optin, errorGeneric, signedInCta, legal, copyright, logoAlt] =
     await Promise.all([
@@ -39,9 +53,9 @@ export default async function Home() {
           purple plane, then a pool of dark over the middle so the invitation
           reads as a tournament poster rather than a coloured wall. */}
       <Facets
-        deep="var(--color-tier-purple-deep)"
-        base="var(--color-tier-purple)"
-        bright="var(--color-tier-purple-bright)"
+        deep={`var(--color-tier-${tier}-deep)`}
+        base={`var(--color-tier-${tier})`}
+        bright={`var(--color-tier-${tier}-bright)`}
         seed={23}
         cols={9}
         rows={5}
@@ -51,7 +65,7 @@ export default async function Home() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(78% 62% at 50% 44%, rgba(11,11,13,0.80) 0%, rgba(11,11,13,0.93) 58%, rgba(11,11,13,0.97) 100%)",
+            "radial-gradient(74% 58% at 50% 44%, rgba(11,11,13,0.90) 0%, rgba(11,11,13,0.84) 46%, rgba(11,11,13,0.62) 100%)",
         }}
         aria-hidden
       />

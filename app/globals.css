@@ -551,3 +551,22 @@ textarea {
 .rulebook table { border-collapse: collapse; margin: 1em 0; width: 100%; display: block; overflow-x: auto; }
 .rulebook th, .rulebook td { border: 1px solid var(--color-border); padding: 0.4em 0.7em; text-align: left; }
 .rulebook th { color: var(--color-text-hi); background: var(--color-surface-2); }
+
+/* A long-dash rule (D-038). A solid hairline between chat messages read as a table
+   grid — too hard for a conversation. Long dashes with generous gaps separate the
+   messages without ruling them off from each other. Drawn as a background so the
+   dash length is ours, not the browser's border-style default. */
+.chat-list > li + li {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-border) 0 18px,
+    transparent 18px 30px
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  /* col-reverse inverts the pair: li+li matches the DOM-later items, which sit
+     HIGHER on screen, so the rule belongs on their bottom edge to land between two
+     messages — and the visually lowest message (DOM-first, unmatched) stays clean
+     against the composer. */
+  background-position: bottom left;
+}

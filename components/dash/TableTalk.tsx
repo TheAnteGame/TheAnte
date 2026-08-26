@@ -70,7 +70,7 @@ export async function TableTalk({
         </h2>
         <ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} />
       </div>
-      <ul className="flex max-h-[32rem] min-h-[9rem] flex-col-reverse overflow-y-auto px-4 py-2 [&>li+li]:border-b [&>li+li]:border-[color:var(--color-border)]">
+      <ul className="chat-list flex max-h-[32rem] min-h-[9rem] flex-col-reverse overflow-y-auto px-4 py-2">
         {(messages ?? []).map((m) => (
           <li key={m.id} className="py-2 text-sm">
             {m.hidden_at ? (
