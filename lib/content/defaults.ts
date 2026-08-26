@@ -217,6 +217,25 @@ export const contentDefaults: Record<string, string> = {
   "band.deadline_label": "Deadline",
   "band.preseason_message": "Preseason. The roster is forming — Week 1 locks {lock}.",
 
+  // Band tooltips (D-045). The tutorial and /rules carry the long form; these are the
+  // answer you need without leaving the board. Short, and never a claim the data
+  // cannot back — the Pot deliberately does not assert its own arithmetic, because
+  // late admissions (D-020) put antes into it after the head count was frozen.
+  "band.ante_tip":
+    "Your weekly buy-in, taken automatically when the slate opens Tuesday. Every ante in the league goes straight into the Pot. It climbs with the tiers: 10 to start, 15 from Week 5, 20 from Week 10, 30 from Week 15.",
+  "band.pot_tip":
+    "Every ante in the league lands here. On Monday night it goes to whoever GAINED the most chips that week — not the biggest stack — and a fold can never win it. Bigger leagues pay more than one place. The Pot panel further down shows the full working.",
+  "band.limit_tip":
+    "The most you can commit this week, across every game. One third of the smaller of your own stack or the league's middle stack, rounded down to a ten. {capped} It is a ceiling, not a target — betting less is fine.",
+  "band.limit_capped_stack": "Right now yours is set by your own stack of {stack}.",
+  "band.limit_capped_room": "Right now yours is set by the league's middle stack of {median}, not by your own.",
+  "band.deadline_tip":
+    "{deadline} — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first.",
+  "band.deadline_tip_first":
+    "The season starts here. {deadline} is the first deadline — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first. The roster locks at this moment too, so it is last call for anyone still deciding.",
+  "band.ring_tip":
+    "Week {week} of 18. The ring tracks the four ante tiers a season passes through — purple, red, teal, gold. You are in {tier}, weeks {range}. The ante rises with each one, so the cost of sitting out rises too.",
+
   // Ticker system items (ADMIN §4.5.3 — wording is content-managed)
   "ticker.deadline": "Thursday noon ET — {remaining}",
   "ticker.waiting_on": "{in} of {total} in — waiting on {names}",

@@ -1083,3 +1083,57 @@ to fix a smaller one.
 
 "Push" survives only where it is accurate: the shove's own commit note, *"You'll push
 {stake}."*
+
+## D-045 — The band explains itself (2026-08-26)
+
+The stakes band showed four numbers and defined none of them. Owner requirement: a
+player who has done the tutorial and read /rules should still never have to leave the
+board to find out what a figure means. Tooltips now hang off the ring, the ante, the
+Pot, the limit and the deadline.
+
+**The clip-path had to move first.** The band carried `chamfer-lg` — a `clip-path` —
+plus `overflow-hidden`, and a clip-path clips every descendant unconditionally: no
+`z-index`, no `position: fixed`, nothing escapes it. At ~90px tall there was nowhere
+inside to put a tooltip either. So every painted layer (facets, scrim, shine sweep)
+moved into one absolutely-positioned decoration div that now carries the clip, the
+border and the shadow, while the content sits in an unclipped parent. Verified
+side by side against the old structure: identical chamfer, colour and top border;
+tooltip sliced off in the old, whole in the new.
+
+**Trigger is a `<button>`, on purpose.** A phone has no hover, so a hover-only tooltip
+is invisible to most of the league. `group-hover` OR `group-focus-within` — the pair
+the bet slip already uses — means a tap opens it. That forced the trays from `div` to
+`span`: a button may not legally contain flow content.
+
+**The limit tooltip says which cap is binding.** The slip already worked this out and
+the band never said it out loud; §4's real question is "one third of WHAT", so the
+answer names your own stack or the league's middle stack, with the number.
+
+**The Pot tooltip deliberately states no arithmetic.** The obvious copy was
+"{players} × {ante}", and it would already be wrong in production: `active_count_snapshot`
+is frozen at slate open (§7), but late admissions (D-020) keep paying antes into the
+Pot afterwards. Week 1 currently reads a snapshot of 1 against a Pot of 40. The tooltip
+describes what the Pot is and points at the Pot panel, which does show its working
+(D-029).
+
+Deadline copy takes a distinct first-week form naming the date, the countdown, and that
+the roster locks at the same moment (§1, D-046).
+
+## D-046 — The roster lock had no hand to set it (2026-08-26)
+
+§1 and §13 say admission "is preseason-only and dies at the Week 1 deadline along with
+the roster." `seasons.week1_lock_at` has existed since migration 0001 to hold that
+moment. **Nothing ever wrote it** — 25 references across the codebase, all reads, plus
+one comment in `reset-season.sql` telling the operator to do it by hand. So
+`admissionOpen` returned true forever, Approve and Reject stayed live all season, and a
+published rule was simply not in force. Production was running that way.
+
+slate.open now records the lock when Week 1 opens — the moment the deadline first
+exists — and never overwrites one already set. Migration 0020 backfills any season
+already past that point from Week 1's own deadline, which is the value the job would
+have written.
+
+The torture season no longer seeds `week1_lock_at`, so the write itself is under test:
+it asserts the lock is set, that it equals Week 1's deadline, and that a repeated slate
+open does not move it. Confirmed non-vacuous by removing the fix and watching the run
+report 2 FAILURES, then restoring it for SEASON CLEAN.

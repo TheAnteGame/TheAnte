@@ -2,10 +2,11 @@ import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
-import { tierForWeek } from "@/lib/engine";
+import { ANTE_TIERS, tierForWeek } from "@/lib/engine";
 import { ET } from "@/lib/time";
 import { PokerChip } from "@/components/chip/PokerChip";
 import { Facets } from "@/components/ui/Facets";
+import { Tip } from "@/components/ui/Tip";
 import { BandOffset } from "./BandOffset";
 
 // The stakes band (art §3, §7): the ONE large colored surface in the product, and
@@ -76,7 +77,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
 
   const { data: week } = await db
     .from("weeks")
-    .select("id, number, ante, phase, deadline_at")
+    .select("id, number, ante, phase, deadline_at, median_snapshot")
     .in("phase", ["open", "revealed", "settled"])
     .order("number", { ascending: false })
     .limit(1)
@@ -120,47 +121,98 @@ export async function StakesBand({ playerId }: { playerId: string }) {
     fetchAllRows<{ amount: number; player_id: string | null }>((f, t) =>
       db.from("ledger_entries").select("amount, player_id").is("player_id", null).order("id").range(f, t),
     ).then((rows) => ({ data: rows })),
-    db.from("week_players").select("house_limit").eq("week_id", week.id).eq("player_id", playerId).maybeSingle(),
+    // stack_pre_ante joins the read purely so the limit tooltip can say WHICH cap is
+    // binding — the bet slip already works this out; the band never said it out loud.
+    db
+      .from("week_players")
+      .select("house_limit, stack_pre_ante")
+      .eq("week_id", week.id)
+      .eq("player_id", playerId)
+      .maybeSingle(),
   ]);
   const potBalance = (pot ?? []).reduce((s, e) => s + e.amount, 0);
 
   const tier = tierForWeek(week.number);
   const v = TIER_VARS[tier];
-  const [weekLabel, tierLabel, anteLabel, potLabel, limitLabel, deadlineLabel] = await Promise.all([
+  const deadline = DateTime.fromISO(week.deadline_at).setZone(ET);
+
+  // §4 — which side of the limit binds. Same test the slip uses, said plainly.
+  const median = week.median_snapshot ?? 0;
+  const ownAfterAnte = (snap?.stack_pre_ante ?? 0) - week.ante;
+  const cappedByStack = ownAfterAnte <= median;
+
+  // "in 6 days" / "tomorrow" / "in 3 hours" — rendered on the server, so it is
+  // accurate to the request rather than to a stale build.
+  const countdown = deadline.toRelative({ base: DateTime.now().setZone(ET) }) ?? "";
+  const tierRange = ANTE_TIERS.find((t) => t.tier === tier)?.weeks ?? [1, 4];
+
+  const tierLabel = await getContent(v.labelKey);
+
+  const [
+    weekLabel, anteLabel, potLabel, limitLabel, deadlineLabel,
+    anteTip, potTip, limitTipRaw, cappedCopy, deadlineTip, ringTip,
+  ] = await Promise.all([
     getContent("band.week_label"),
-    getContent(v.labelKey),
     getContent("band.ante_label"),
     getContent("band.pot_label"),
     getContent("band.limit_label"),
     getContent("band.deadline_label"),
+    getContent("band.ante_tip"),
+    getContent("band.pot_tip"),
+    getContent("band.limit_tip"),
+    cappedByStack
+      ? getContent("band.limit_capped_stack", { stack: ownAfterAnte })
+      : getContent("band.limit_capped_room", { median }),
+    getContent(week.number === 1 ? "band.deadline_tip_first" : "band.deadline_tip", {
+      deadline: deadline.toFormat("cccc, LLLL d 'at' h:mma 'ET'"),
+      countdown,
+    }),
+    getContent("band.ring_tip", {
+      week: week.number,
+      tier: tierLabel,
+      range: `${tierRange[0]}\u2013${tierRange[1]}`,
+    }),
   ]);
-
-  const deadline = DateTime.fromISO(week.deadline_at).setZone(ET);
+  const limitTip = limitTipRaw.replace("{capped}", cappedCopy);
 
   // Every figure sits in a tray milled into the plane — the tray is what makes a
   // number readable over a gem, and what makes the band read as machined.
+  // Spans, not divs: each tray is now wrapped in a <button> so a tap can open its
+  // tooltip, and a button may not legally contain flow content.
   const stat = (label: string, value: string) => (
-    <div className="well chamfer px-3.5 py-2">
+    <span className="well chamfer block px-3.5 py-2">
       <span className="block text-[12px] font-semibold uppercase tracking-[0.18em] text-white/70">{label}</span>
       <span className="nums block font-[family-name:var(--font-display)] text-xl font-bold leading-tight text-white">{value}</span>
-    </div>
+    </span>
   );
 
   return (
     <div
       data-stakes-band
-      className="band-in chamfer-lg relative isolate z-30 flex flex-wrap items-center gap-x-6 gap-y-4 overflow-hidden px-6 py-5 min-[900px]:sticky min-[900px]:top-0"
-      style={{
-        borderTop: `2px solid ${v.bright}`,
-        boxShadow: "0 26px 60px -30px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.16)",
-      }}
+      className="band-in relative isolate z-30 flex flex-wrap items-center gap-x-6 gap-y-4 px-6 py-5 min-[900px]:sticky min-[900px]:top-0"
     >
-      <Facets deep={v.deep} base={v.base} bright={v.bright} seed={week.number * 17 + 3} className="absolute inset-0 -z-10 h-full w-full" />
-      <div className="pointer-events-none absolute inset-0 -z-10" style={{ background: SCRIM }} aria-hidden />
-      <div className="shine-sweep pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.15)_50%,transparent_60%)]" aria-hidden />
+      {/* Every painted layer lives in here, and the chamfer clip lives with it (D-045).
+          It used to sit on the band itself — and a clip-path clips EVERY descendant
+          unconditionally, which no z-index or fixed positioning escapes. A tooltip
+          drawn inside the band was therefore impossible. The band is ~90px tall, so
+          there was nowhere inside to put one either. Same pixels, one layer down. */}
+      <div
+        className="chamfer-lg pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+        style={{
+          borderTop: `2px solid ${v.bright}`,
+          boxShadow: "0 26px 60px -30px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.16)",
+        }}
+        aria-hidden
+      >
+        <Facets deep={v.deep} base={v.base} bright={v.bright} seed={week.number * 17 + 3} className="absolute inset-0 h-full w-full" />
+        <div className="absolute inset-0" style={{ background: SCRIM }} />
+        <div className="shine-sweep absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.15)_50%,transparent_60%)]" />
+      </div>
 
       <BandOffset />
-      <SeasonRing weekNumber={week.number} />
+      <Tip text={ringTip} label={`${weekLabel} ${week.number}, ${tierLabel}`}>
+        <SeasonRing weekNumber={week.number} />
+      </Tip>
 
       <div className="flex flex-col">
         <span
@@ -177,24 +229,39 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         </span>
       </div>
 
-      {stat(anteLabel, String(week.ante))}
+      <Tip text={anteTip} label={anteLabel}>
+        {stat(anteLabel, String(week.ante))}
+      </Tip>
 
       {/* The Pot is the house's money, so it is the one thing here wearing gold. */}
-      <div className="well well-gold chamfer flex items-center gap-3 px-3.5 py-2">
-        <PokerChip tone="gold" size={30} className="gold-pulse shrink-0" />
-        <div className="flex flex-col">
-          <span className="block text-[12px] font-semibold uppercase tracking-[0.18em] text-white/70">{potLabel}</span>
-          <span
-            className="nums block font-[family-name:var(--font-display)] text-xl font-bold leading-tight"
-            style={{ color: "var(--color-tier-gold-bright)" }}
-          >
-            {potBalance}
+      <Tip text={potTip} label={potLabel}>
+        <span className="well well-gold chamfer flex items-center gap-3 px-3.5 py-2">
+          <PokerChip tone="gold" size={30} className="gold-pulse shrink-0" />
+          <span className="flex flex-col">
+            <span className="block text-[12px] font-semibold uppercase tracking-[0.18em] text-white/70">{potLabel}</span>
+            <span
+              className="nums block font-[family-name:var(--font-display)] text-xl font-bold leading-tight"
+              style={{ color: "var(--color-tier-gold-bright)" }}
+            >
+              {potBalance}
+            </span>
           </span>
-        </div>
-      </div>
+        </span>
+      </Tip>
 
-      {snap && stat(limitLabel, String(snap.house_limit))}
-      <div className="ml-auto">{stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}</div>
+      {snap && (
+        <Tip text={limitTip} label={limitLabel}>
+          {stat(limitLabel, String(snap.house_limit))}
+        </Tip>
+      )}
+
+      {/* Hangs from its right edge: this tray sits at the margin, and a left-hung
+          tooltip would run off the screen on a phone. */}
+      <span className="ml-auto">
+        <Tip text={deadlineTip} label={deadlineLabel} align="right">
+          {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}
+        </Tip>
+      </span>
     </div>
   );
 }

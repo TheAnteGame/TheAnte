@@ -180,7 +180,10 @@ async function main() {
   }
 
   // Seed: season + 25 approved players with buy-ins.
-  await service.from("seasons").insert({ year: 2026, status: "active", week1_lock_at: new Date(Date.now() - 3600_000).toISOString() });
+  // week1_lock_at is deliberately NOT seeded: slate.open is supposed to write it when
+  // Week 1 opens (§1, §13), and it never did (D-046). Leaving it null puts that write
+  // under test instead of papering over it.
+  await service.from("seasons").insert({ year: 2026, status: "active" });
   const playerIds: string[] = [];
   const subs: string[] = [];
   for (let i = 0; i < N; i++) {
@@ -292,6 +295,23 @@ async function main() {
       { opensAt, deadlineAt },
     );
     check(open.status === "succeeded", `week ${week} slate open (${JSON.stringify(open.detail)})`);
+
+    // §1/§13 — the roster locks at the Week 1 deadline, and that moment has to be
+    // written down or admission never closes (D-046).
+    if (week === 1) {
+      const { data: s1 } = await service.from("seasons").select("week1_lock_at").eq("year", 2026).single();
+      const { data: w1 } = await service.from("weeks").select("deadline_at").eq("number", 1).single();
+      check(!!s1?.week1_lock_at, "week 1 slate open did not set week1_lock_at (roster would never lock)");
+      check(
+        !!s1?.week1_lock_at && new Date(s1.week1_lock_at).getTime() === new Date(w1!.deadline_at).getTime(),
+        `week1_lock_at ${s1?.week1_lock_at} !== week 1 deadline ${w1?.deadline_at}`,
+      );
+      // A re-run must not move a lock that is already set.
+      const rerunLock = s1?.week1_lock_at;
+      await openWeekCore(service, seasonRow, 1, { games, spreads: [], finals: new Map(), raw: [] }, { opensAt, deadlineAt });
+      const { data: s2 } = await service.from("seasons").select("week1_lock_at").eq("year", 2026).single();
+      check(s2?.week1_lock_at === rerunLock, "a repeated slate open moved the roster lock");
+    }
 
     // Double-fire: a retried cron must not ante the league twice (acceptance 16).
     const before = await balances();

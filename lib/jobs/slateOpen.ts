@@ -61,7 +61,7 @@ export async function slateOpenEarly(db: SupabaseClient): Promise<JobOutcome> {
  *  Identical writes either way — this seam adds no test-only behavior. */
 export async function openWeekCore(
   db: SupabaseClient,
-  season: { id: string; year: number },
+  season: { id: string; year: number; week1_lock_at?: string | null },
   weekNumber: number,
   feed: NflverseFetch,
   anchors: { opensAt: Date; deadlineAt: Date },
@@ -99,6 +99,20 @@ export async function openWeekCore(
       .single();
     if (error) throw new Error(`week insert failed: ${error.message}`);
     weekId = created.id;
+
+    // The roster locks at the Week 1 deadline (§1, §13) — "this power is preseason-only
+    // and dies at the Week 1 deadline along with the roster." Nothing ever wrote that
+    // moment down (D-046): week1_lock_at was read in five places and set in none, so
+    // admissionOpen returned true forever and Approve/Reject stayed live all season.
+    // Week 1 opening is the moment the deadline first exists, so it is the moment to
+    // record it. Never overwrites a lock the commissioner set by hand.
+    if (weekNumber === 1 && !season.week1_lock_at) {
+      await db
+        .from("seasons")
+        .update({ week1_lock_at: deadlineAt.toISOString() })
+        .eq("id", season.id)
+        .is("week1_lock_at", null);
+    }
   }
 
   // Freeze the slate. Games kicking before Thursday noon are off-slate (§3) — the
