@@ -178,6 +178,13 @@ export const contentDefaults: Record<string, string> = {
     "The spread and the moneyline come from the sportsbooks and are frozen when the slate opens. Neither one pays here: bets settle straight-up, and what you win is set by how the room split (rulebook \u00a75).",
   "dash.wager.submit_tooltip":
     "Locks your picks in for the week. You'll get one confirmation first. After that there are no edits \u2014 not by you, not by the Commissioner.",
+  // Arming the shove (D-040): an explainer gate BEFORE shove mode, distinct from the
+  // type-SHOVE gate that guards the commit itself.
+  "dash.wager.shove_arm_title": "Use your shove?",
+  "dash.wager.shove_arm_body":
+    "A shove pushes your entire stack onto one game, at even money — win and you double, lose and you're on the felt. You get one per season, and using it replaces your other bets this week.",
+  "dash.wager.shove_arm_note": "This only arms it. You still pick your game and confirm before anything is committed.",
+  "dash.wager.shove_arm_cta": "Arm the shove",
   "dash.wager.shove_tooltip":
     "Once a season: push your whole stack onto one game. Win and it pays big. Lose and you're on the felt. Nobody sees it until the reveal.",
   "dash.wager.at_label": "at",

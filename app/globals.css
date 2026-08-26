@@ -557,9 +557,13 @@ textarea {
    messages without ruling them off from each other. Drawn as a background so the
    dash length is ours, not the browser's border-style default. */
 .chat-list > li + li {
+  /* Its own grey, two shades under --color-border (D-040). The border token stays at
+     the 3:1 WCAG 1.4.11 floor because it draws real UI boundaries; a separator between
+     two chat messages is not one — the spacing already does the separating, so this
+     rule only needs to whisper. */
   background-image: repeating-linear-gradient(
     to right,
-    var(--color-border) 0 18px,
+    #5c5c64 0 18px,
     transparent 18px 30px
   );
   background-repeat: no-repeat;

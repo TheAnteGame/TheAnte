@@ -43,6 +43,10 @@ export interface SlipCopy {
   atLabel: string;
   submitTooltip: string;
   shoveTooltip: string;
+  shoveArmTitle: string;
+  shoveArmBody: string;
+  shoveArmNote: string;
+  shoveArmCta: string;
   feltNotice: string;
   cappedRoom: string;
   cappedStack: string;
@@ -92,6 +96,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
   const [shovePick, setShovePick] = useState<{ gameId: string; side: Side } | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [shoveWord, setShoveWord] = useState("");
+  const [arming, setArming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -348,42 +353,25 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
         {copy.spreadNote}
       </p>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--color-border)] px-4 py-3">
+      {/* The commitment row (D-040): the action and its own instruction sit together on
+          the left; the shove is a rare, separate decision and lives out at the right
+          margin so it never reads as step one. Gold marks the button you are working
+          toward; it becomes the chrome face the moment the slip is legal. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-[color:var(--color-border)] px-4 py-3">
         {withTip(
           copy.submitTooltip,
           <button
             type="button"
             disabled={!canSubmit || busy}
             onClick={() => setConfirming(true)}
-            className="chamfer chrome-face px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide text-[color:var(--color-canvas)]"
+            className={`chamfer px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide ${
+              canSubmit
+                ? "chrome-face text-[color:var(--color-canvas)]"
+                : "bg-[color:var(--color-gold)] text-[color:var(--color-canvas)] opacity-90"
+            }`}
           >
             {copy.submitCta}
           </button>,
-        )}
-        {shoveUsedWeek === null ? (
-          withTip(
-            copy.shoveTooltip,
-            <button
-              type="button"
-              onClick={() => {
-                setShoveMode((m) => !m);
-                setShovePick(null);
-                setError("");
-              }}
-              aria-pressed={shoveMode}
-              className={`chamfer px-4 py-3 text-sm font-semibold uppercase tracking-wide ${
-                shoveMode
-                  ? "bg-[color:var(--color-gold)] text-[color:var(--color-canvas)]"
-                  : "border border-[color:var(--color-gold-dim)] text-[color:var(--color-gold)]"
-              }`}
-            >
-              {copy.shoveModeCta}
-            </button>,
-          )
-        ) : (
-          <span className="text-xs text-[color:var(--color-text-low)]">
-            {copy.shoveSpentLabel.replace("{week}", String(shoveUsedWeek))}
-          </span>
         )}
         {!shoveMode && picks.size < minGames && (
           <span className="text-xs text-[color:var(--color-text-low)]">
@@ -395,7 +383,75 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
             — {error}
           </span>
         )}
+
+        <div className="ml-auto">
+          {shoveUsedWeek === null ? (
+            withTip(
+              copy.shoveTooltip,
+              <button
+                type="button"
+                onClick={() => {
+                  if (shoveMode) {
+                    setShoveMode(false);
+                    setShovePick(null);
+                    setError("");
+                  } else {
+                    setArming(true);
+                  }
+                }}
+                aria-pressed={shoveMode}
+                className={`chamfer px-4 py-3 text-sm font-semibold uppercase tracking-wide ${
+                  shoveMode
+                    ? "bg-[color:var(--color-chrome-dim)] text-[color:var(--color-canvas)]"
+                    : "border border-[color:var(--color-text-low)] text-[color:var(--color-text-mid)] hover:border-[color:var(--color-chrome)] hover:text-[color:var(--color-text-hi)]"
+                }`}
+              >
+                {copy.shoveModeCta}
+              </button>,
+            )
+          ) : (
+            <span className="text-xs text-[color:var(--color-text-low)]">
+              {copy.shoveSpentLabel.replace("{week}", String(shoveUsedWeek))}
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* Arming gate (D-040). Pressing "The shove" used to switch the board straight
+          into shove mode with no explanation. This says what a shove costs and that
+          there is exactly one — and is explicit that arming commits nothing. */}
+      {arming && (
+        <div role="dialog" aria-modal="true" aria-label={copy.shoveArmTitle} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="chamfer w-full max-w-md border-2 border-[color:var(--color-gold)] bg-[color:var(--color-surface-1)] p-6">
+            <h3 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-wide text-[color:var(--color-gold)]">
+              {copy.shoveArmTitle}
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-[color:var(--color-text-hi)]">{copy.shoveArmBody}</p>
+            <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-low)]">{copy.shoveArmNote}</p>
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setArming(false)}
+                className="chamfer px-4 py-2 text-sm font-semibold text-[color:var(--color-text-mid)] hover:text-[color:var(--color-text-hi)]"
+              >
+                {copy.cancelCta}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setArming(false);
+                  setShoveMode(true);
+                  setShovePick(null);
+                  setError("");
+                }}
+                className="chamfer chrome-face px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wide text-[color:var(--color-canvas)]"
+              >
+                {copy.shoveArmCta}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation — the commitment moment (§5.2): list everything, say it's final. */}
       {confirming && (

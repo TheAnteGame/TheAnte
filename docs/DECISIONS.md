@@ -924,3 +924,25 @@ supersedes D-038, which retired three announcements and kept the rest.
 
 Verified: a full torture season (reveals, settlements, pot awards, a correction
 cascade, two mid-season admissions) ends with `system_msgs = 0`.
+
+## D-040 — The commitment row, and a gate before the shove (2026-08-23)
+
+The slip's footer put "Push your chips in" and "The shove" side by side, both in
+gold. Two problems: the shove read as a co-equal first choice, and the "pick at
+least 5 games" instruction floated after the shove instead of beside the button it
+describes. Now the action and its own instruction sit together at the left, and the
+shove is pushed to the right margin — a rare, separate decision, and visually so.
+
+Colour carries the state: the submit is GOLD while the slip is short (the button
+you are working toward), and becomes the chrome face the moment it is legal. The
+shove is neutral grey, outlined at rest and filled when armed. No gold on the once-
+a-season button.
+
+Pressing "The shove" now opens an explainer gate — what a shove costs, that there
+is one per season, and that arming commits nothing — before shove mode engages.
+The type-SHOVE confirmation still guards the commit itself, so an irreversible
+once-a-season move takes two deliberate steps.
+
+Chat dividers got their own grey (#5c5c64), two shades under --color-border. The
+border token stays at the WCAG 1.4.11 3:1 floor because it draws real UI
+boundaries; a separator between two chat messages is not one.
