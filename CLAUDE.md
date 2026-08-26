@@ -52,3 +52,44 @@ absorbed the leak and the books still balanced. Unit tests cannot see that class
 A `PostToolUse` hook in `.claude/settings.json` raises this automatically when one of those
 files is edited. If the run fails, say so with the output — a failure here is a real defect,
 never a flaky test.
+
+## Before pushing anything that adds a migration
+
+Vercel deploys code. **Nothing deploys migrations** — they are applied by hand, in the
+Supabase dashboard or via a linked CLI. The two have no automatic agreement, so check it:
+
+```
+npm run schema:check    # reads .env.local, probes production via PostgREST
+```
+
+Green prints `SCHEMA IN SYNC`. Drift names the exact table and columns:
+
+```
+✕ players — missing: removal_reason, removed_at
+❌ SCHEMA DRIFT — 2 column(s) ... not on vyhxslqddjyyrgbmaedn.supabase.co
+```
+
+Run it **after** the migration is applied and **before** calling a deploy done. D-041
+shipped against a database that had never been migrated and nothing in the pipeline
+could see it; it was harmless only because the surface it powers was unreachable for
+weeks. Add `--local` to check the local stack instead.
+
+**Known gap — it verifies columns, not check constraints.** A migration that only widens
+a `check (... in (...))` list, without adding a column, passes this silently. Say so when
+that is the shape of the change, and verify the constraint by hand:
+
+```sql
+select conname, pg_get_constraintdef(oid) from pg_constraint where conname = '<name>';
+```
+
+## The order a release goes in
+
+1. `npm run torture:reset` if chips, the ledger, `lib/engine/` or a migration are touched
+2. Commit and push — CI re-runs typecheck, lint, 140 unit tests, content-grep, and the
+   full torture season against a real Supabase stack (`.github/workflows/ci.yml`)
+3. Apply any new migration to production **before** the feature is reachable
+4. `npm run schema:check` to prove step 3 actually happened
+5. Verify the live surface, not just the build — `curl` the public page or drive it
+
+CI green is now meaningful: it was red for three commits on a lint rule while silently
+skipping the test suite, so treat a red run as real (D-043).
