@@ -157,7 +157,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.submitted_message": "Your ticket is in. Locked. No edits — not by you, not by anyone.",
   "dash.wager.blackout_notice": "Nobody sees a pick until everyone is in.",
   "dash.wager.waiting_on_label": "Waiting on",
-  "dash.wager.confirm_title": "Push your chips in?",
+  "dash.wager.confirm_title": "Submit your ticket?",
   "dash.wager.confirm_body":
     "Submitting locks this ticket. It cannot be changed — not by you, not by the Commissioner, not for injuries, weather, or regret.",
   "dash.wager.shove_warning":
@@ -167,7 +167,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.committed_label": "Committed",
   "dash.wager.remaining_label": "Remaining",
   "dash.wager.games_label": "Games",
-  "dash.wager.submit_cta": "Push your chips in",
+  "dash.wager.submit_cta": "Submit your ticket",
   "dash.wager.confirm_cta": "Lock it",
   "dash.wager.cancel_cta": "Not yet",
   "dash.wager.shove_mode_cta": "The shove",

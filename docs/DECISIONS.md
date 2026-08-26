@@ -1061,3 +1061,25 @@ both directions on first run: production reported exactly `players.removed_at,
 removal_reason` missing and nothing else across 25 tables; the local stack, which has
 0019, reported in sync. It is wired into CI dormant, activating when a
 `SCHEMA_CHECK_KEY` repo secret is added.
+
+## D-044 — "Push your chips in" was the shove's language (2026-08-26)
+
+Owner catch, from reading the board the way a new player would. The submit button
+said **"Push your chips in"** — which in poker means going all-in — while the button
+beside it was literally called **"The shove."** D-040 had already separated the two by
+position and colour, on the theory that the shove read as a co-equal first choice. It
+did not go far enough: the words themselves were the problem. The safe, every-week
+action was wearing the once-a-season action's vocabulary.
+
+Now **"Submit your ticket"**, and the confirmation title matches. "Ticket" is the word
+the product already speaks — 32 times in the rulebook, 14 in the content defaults, and
+in the surrounding copy on this very screen: *"Your ticket is in. Locked."*,
+*"Submitting locks this ticket."* The button was the odd one out.
+
+Not "lineup", which was the first suggestion: that is fantasy-football vocabulary for
+choosing players, and ANTE opens by distinguishing itself from exactly that — *"you bet
+chips instead of making picks."* Borrowing the word would import the wrong mental model
+to fix a smaller one.
+
+"Push" survives only where it is accurate: the shove's own commit note, *"You'll push
+{stake}."*
