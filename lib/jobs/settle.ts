@@ -9,7 +9,7 @@ import {
 import type { EngineGame, EngineLedgerEntry, EngineTicket } from "@/lib/engine";
 import { emailPlayer } from "@/lib/notify/templates";
 import { fetchAllRows } from "@/lib/db/fetchAll";
-import { postSystemMessage, stacksByPlayer, type JobOutcome } from "./util";
+import { stacksByPlayer, type JobOutcome } from "./util";
 
 // settle.week (ANTE-ADMIN §5): runs when every on-slate game is final or void.
 // The conservation assertion runs BEFORE anything is written — on failure the week
@@ -140,7 +140,6 @@ export async function settleWeekRecord(
     assertInvariants(combined);
   } catch (e) {
     if (e instanceof InvariantViolation) {
-      await postSystemMessage(db, `⚠ Settlement HALTED for Week ${week.number}: ${e.message}`);
       return { status: "failed", detail: { halted: true, error: e.message } };
     }
     throw e;
@@ -222,24 +221,6 @@ export async function settleWeekRecord(
       `ANTE — Week ${week.number} settled`,
       { week: week.number, delta: (gain >= 0 ? "+" : "−") + Math.abs(gain) + (potWon > 0 ? ` (plus the Pot: +${potWon})` : ""), stack: newStack, rank: "—" },
       `notify.settled:w${week.number}`,
-    );
-  }
-
-  if (result.potAwards.length > 0) {
-    const { data: winners } = await db
-      .from("players")
-      .select("id, first_name")
-      .in("id", result.potAwards.map((a) => a.playerId));
-    const names = result.potAwards
-      .map((a) => `${winners?.find((w) => w.id === a.playerId)?.first_name ?? "?"} +${a.amount}`)
-      .join(", ");
-    await postSystemMessage(db, `Week ${week.number} settled. The Pot: ${names}.`);
-  } else {
-    await postSystemMessage(
-      db,
-      result.potAfter < 0
-        ? `Week ${week.number} settled. The table is into the Pot for ${-result.potAfter} — the marker carries (§7).`
-        : `Week ${week.number} settled. Nobody was eligible; the Pot rolls.`,
     );
   }
 

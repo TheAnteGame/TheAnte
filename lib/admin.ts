@@ -44,8 +44,7 @@ export async function writeAudit(
     after: opts?.after ?? null,
     public: opts?.isPublic ?? false,
   });
-  // Every correction is public (§13): mirrored to Table Talk automatically.
-  if (opts?.isPublic && opts.publicLine) {
-    await ctx.db.from("chat_messages").insert({ player_id: null, body: opts.publicLine, is_system: true });
-  }
+  // NOTHING is mirrored to Table Talk (D-039). The `public` flag still marks the
+  // entry in the audit log — §13's "corrections are public" is served by the audit
+  // trail and the results surfaces, not by posting into the room's conversation.
 }

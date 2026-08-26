@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchNflverseWeek } from "@/lib/sports/nflverse";
-import { postSystemMessage, type JobOutcome } from "./util";
+import { type JobOutcome } from "./util";
 
 // Nightly schedule re-fetch (ANTE-TECH §3.1): flex scheduling moves kickoffs, and
 // §10 voids any game rescheduled to kick before the deadline. A game that moved
@@ -45,11 +45,6 @@ export async function scheduleRefetch(db: SupabaseClient): Promise<JobOutcome> {
       nowPreDeadline,
     });
     if (nowPreDeadline) {
-      await postSystemMessage(
-        db,
-        `⚠ Commissioner: ${g.external_id} has been rescheduled to kick before Thursday noon. ` +
-          `Under §10 it must be voided — chips return. Use the week control to void it.`,
-      );
     }
   }
 

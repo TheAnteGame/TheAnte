@@ -626,12 +626,6 @@ export async function drawHighCard(): Promise<ActionResult> {
 
   const seed = randomUUID();
   const commitment = createHash("sha256").update(seed).digest("hex");
-  await ctx.db.from("chat_messages").insert({
-    player_id: null,
-    is_system: true,
-    body: `High card, committed: sha256 = ${commitment}. The seed follows with the draw — check the math yourself.`,
-  });
-
   const cards = tied.map((s) => {
     const h = createHash("sha256").update(`${seed}:${s.playerId}`).digest();
     const rank = (h.readUInt32BE(0) % 13) + 2; // 2..14
@@ -640,15 +634,16 @@ export async function drawHighCard(): Promise<ActionResult> {
   cards.sort((a, b) => b.rank - a.rank);
   const rankName = (r: number) => (r === 14 ? "Ace" : r === 13 ? "King" : r === 12 ? "Queen" : r === 11 ? "Jack" : String(r));
   const lines = cards.map((c) => `${season.names.get(c.playerId)}: ${rankName(c.rank)}`).join(" · ");
-  await ctx.db.from("chat_messages").insert({
-    player_id: null,
-    is_system: true,
-    body: `The draw — seed ${seed}: ${lines}. ${season.names.get(cards[0].playerId)} takes it. No re-draws.`,
-  });
-
-  await writeAudit(ctx, "season.high_card", "season", "2026", `seed=${seed} commitment=${commitment}`, {
-    after: cards as unknown,
-  });
+  // The draw stays verifiable without posting to the room (D-039): commitment, seed
+  // and every card land in the audit log, which is where the math can be checked.
+  await writeAudit(
+    ctx,
+    "season.high_card",
+    "season",
+    "2026",
+    `commitment=${commitment} seed=${seed} draw=${lines} winner=${season.names.get(cards[0].playerId)}`,
+    { after: cards as unknown },
+  );
   revalidatePath("/admin/season-close");
   return { ok: true };
 }

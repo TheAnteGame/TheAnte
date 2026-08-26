@@ -54,10 +54,6 @@ export async function runJob(jobKey: string, fn: (db: SupabaseClient) => Promise
   return outcome;
 }
 
-export async function postSystemMessage(db: SupabaseClient, body: string): Promise<void> {
-  await db.from("chat_messages").insert({ player_id: null, body, is_system: true });
-}
-
 /** Current stacks — SUM over the append-only ledger. Nothing reads a stack column,
  *  because there isn't one (ANTE-TECH §1). Paged: the ledger outgrows PostgREST's
  *  1,000-row cap mid-season at 25 players — the torture test caught this.

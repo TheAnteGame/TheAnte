@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { canReveal, revealEntries } from "@/lib/engine";
 import type { EngineTicket } from "@/lib/engine";
 import { emailAllApproved } from "@/lib/notify/templates";
-import { postSystemMessage, type JobOutcome } from "./util";
+import { type JobOutcome } from "./util";
 
 // The reveal fires the instant the last ACTIVE player's ticket lands, or Thursday
 // noon — whichever comes first (§6, ANTE-PLAYER §1.5: deactivated players never
@@ -202,7 +202,6 @@ async function fireReveal(db: SupabaseClient, week: OpenWeek, autoFolded = 0): P
     .eq("phase", "open"); // guard against a concurrent fire
   if (wErr) throw new Error(`reveal phase flip failed: ${wErr.message}`);
 
-  await postSystemMessage(db, `The room is open — every Week ${week.number} ticket is live.`);
   await emailAllApproved(
     db,
     "notify.reveal",

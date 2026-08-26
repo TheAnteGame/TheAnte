@@ -21,9 +21,14 @@ export async function TableTalk({
   const db = dbOverride ?? createUserClient();
 
   const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, tombstone, helpAria, helpTitle, helpMentions, helpEmoji, emojiAria] = await Promise.all([
+    // Player conversation ONLY (D-039). Nothing writes system messages any more, and
+    // this filter also retires the ones already posted — the room never shows them
+    // again without a migration. The rows stay in the table; they are simply not this
+    // panel's business.
     db
       .from("chat_messages")
       .select("id, player_id, body, is_system, hidden_at, hidden_reason, created_at")
+      .eq("is_system", false)
       .order("created_at", { ascending: false })
       .limit(50),
     db.from("players").select("is_muted, muted_until").eq("id", playerId).maybeSingle(),

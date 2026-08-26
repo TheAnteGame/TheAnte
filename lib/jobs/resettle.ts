@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { postSystemMessage, type JobOutcome } from "./util";
+import { type JobOutcome } from "./util";
 import { settleWeekRecord } from "./settle";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 
@@ -87,12 +87,6 @@ export async function resettleFromWeek(
       return { status: "failed", detail: { halted_at_week: week.number, results } };
     }
   }
-
-  await postSystemMessage(
-    db,
-    `Commissioner correction: Weeks ${weeks[0].number}–${weeks[weeks.length - 1].number} were re-settled. Reason: ${reason}. ` +
-      `Every original entry stands with a visible reversal beside it — nothing was deleted (§13).`,
-  );
 
   return { status: "succeeded", detail: { from: fromWeekNumber, weeks: results } };
 }

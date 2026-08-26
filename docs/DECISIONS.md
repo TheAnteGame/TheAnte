@@ -903,3 +903,24 @@ now holds the centre for legibility (0.90) and opens toward the edges (0.62). Th
 invitation also wears the season's current tier — purple, red, teal, gold on the
 §2 week ranges, the same clock the stakes band keeps — so the front door changes
 with the season. Preseason shows purple, the tier Week 1 opens on.
+
+## D-039 — League Chat is player conversation only (2026-08-23)
+
+Owner's call, stated three times and now absolute: **no system messages in League
+Chat, ever.** Not corrections, not deactivations, not mutes, not the reveal, not
+settlements, not the high-card draw. Removed at the source rather than filtered at
+the edges — `postSystemMessage` is deleted outright, `writeAudit` no longer mirrors
+`publicLine`, and the season-close draw's two direct inserts are gone. Nothing in
+the codebase writes `is_system: true` any more; `grep` is the test.
+
+TableTalk additionally reads `is_system = false`, which retires the messages already
+posted without touching the append-only table — the rows stay, the room stops
+showing them.
+
+§13's "every correction is public" is now served by the audit log and the results
+surfaces, which is where the working already lives: /results shows the Pot's math
+week by week, and the ledger keeps every reversal beside its original. This
+supersedes D-038, which retired three announcements and kept the rest.
+
+Verified: a full torture season (reveals, settlements, pot awards, a correction
+cascade, two mid-season admissions) ends with `system_msgs = 0`.
