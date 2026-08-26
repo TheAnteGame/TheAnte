@@ -49,3 +49,39 @@ export function computeSlateOpen(players: EnginePlayer[], weekNumber: number): S
 
   return { medianSnapshot, placesTierSnapshot, activeCountSnapshot, feltPlayerIds, entries, houseLimits };
 }
+
+/** One player's slate-open arithmetic, for a LATE admission into an open week (D-020,
+ *  hardened per review D-036). Mirrors the per-player branch above exactly — the felt
+ *  evaluation, the ante, the §9 floor when the ante lands a stack below 1, the limit
+ *  from the FROZEN median — so the job layer cannot drift from the engine again: the
+ *  drift was real (a reactivated stack equal to the ante was being anted to 0 with a
+ *  0 limit, below the stack≥1 invariant, because the job's re-implementation lacked
+ *  the floor branch). */
+export function computeAdmission(
+  stackPreAnte: number,
+  ante: number,
+  medianSnapshot: number,
+): {
+  felt: boolean;
+  houseLimit: number;
+  entries: SlateOpenResult["entries"];
+} {
+  if (isFelt(stackPreAnte, ante)) {
+    // §9: no ante, no minimums; the limit is the entire stack.
+    return { felt: true, houseLimit: stackPreAnte, entries: [] };
+  }
+  const entries: SlateOpenResult["entries"] = [
+    { account: null, kind: "ante", amount: ante, reason: "admission ante — pot side" },
+  ];
+  // Player side first for readability at the call site.
+  entries.unshift({ account: "self", kind: "ante", amount: -ante, reason: "admission ante" });
+  if (stackPreAnte - ante < 1) {
+    const floorChip = 1 - (stackPreAnte - ante);
+    entries.push(
+      { account: "self", kind: "felt_floor", amount: floorChip, reason: "§9 floor after ante" },
+      { account: null, kind: "felt_floor", amount: -floorChip, reason: "§9 floor after ante" },
+    );
+    return { felt: true, houseLimit: 1, entries };
+  }
+  return { felt: false, houseLimit: houseLimit(stackPreAnte - ante, medianSnapshot), entries };
+}

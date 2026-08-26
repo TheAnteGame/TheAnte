@@ -66,6 +66,12 @@ export async function revealCheck(db: SupabaseClient): Promise<JobOutcome> {
   const submitted = new Set((ticketsR.data ?? []).map((t) => t.player_id));
   const waiting = (activeR.data ?? []).filter((p) => dealtIn.has(p.id) && !submitted.has(p.id));
 
+  // An empty room is not a unanimous one (D-034): with nobody dealt in there is no
+  // "last ticket" to land, so the instant-reveal path never fires. Only the deadline
+  // completes such a week.
+  if (dealtIn.size === 0) {
+    return { status: "skipped", detail: { reason: "nobody dealt in — the deadline handles this week" } };
+  }
   if (waiting.length > 0) {
     return { status: "skipped", detail: { reason: `waiting on ${waiting.length}` } };
   }
@@ -112,14 +118,15 @@ async function fireReveal(db: SupabaseClient, week: OpenWeek, autoFolded = 0): P
     .eq("week_id", week.id);
   if (tErr) throw new Error(`tickets read failed: ${tErr.message}`);
 
-  // Both callers converge here, so the empty-room bar is checked once. revealCheck
-  // reaches this point whenever its waiting list is empty — and an empty roster makes
-  // that list empty too, which is how a room with nobody in it used to open itself.
-  const { count: activePlayers } = await db
-    .from("players")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "approved");
-  const ready = canReveal({ activePlayers: activePlayers ?? 0, tickets: (ticketRows ?? []).length });
+  // Both callers converge here. The bar is the WEEK's room, not the global roster
+  // (review D-036: gating on league-wide approved players wedged a week — and with
+  // it the season — when the roster changed after submissions; a deactivated
+  // player's submitted ticket still deserves its reveal).
+  const { count: dealtInCount } = await db
+    .from("week_players")
+    .select("player_id", { count: "exact", head: true })
+    .eq("week_id", week.id);
+  const ready = canReveal({ dealtIn: dealtInCount ?? 0, tickets: (ticketRows ?? []).length });
   if (!ready.ok) return { status: "skipped", detail: { reason: ready.reason, week: week.number } };
 
   const { data: betRows, error: bErr } = await db

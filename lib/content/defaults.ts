@@ -21,6 +21,7 @@ export const contentDefaults: Record<string, string> = {
     "The roster locked at the Week 1 deadline. Everybody starts at 500 on the same Thursday or not at all. There's always next season.",
   "home.verify_cta": "Verify",
   "home.resend_label": "Send a new code",
+  "home.signed_in_cta": "You're already in \u2014 take me to my seat",
 
   // Onboarding / profile
   "profile.heading": "Take your seat",

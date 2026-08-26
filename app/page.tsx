@@ -15,7 +15,7 @@ export default async function Home() {
   const state = await getPlayerState();
   if (state) redirect(routeFor(state));
 
-  const [heading, body, phoneLabel, phonePlaceholder, phoneCta, codePrompt, verifyCta, resendLabel, optin, errorGeneric, legal, copyright, logoAlt] =
+  const [heading, body, phoneLabel, phonePlaceholder, phoneCta, codePrompt, verifyCta, resendLabel, optin, errorGeneric, signedInCta, legal, copyright, logoAlt] =
     await Promise.all([
       getContent("home.intro_heading"),
       getContent("home.intro_body"),
@@ -27,6 +27,7 @@ export default async function Home() {
       getContent("home.resend_label"),
       getContent("sms.optin_disclosure"),
       getContent("profile.error_generic"),
+      getContent("home.signed_in_cta"),
       getContent("home.legal_line"),
       getContent("home.copyright"),
       getContent("home.logo_alt"),
@@ -79,6 +80,7 @@ export default async function Home() {
             resendLabel,
             optinDisclosure: optin,
             errorGeneric,
+            signedInCta,
           }}
         />
       </div>

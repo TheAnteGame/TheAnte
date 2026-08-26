@@ -19,6 +19,15 @@ interface Copy {
   resendLabel: string;
   optinDisclosure: string;
   errorGeneric: string;
+  signedInCta: string;
+}
+
+/** Clerk's session_exists error, by code when present, by message as a fallback.
+ *  The person is not in an error state — they are IN. Rendering the raw string as a
+ *  red error was a dead end: signed in, but shown the closed front door (D-036). */
+function isSessionExists(err: { code?: string; message?: string } | null | undefined): boolean {
+  if (!err) return false;
+  return err.code === "session_exists" || /already signed in/i.test(err.message ?? "");
 }
 
 /** E.164 with US default (§3.1): 10 digits → +1, 11 with leading 1 → +, else as given. */
@@ -41,6 +50,7 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [sessionExists, setSessionExists] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const codeRef = useRef<HTMLInputElement>(null);
 
@@ -63,6 +73,11 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
 
     // Existing player first; an unknown phone becomes an application (§3.1).
     const attempt = await signIn.phoneCode.sendCode({ phoneNumber });
+    if (isSessionExists(attempt.error)) {
+      setSessionExists(true);
+      setBusy(false);
+      return;
+    }
     if (!attempt.error) {
       setMode("signin");
       setStage("code");
@@ -81,6 +96,11 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
         setBusy(false);
         return;
       }
+    }
+    if (isSessionExists(created.error)) {
+      setSessionExists(true);
+      setBusy(false);
+      return;
     }
     setError(created.error?.message ?? copy.errorGeneric);
     setBusy(false);
@@ -201,7 +221,16 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
       <p className="max-w-xs text-center text-xs leading-relaxed text-[color:var(--color-text-low)]">
         {copy.optinDisclosure}
       </p>
-      {error && (
+      {sessionExists && (
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard")}
+          className="chamfer chrome-face px-6 py-3 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wide"
+        >
+          {copy.signedInCta}
+        </button>
+      )}
+      {error && !sessionExists && (
         <p role="alert" className="text-sm text-[color:var(--color-loss)]">
           — {error}
         </p>
