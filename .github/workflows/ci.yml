@@ -6,6 +6,9 @@ on:
   pull_request:
 
 jobs:
+  # Fast feedback: types, lint, unit tests, content discipline. Lint is deliberately
+  # NOT allowed to mask the steps behind it — see the note in eslint.config.mjs. It
+  # once failed on style rules and GitHub skipped `npm test` for three commits running.
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -17,6 +20,62 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: npm test
+      # Unit tests run even if lint is unhappy: a style complaint must never be the
+      # reason nobody found out the engine broke.
+      - if: always()
+        run: npm test
       # Acceptance test 8 (ANTE-ADMIN §7): no hardcoded strings in player-app JSX.
-      - run: node scripts/content-grep.mjs
+      - if: always()
+        run: node scripts/content-grep.mjs
+
+  # Does the deployed database actually have what supabase/migrations/ claims? Vercel
+  # ships code; migrations are applied by hand; nothing checked that the two agreed —
+  # which is how D-041 went live against a schema that had never been migrated.
+  # Dormant until SCHEMA_CHECK_KEY (a service-role key) is added to repo secrets.
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Production schema drift
+        if: ${{ secrets.SCHEMA_CHECK_KEY != '' }}
+        env:
+          SCHEMA_CHECK_URL: ${{ secrets.SCHEMA_CHECK_URL }}
+          SCHEMA_CHECK_KEY: ${{ secrets.SCHEMA_CHECK_KEY }}
+        run: npm run schema:check
+      - name: Skipped
+        if: ${{ secrets.SCHEMA_CHECK_KEY == '' }}
+        run: echo "SCHEMA_CHECK_KEY not set — drift check inactive. Add it in repo settings to enable."
+
+  # The one check that can see a chip leak (CLAUDE.md): a full 18-week, 25-player
+  # season against a REAL Supabase stack — real RLS, real jobs, real settlement.
+  # D-023 was found by this and by nothing else, and until now it ran only by hand on
+  # the commissioner's laptop. Unit tests cannot see that class of bug: the Pot
+  # absorbs the leak and every total still balances.
+  torture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # Docker is preinstalled on ubuntu-latest; this brings up Postgres + PostgREST
+      # + auth with every migration applied, which is also a from-scratch proof that
+      # the migration chain still builds a working database.
+      - name: Start local Supabase
+        run: supabase start
+      - name: Season torture test
+        run: npm run torture:reset
+      - name: Supabase logs on failure
+        if: failure()
+        run: supabase status || true

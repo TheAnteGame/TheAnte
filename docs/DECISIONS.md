@@ -1021,3 +1021,43 @@ the way past.
 Grey is `--color-canvas` at 40% (75% hovered). The selected tile is a near-white
 chrome face, so a literally light-grey ✕ would have vanished into it; the soft-dark
 reading of "quiet grey" is what that background actually needs.
+
+## D-043 — A gate that blocks the checks behind it is worse than no gate (2026-08-26)
+
+Three findings, one root cause: the pipeline could not see anything.
+
+**CI had been failing for three commits and nobody knew what it was failing on.**
+`npm run lint` errored on React 19's new compiler rules, and because GitHub Actions
+stops a job at the first failed step, `npm test` and the content-grep were **skipped**
+— 140 unit tests silently not running since D-038. The alarm was unplugged and the
+red light was on for the wrong reason.
+
+Both offending rules fire on code that is correct and has no better form.
+`set-state-in-effect` catches the SSR-safe hydration read: a component cannot know
+`matchMedia("prefers-reduced-motion")`, `sessionStorage`, or a measured width during
+render without breaking the server render, so it reads in an effect and sets state
+once. That is the cascading render the rule describes, and it is also the only way to
+do it — NewsFader, TickerMarquee, RevealExperience and BetSlip all rely on it.
+`purity` catches `Date.now()` inside a *server* component. Both are now **warnings**:
+still reported on new code, no longer able to hide the tests. Rewriting four
+player-facing components to satisfy a linter days before invites is how you cause the
+bug you were trying to prevent. Unit tests and content-grep additionally run with
+`if: always()`, so a style complaint can never again be the reason nobody found out
+the engine broke.
+
+**The torture test now runs in CI.** CLAUDE.md calls it not optional and says D-023
+was found by it and by nothing else — and it ran only by hand, on one laptop. A new
+job brings up a real Supabase stack and plays the full 18-week season on every push.
+It doubles as a from-scratch proof that the migration chain still builds a working
+database.
+
+**Schema drift has a checker** (`npm run schema:check`). D-041 shipped to production
+against a database where migration 0019 had never been applied: Vercel deploys code,
+migrations are applied by hand, and nothing compared them. Harmless that time only
+because the surface it powers is unreachable until Week 4. The script parses every
+migration for the columns it declares and asks the target's PostgREST endpoint for
+each one — a column PostgREST cannot select is a column that is not there. Proven in
+both directions on first run: production reported exactly `players.removed_at,
+removal_reason` missing and nothing else across 25 tables; the local stack, which has
+0019, reported in sync. It is wired into CI dormant, activating when a
+`SCHEMA_CHECK_KEY` repo secret is added.
