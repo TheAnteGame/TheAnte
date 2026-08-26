@@ -145,6 +145,18 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
     }
   };
 
+  // Taking a bet back, directly. The ladder still wraps to nothing at the top; this
+  // is the same exit without having to know that.
+  const clearPick = (gameId: string) => {
+    setError("");
+    setPicks((cur) => {
+      if (!cur.has(gameId)) return cur;
+      const next = new Map(cur);
+      next.delete(gameId);
+      return next;
+    });
+  };
+
   const canSubmit = shoveMode
     ? shovePick !== null
     : picks.size >= minGames && committed > 0 && committed <= houseLimit;
@@ -283,12 +295,22 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                   ? `${team} — ${pick!.chips} in. Press to ${rung >= rungs.length ? "take it back" : `raise to ${rungs[rung]}`}.`
                   : `${team} — press to back for ${rungs[0]}.`;
               return (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => pickSide(g.id, side)}
+                  onKeyDown={(e) => {
+                    // The cancel inside is a control of its own: its Enter/Space is
+                    // its own, not another raise on the way past.
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      pickSide(g.id, side);
+                    }
+                  }}
                   aria-pressed={active}
                   aria-label={label}
-                  className={`chamfer flex flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${
+                  className={`chamfer flex cursor-default select-none flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${
                     active
                       ? "chrome-face border border-[color:var(--color-chrome)]"
                       : "team-tile text-[color:var(--color-text-hi)]"
@@ -309,13 +331,37 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                   )}
                   {active && !shoveMode && (
                     <>
-                      <ChipStack
-                        tone={chipTone}
-                        total={pick!.chips}
-                        count={rung}
-                        size={44}
-                        animated={!reducedMotion && bumpedGame === g.id}
-                      />
+                      {/* Five presses to clear is a rule you have to read; a cancel next
+                          to the stack is one you can see. It rides right as the fan
+                          grows, so it stays where the chips just landed. */}
+                      <span className="flex items-center gap-2">
+                        <ChipStack
+                          tone={chipTone}
+                          total={pick!.chips}
+                          count={rung}
+                          size={44}
+                          animated={!reducedMotion && bumpedGame === g.id}
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearPick(g.id);
+                          }}
+                          aria-label={`${team} \u2014 take the bet back.`}
+                          className="shrink-0 cursor-pointer text-[color:var(--color-canvas)]/40 transition-colors hover:text-[color:var(--color-canvas)]/75"
+                        >
+                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+                            <circle cx="10" cy="10" r="8.2" stroke="currentColor" strokeWidth="1.3" />
+                            <path
+                              d="M7.4 7.4 L12.6 12.6 M12.6 7.4 L7.4 12.6"
+                              stroke="currentColor"
+                              strokeWidth="1.3"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                      </span>
                       {/* Five rungs, drawn: the reset stops being a surprise. */}
                       <span className="flex gap-1" aria-hidden>
                         {rungs.map((_, i) => (
@@ -330,7 +376,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                   {active && shoveMode && (
                     <span className="nums text-[color:var(--color-gold)]">{stackPreAnte}</span>
                   )}
-                </button>
+                </div>
               );
             };
 
