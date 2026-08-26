@@ -34,6 +34,11 @@ jobs:
   # Dormant until SCHEMA_CHECK_KEY (a service-role key) is added to repo secrets.
   schema:
     runs-on: ubuntu-latest
+    # Hoisted to env because the `secrets` context is not permitted inside an `if`
+    # expression — referencing it there fails the whole workflow at parse time.
+    env:
+      SCHEMA_CHECK_URL: ${{ secrets.SCHEMA_CHECK_URL }}
+      SCHEMA_CHECK_KEY: ${{ secrets.SCHEMA_CHECK_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,13 +47,10 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Production schema drift
-        if: ${{ secrets.SCHEMA_CHECK_KEY != '' }}
-        env:
-          SCHEMA_CHECK_URL: ${{ secrets.SCHEMA_CHECK_URL }}
-          SCHEMA_CHECK_KEY: ${{ secrets.SCHEMA_CHECK_KEY }}
+        if: env.SCHEMA_CHECK_KEY != ''
         run: npm run schema:check
-      - name: Skipped
-        if: ${{ secrets.SCHEMA_CHECK_KEY == '' }}
+      - name: Drift check inactive
+        if: env.SCHEMA_CHECK_KEY == ''
         run: echo "SCHEMA_CHECK_KEY not set — drift check inactive. Add it in repo settings to enable."
 
   # The one check that can see a chip leak (CLAUDE.md): a full 18-week, 25-player
