@@ -8,6 +8,23 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-26 (twenty-fifth pass):** **The deadweight rule (D-041), rulebook v1.2.**
+> Owner requirement for the beta: some invited players will never bet, and a dead seat
+> holds chips nobody can win. New §14 rule — three straight weeks with no ticket and
+> the commissioner may remove the seat; the whole stack splits evenly across remaining
+> approved players, floored, remainder to the Pot. Submitting anything (including a
+> chosen fold) resets the count. Rulebook, §11, §7 league-size, and faq.a7/a10 all
+> updated; /rules renders from the file so the site follows automatically.
+> Removal is a **transfer, never a delete** — deleting rows breaks conservation by
+> exactly the amount the player was up or down. Split arithmetic lives in
+> `lib/engine/removal.ts`; `assertInvariants` learned the one legitimate zero (a
+> removed seat must be EXACTLY empty, read off the ledger's `removal` kind). Two gates
+> enforced server-side: the three-week count, and no removal mid-blackout. Migration
+> 0019. Console also gains **edit** (name/email/team; phone excluded — Clerk identity).
+> Torture season carries a never-submitting seat, removes it at week 12, asserts
+> conservation, the emptied seat, exact per-recipient share, Pot remainder, standings
+> disappearance, and idempotency. `SEASON CLEAN`, 140 unit tests, build green.
+
 > **2026-08-23 (twenty-fourth pass):** **The rulebook became a surface (D-037).**
 > /rules now renders in sections with a scroll-tracking menu (sticky rail on wide
 > screens, collapsible jump list on phones; scroll-spy verified live). /guide gains a

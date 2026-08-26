@@ -946,3 +946,78 @@ once-a-season move takes two deliberate steps.
 Chat dividers got their own grey (#5c5c64), two shades under --color-border. The
 border token stays at the WCAG 1.4.11 3:1 floor because it draws real UI
 boundaries; a separator between two chat messages is not one.
+
+## D-041 — The deadweight rule, and a commissioner who can fix a typo (2026-08-26)
+
+Beta reality: a couple of players will accept a seat, mean well, and never bet.
+Rulebook v1.1 had exactly one answer for that — nothing. §14 said a player who goes
+quiet auto-folds forever and keeps paying antes, and §13 said silence is never
+grounds for removal. Correct for a league of friends who all showed up; wrong for a
+first season where a dead seat holds chips nobody can win and quietly makes an
+eight-player table smaller than the numbers claim.
+
+**The rule.** Three straight weeks with no ticket and the commissioner MAY remove
+the seat. The whole stack is then split evenly across every remaining APPROVED
+player. Submitting anything resets the count — including a fold you chose, because
+turning up and betting nothing is turning up. Rulebook is v1.2; the change landed in
+the preseason, before the Week 1 deadline, which §13 makes the last legitimate
+moment a rule can move.
+
+**Even split, not the Pot.** The Pot was the first proposal and it was wrong: one
+player taking a +400 lump in a game where stacks sit near 500 and limits are
+median÷3 is a far bigger distortion than spreading it thin. Chips are whole, so the
+share is floored and the leftover — always fewer chips than there are players — goes
+to the Pot. Odd chips already live there (§9's felt floor is paid out of it).
+
+**Why removal is a transfer and never a delete.** The ledger is append-only and
+conservation reads `stacks + pot === 500 × buy-ins`. Deleting a player's rows drops
+their buy-in (500) but also drops whatever they won FROM other players — chips those
+players' stacks still show. The books break by exactly the amount the player was up
+or down. So the stack moves out and every row stays.
+
+**Two gates in code, not just prose.** §13's anti-abuse logic still applies: a
+commissioner who could remove a quiet-but-solvent big stack could move every house
+limit in the league. So the three-week count is computed and enforced server-side —
+the button does not appear below the threshold and the action refuses anyway — and
+removal is blocked while a week is mid-blackout, because redistribution moves every
+stack and §6 says no stack moves between the ante and the reveal.
+
+`assertInvariants` gained the one legitimate way to reach zero. It reads the removed
+set off the ledger itself (a `removal` debit) rather than plumbing roster status into
+the engine, and does not waive the §9 floor so much as replace it with something
+stricter: a removed seat must be EXACTLY empty. Half-drained is a redistribution bug
+and now halts settlement. The split arithmetic lives in `lib/engine/removal.ts` so
+the console cannot drift from it — the torture test drives the same function.
+
+The torture season now carries a seat that never submits, removes it at week 12, and
+asserts conservation across the removal, the emptied seat, that every recipient
+gained exactly the share and nobody twice, that only the odd chips reached the Pot,
+that the player vanishes from the standings view, and that a repeated removal is
+rejected by the idempotency index rather than paying the room twice.
+
+**Edit.** The console can now fix a first name, a last name, an email or a favourite
+team — audited, not announced, because §13's "every correction is public" is about
+chips, not spelling. Phone is deliberately absent: it is the Clerk login identity,
+and editing it here would change who gets the mail without changing who can sign in.
+
+## D-042 — The way out of a bet is drawn, not remembered (2026-08-26)
+
+Clearing a stake meant pressing the same team tile until the ladder wrapped past its
+top rung — five presses at 50 chips. The instruction sat one line above the board and
+players still asked how to undo a pick, which is the tell that an affordance is a
+rule you have to read rather than a thing you can see.
+
+A soft grey ✕ now rides at the right edge of the chip fan on a backed tile, moving
+out as the stack grows so it stays where the chips just landed. One press clears the
+pick and the tile returns to rest. The ladder still wraps, for anyone who learned it.
+
+The tile had to stop being a `<button>` element — a button cannot legally contain
+another button — so it is a `div` with `role="button"`, `tabIndex` and Enter/Space
+handling. Same ARIA semantics, same focus outline, plus `cursor-default select-none`
+so it does not pick up a div's text I-beam. The tile's key handler ignores events
+originating inside the ✕, or Enter on the cancel would clear the bet AND raise it on
+the way past.
+
+Grey is `--color-canvas` at 40% (75% hovered). The selected tile is a near-white
+chrome face, so a literally light-grey ✕ would have vanished into it; the soft-dark
+reading of "quiet grey" is what that background actually needs.

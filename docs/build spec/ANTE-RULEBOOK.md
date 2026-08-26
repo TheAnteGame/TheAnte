@@ -1,7 +1,7 @@
 # ANTE
 ### The complete rules
 
-*Version 1.1 — frozen for the 2026 season. This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves.*
+*Version 1.2 — frozen for the 2026 season. This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
 
 ANTE is a season-long NFL pool where you bet chips instead of making picks. Everyone starts with 500. Each week you spread chips across the games you like but what you get paid depends on how many people agreed with you. Take the side everyone took and you barely get paid. Take the side almost nobody took and you get paid double. Nobody sees a single pick until every player is locked in, so every week you're guessing what your friends are about to do. Biggest stack on the last Sunday wins.
 
@@ -233,7 +233,7 @@ By Week 18 a single Pot is worth most of a starting stack. **Nobody is mathemati
 
 ### How many places it pays: one for every 8 players
 
-**League size means** everyone who bought in and hasn't been deactivated (§13), **counted the moment the slate opens and fixed there for the week.** Players on the felt count — they are still in this, and they are exactly who the extra places exist for. A deactivation mid-week never changes the prize structure after tickets are already locked.
+**League size means** everyone who bought in and hasn't been deactivated or removed (§13), **counted the moment the slate opens and fixed there for the week.** Players on the felt count — they are still in this, and they are exactly who the extra places exist for. A deactivation mid-week never changes the prize structure after tickets are already locked.
 
 | League size | Places paid | Split |
 |---|---|---|
@@ -330,6 +330,8 @@ Poker calls this a chip and a chair. Jack Straus won the 1982 World Series from 
 
 **A deactivated player (§13) keeps their chips and their line in the standings, but cannot win the season and cannot take a season award.** They stopped paying the ante. The ante is the clock, and nobody gets to win by stepping off it.
 
+**A player removed under the deadweight rule (§14) is not in the standings at all.** Their chips went to the players still at the table the moment they were removed, so there is nothing left to rank.
+
 Tiebreakers, in order:
 
 1. Most winning bets across the season — a winning shove counts as one; bets returned from ties, cancellations, and voids count as neither
@@ -356,7 +358,7 @@ Cost nothing. Carry more weight than they should.
 | **The Straggler** | Last to submit the most weeks. Held up the reveal all season. **Never submitting counts as last** — an auto-fold is the latest anybody can possibly be. |
 | **The Mark** | Voted by everyone who finished on the felt. One vote each, any player nominable, seven days from season close, plurality takes it, and a tie means co-winners. |
 
-Deactivated players are not eligible for any of these (§11).
+Deactivated players are not eligible for any of these (§11). Removed players (§14) are not in the standings the awards are drawn from.
 
 ---
 
@@ -370,14 +372,17 @@ Somebody runs the league. The rules are deliberately specific about what that me
 - **Re-run settlement** on a week that settled wrong. This includes **forcing a reveal the clock should already have fired** — after Thursday noon, never one second before, and only when the automation failed.
 - **Admit the league.** Before the season starts, approve or reject the people applying to play. This power is preseason-only and dies at the Week 1 deadline along with the roster (§1). Somebody has to constitute the table; nobody gets to reshape it once the cards are out.
 - **Deactivate a player who has affirmatively quit.** Not a player who has merely gone quiet — see below.
+- **Remove a seat that has gone dead** — and only after three straight weeks of no ticket at all. This is the deadweight rule, it is spelled out in §14, and it is the single exception to everything the next paragraph says.
 - **Moderate Table Talk.** Mute a player from the chat, or hide a message. Both are announced, both are logged, neither is ever a deletion, and **neither ever touches a player's ability to bet.** A muted player still gets a full ticket, a full stack, and a full share of everything else.
 - **Hand off the job** to somebody else.
 
 ### Deactivation is not for silence
 
-**Deactivating a player requires that they have said they're done** — a text, an email, a "take me off the list," something the Commissioner can quote in the reason field. Silence is not consent to be removed, and §14 already says precisely what happens to a player who simply stops: they auto-fold, they keep paying antes, they stay in the standings.
+**Deactivating a player requires that they have said they're done** — a text, an email, a "take me off the list," something the Commissioner can quote in the reason field. Silence is not consent to be deactivated, and §14 says precisely what happens to a player who simply stops for a week or two: they auto-fold, they keep paying antes, they stay in the standings.
 
 This is not bureaucracy. A deactivated player leaves the median, and the median sets everyone's house limit. A Commissioner who could deactivate a quiet-but-solvent big stack could move every limit in the league without touching a single ticket. So they can't.
+
+**The deadweight rule (§14) is the one exception, and it is built so it cannot become that lever.** It does not run on the Commissioner's judgment about whether somebody has quit — it runs on a number anybody can check: three straight weeks with no ticket. A player who submits anything at all, including a fold they chose on purpose, is not deadweight and cannot be touched. And because the chips come out in equal shares to everyone still playing, there is no version of this the Commissioner can aim at a rival or at themselves.
 
 ### What the Commissioner cannot do — ever
 
@@ -466,9 +471,34 @@ The season is **Weeks 1 through 18.** Playoff games do not count, do not settle,
 
 ### Players who disappear
 
-Nobody gets removed for going quiet. A player who stops submitting is folded automatically every week and keeps paying antes into other people's Pots until they land on the felt. They stay in the standings and remain eligible for the tiebreaker they will not need.
+A player who stops submitting is folded automatically every week and keeps paying antes into other people's Pots until they land on the felt. For the first two weeks nothing else happens to them: they stay in the standings, they keep their chips, and they remain eligible for the tiebreaker they will not need. Going quiet for a week is not a crime. Life happens.
 
 **Deactivation is a different thing and requires them to say so** (§13). A player who has actually quit stops anteing, drops out of the median, and keeps their chips — but forfeits the championship and every season award (§11). A player who has merely gone dark keeps all three, and keeps paying.
+
+### The deadweight rule
+
+**A player who has not submitted a ticket for three straight weeks may be removed from the league by the Commissioner. Their entire stack is then divided equally among every player still in.**
+
+This exists because a dead seat is not neutral. It sits in the standings, it holds chips nobody can win, and in a small league it quietly makes the table smaller than the numbers say it is. Three weeks is long enough that it isn't a bad stretch at work, and short enough that the rest of the season is still worth playing.
+
+**What counts as a missed week:** the reveal came and went and you had no ticket in it. The app folds you automatically and that fold is the record. **Submitting anything resets the count to zero** — including a deliberate fold. Turning up and betting nothing is turning up. The rule is aimed at the empty chair, not at the cautious player.
+
+**What happens when the Commissioner uses it:**
+
+- The removed player's whole stack is split evenly across every remaining **approved** player. Deactivated players stopped anteing and left the median; they do not collect here either.
+- Chips are whole, so the share is rounded **down** and the leftover — always fewer chips than there are players — **goes into the Pot** to be won that week. Nothing is created and nothing is destroyed (§5).
+- The removed player leaves the standings entirely. They forfeit the championship, every season award, and any claim on the Pot.
+- Their bets, tickets and ledger history stay in the books. **The removal is a transfer out of their stack, never a deletion of their history** — the league's chip count has to keep adding up, and it does.
+
+**What it cannot do:**
+
+- It cannot be used on a player who is still submitting, no matter what the Commissioner thinks of them.
+- It cannot be run during the blackout. Redistribution moves every stack in the league, and between the ante and the reveal no stack moves at all (§6). It waits for the reveal.
+- It cannot be undone. Once the chips are spread, they belong to the people who received them — reversing it would take chips back out of stacks those players have since bet from.
+
+**It is a right, not an obligation.** The Commissioner may leave a dead seat exactly where it is, and in a league that is comfortably above the eight-player minimum that is often the kinder call. The rule exists so that a pool of eight does not quietly become a pool of five.
+
+Every use of it posts to Table Talk with the name, the number of weeks missed, the chips involved and the share each player received (§13).
 
 ### A word about collusion
 

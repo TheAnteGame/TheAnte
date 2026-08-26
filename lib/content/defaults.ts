@@ -248,7 +248,7 @@ export const contentDefaults: Record<string, string> = {
   "faq.a6": "No. Not you, not the Commissioner, not for any reason. Submitted is stone.",
   "faq.q7": "What happens if I skip a week?",
   "faq.a7":
-    "You're folded automatically at the deadline. You still pay the ante, and a fold can never win the Pot.",
+    "You're folded automatically at the deadline. You still pay the ante, and a fold can never win the Pot. Miss three weeks running with no ticket at all and the Commissioner may remove you under the deadweight rule \u2014 your chips are then split evenly across everyone still playing. Submitting anything, even a fold you chose, resets that count to zero.",
   "faq.q8": "Who wins the weekly Pot?",
   "faq.a8":
     "Whoever GAINS the most chips that week, ante included \u2014 not the biggest stack. Every ante in the league is in it, and in bigger leagues it pays more places.",
@@ -257,7 +257,7 @@ export const contentDefaults: Record<string, string> = {
     "Once a season you can push your entire stack onto one game. It always pays even money: win and you double, lose and you're on the felt.",
   "faq.q10": "Can I go broke and get knocked out?",
   "faq.a10":
-    "No. Nobody is eliminated \u2014 your last chip is protected, you're dealt into every week, and on the felt you bet 1-chip slips until you climb back.",
+    "Not by losing. Your last chip is protected, you're dealt into every week, and on the felt you bet 1-chip slips until you climb back. The only way out of this league is not turning up at all \u2014 three straight weeks without a ticket and the Commissioner may remove the seat (\u00a714).",
 
   "ticker.leader_tied": "{count} players tied at the top on {stack} \u2014 nobody leads yet",
 

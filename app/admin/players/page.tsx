@@ -1,14 +1,17 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
+import { DEADWEIGHT_WEEKS } from "@/lib/engine/constants";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { ET } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import {
   approvePlayer,
   deactivatePlayer,
+  editPlayer,
   mutePlayer,
   reactivatePlayer,
   rejectPlayer,
+  removePlayer,
   savePlayerNotes,
   unmutePlayer,
 } from "../actions";
@@ -30,16 +33,40 @@ export default async function Players() {
     fetchAllRows<{ player_id: string | null; amount: number }>((f, t) =>
       db.from("ledger_entries").select("player_id, amount").order("id").range(f, t),
     ).then((rows) => ({ data: rows })),
-    db.from("tickets").select("player_id, submitted_at").order("submitted_at", { ascending: false }),
+    db.from("tickets").select("player_id, submitted_at, week_id, is_fold").order("submitted_at", { ascending: false }),
   ]);
+
+  // Revealed weeks, newest first — the spine of the deadweight count (§14).
+  const { data: revealed } = await db
+    .from("weeks")
+    .select("id, number")
+    .not("revealed_at", "is", null)
+    .order("number", { ascending: false });
 
   const stackOf = (id: string) =>
     (stacks ?? []).filter((e) => e.player_id === id).reduce((s, e) => s + e.amount, 0);
   const lastSubmit = (id: string) => (tickets ?? []).find((t) => t.player_id === id)?.submitted_at ?? null;
 
+  // Consecutive most-recent revealed weeks auto-folded. Mirrors missedWeekStreak in
+  // the action exactly; shown here so the button's availability is never a surprise.
+  const missedStreak = (id: string) => {
+    const byWeek = new Map(
+      (tickets ?? []).filter((t) => t.player_id === id).map((t) => [t.week_id, t.is_fold]),
+    );
+    let streak = 0;
+    for (const w of revealed ?? []) {
+      if (byWeek.get(w.id) !== true) break;
+      streak++;
+    }
+    return streak;
+  };
+
   const admissionOpen = !season?.week1_lock_at || new Date(season.week1_lock_at) > new Date();
   const pending = (players ?? []).filter((p) => p.status === "pending");
-  const roster = (players ?? []).filter((p) => p.status !== "pending" && p.status !== "rejected");
+  const roster = (players ?? []).filter(
+    (p) => p.status !== "pending" && p.status !== "rejected" && p.status !== "removed",
+  );
+  const removed = (players ?? []).filter((p) => p.status === "removed");
   const approvedCount = roster.filter((p) => p.status === "approved").length;
 
   return (
@@ -164,10 +191,67 @@ export default async function Players() {
                     <input name="notes" defaultValue={p.notes ?? ""} placeholder="commissioner-private notes" className={`${inputCls} w-64`} aria-label="Notes" />
                   </AdminForm>
                 </div>
+
+                {/* Fixing what somebody typed wrong at 11pm on their phone (D-041).
+                    Phone is absent on purpose: it is the Clerk login identity, and
+                    changing it here would change who we email without changing who
+                    can actually sign in. That one stays a Clerk flow. */}
+                <div className="mt-3 border-t border-[color:var(--color-border)] pt-3">
+                  <AdminForm action={editPlayer} submitLabel="Save details" inline>
+                    <input type="hidden" name="playerId" value={p.id} />
+                    <input name="firstName" defaultValue={p.first_name ?? ""} placeholder="first" className={`${inputCls} w-28`} aria-label="First name" />
+                    <input name="lastName" defaultValue={p.last_name ?? ""} placeholder="last" className={`${inputCls} w-28`} aria-label="Last name" />
+                    <input name="email" type="email" defaultValue={p.email ?? ""} placeholder="email" className={`${inputCls} w-56`} aria-label="Email" />
+                    <input name="favoriteTeam" defaultValue={p.favorite_team ?? ""} placeholder="team" className={`${inputCls} w-24`} aria-label="Favorite team" />
+                  </AdminForm>
+                </div>
+
+                {/* The deadweight rule (§14). The count is drawn here rather than
+                    left to the error message, so the commissioner can see whether the
+                    rule is even available before pressing anything. */}
+                <div className="mt-3 border-t border-[color:var(--color-border)] pt-3">
+                  {missedStreak(p.id) >= DEADWEIGHT_WEEKS ? (
+                    <AdminForm
+                      action={removePlayer}
+                      submitLabel="Remove from league"
+                      danger
+                      confirmText={`Remove ${p.first_name}? They have missed ${missedStreak(p.id)} straight weeks. Their ${stackOf(p.id)} chips are split evenly across the ${approvedCount - (p.status === "approved" ? 1 : 0)} players still in, with any remainder to the Pot. They vanish from the roster and the standings; their ledger history and audit trail stay. This is NOT reversible — the chips are gone the moment you confirm.`}
+                      inline
+                    >
+                      <input type="hidden" name="playerId" value={p.id} />
+                      <input name="reason" placeholder="your rationale (required)" required className={`${inputCls} w-56`} aria-label="Reason" />
+                    </AdminForm>
+                  ) : (
+                    <p className="text-xs text-[color:var(--color-text-low)]">
+                      Deadweight rule (§14): {missedStreak(p.id)} of {DEADWEIGHT_WEEKS} straight weeks missed. Removal unlocks at {DEADWEIGHT_WEEKS}.
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </details>
+
+        {removed.length > 0 && (
+          <details className="mt-4">
+            <summary className="cursor-pointer text-sm text-[color:var(--color-text-mid)]">
+              Removed under the deadweight rule — {removed.length}
+            </summary>
+            <ul className="mt-3 space-y-2 text-sm">
+              {removed.map((p) => (
+                <li key={p.id} className="text-[color:var(--color-text-mid)]">
+                  <span className="text-[color:var(--color-text-hi)]">
+                    {p.first_name} {p.last_name}
+                  </span>{" "}
+                  · {p.email ?? "no email"} · removed{" "}
+                  {p.removed_at ? DateTime.fromISO(p.removed_at).setZone(ET).toFormat("LLL d") : "—"} ·{" "}
+                  {p.removal_reason ?? "no reason recorded"}
+                  <span className="ml-2 nums text-[color:var(--color-text-low)]">stack {stackOf(p.id)}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </Section>
     </div>
   );

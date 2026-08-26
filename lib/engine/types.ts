@@ -60,7 +60,8 @@ export interface EngineLedgerEntry {
     | "correction"
     | "reversal"
     | "sweep"
-    | "season_close";
+    | "season_close"
+    | "removal";
   amount: number; // signed integer chips
   reason: string;
 }

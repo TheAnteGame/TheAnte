@@ -9,3 +9,4 @@ export * from "./slateOpen";
 export * from "./reveal";
 export * from "./settle";
 export * from "./invariants";
+export * from "./removal";

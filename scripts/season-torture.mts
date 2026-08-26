@@ -55,6 +55,9 @@ const { settleCurrentWeek } = await import("../lib/jobs/settle");
 const { resettleFromWeek } = await import("../lib/jobs/resettle");
 const { admitToOpenWeek } = await import("../lib/jobs/admit");
 const { houseLimit } = await import("../lib/engine/core");
+const { computeRemoval } = await import("../lib/engine/removal");
+const { assertInvariants } = await import("../lib/engine/invariants");
+type EngineRow = Parameters<typeof assertInvariants>[0][number];
 const { leaderFrom } = await import("../lib/ticker/leader");
 
 const service: SupabaseClient = createClient(API_URL, SERVICE_KEY, { auth: { persistSession: false } });
@@ -129,6 +132,26 @@ async function balances(): Promise<{ stacks: Map<string, number>; pot: number; t
   }
   const total = [...stacks.values()].reduce((a, b) => a + b, 0) + pot;
   return { stacks, pot, total };
+}
+
+/** The whole ledger in engine shape — what assertInvariants is designed to eat. */
+async function fetchAllLedger(): Promise<EngineRow[]> {
+  const out: EngineRow[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data: page, error } = await service
+      .from("ledger_entries").select("player_id, kind, amount, reason").order("id").range(from, from + 999);
+    if (error) throw new Error(error.message);
+    out.push(
+      ...(page ?? []).map((e) => ({
+        account: e.player_id,
+        kind: e.kind as EngineRow["kind"],
+        amount: e.amount,
+        reason: e.reason,
+      })),
+    );
+    if (!page || page.length < 1000) break;
+  }
+  return out;
 }
 
 async function ticketFingerprint(): Promise<string> {
@@ -222,6 +245,15 @@ async function main() {
 
   const shoveWeekByPlayer = new Map<string, number>();
   let preFingerprint = "";
+
+  // ── The deadweight seat (D-041, §14) ──────────────────────────────────────────
+  // One player never submits anything, all season. By week 12 they are far past the
+  // three-week threshold, and the removal below is exercised against a stack that has
+  // been ante'd down for eleven weeks — not a tidy 500 that would divide evenly and
+  // hide the remainder path entirely.
+  const deadweightIdx = N - 1;
+  const deadweightId = playerIds[deadweightIdx];
+  const removedIds = new Set<string>();
 
   for (let week = 1; week <= 18; week++) {
     const t0 = Date.now();
@@ -332,8 +364,14 @@ async function main() {
 
     for (let i = 0; i < playerIds.length; i++) {
       const pid = playerIds[i];
+      // A removed seat has no week_players row at all — slate open skips it — so this
+      // must come before the snapshot read, not after.
+      if (removedIds.has(pid)) continue;
       const snap = snapOf.get(pid)!;
-      if (rand() < 0.06) {
+      // rand() is consumed either way: the deadweight seat must not shift the
+      // deterministic chaos sequence for everyone else.
+      const unlucky = rand() < 0.06;
+      if (unlucky || pid === deadweightId) {
         folded.push(i);
         continue; // never submits — the deadline job folds them
       }
@@ -471,7 +509,10 @@ async function main() {
     // ── Weekly conservation, straight SQL truth ────────────────────────────────
     const b = await balances();
     check(b.total === playerIds.length * 500, `week ${week} CONSERVATION: ${b.total} ≠ ${playerIds.length * 500}`);
-    check([...b.stacks.values()].every((s) => s >= 1), `week ${week} a stack fell below 1`);
+    check(
+      [...b.stacks.entries()].every(([id, s]) => (removedIds.has(id) ? s === 0 : s >= 1)),
+      `week ${week} a stack fell below 1 (or a removed seat is not exactly empty)`,
+    );
 
     // ── The number the player actually READS ───────────────────────────────────
     // Conservation can hold while the screen still lies: every chip figure in the app
@@ -517,6 +558,96 @@ async function main() {
     console.log(
       `Week ${String(week).padStart(2)} ✓  ${Date.now() - t0}ms  folds=${folded.length} shoves=${shoves} felt=${feltCount} pot=${b.pot} total=${b.total}`,
     );
+
+    // ── The deadweight rule, end to end (D-041, §14) ──────────────────────────
+    // Runs at week 12 — after the week has settled and revealed, which is the only
+    // moment §6 allows a removal, and long past the three-week threshold.
+    if (week === 12) {
+      const bBefore = await balances();
+      const deadStack = bBefore.stacks.get(deadweightId) ?? 0;
+
+      // The rule's own gate, computed the way the console computes it: consecutive
+      // most-recent revealed weeks with an auto-fold on the books.
+      const { data: revealedWeeks } = await service
+        .from("weeks").select("id, number").not("revealed_at", "is", null).order("number", { ascending: false });
+      const { data: dwTickets } = await service
+        .from("tickets").select("week_id, is_fold").eq("player_id", deadweightId);
+      const dwByWeek = new Map((dwTickets ?? []).map((t) => [t.week_id, t.is_fold]));
+      let missed = 0;
+      for (const w of revealedWeeks ?? []) {
+        if (dwByWeek.get(w.id) !== true) break;
+        missed++;
+      }
+      check(missed >= 3, `deadweight seat missed only ${missed} straight weeks, expected ≥ 3`);
+
+      const recipients = (
+        await service.from("players").select("id").eq("status", "approved").neq("id", deadweightId)
+      ).data!.map((r) => r.id);
+
+      const plan = computeRemoval({
+        playerId: deadweightId,
+        stack: deadStack,
+        recipientIds: recipients,
+        who: "Deadweight D.",
+      });
+
+      const { error: remErr } = await service.from("ledger_entries").insert(
+        plan.entries.map((e) => ({
+          player_id: e.account,
+          kind: e.kind,
+          amount: e.amount,
+          reason: e.reason,
+          idempotency_key: `removal:${deadweightId}:${e.account ?? "pot"}`,
+        })),
+      );
+      check(!remErr, `removal ledger insert failed: ${remErr?.message}`);
+      await service
+        .from("players")
+        .update({ status: "removed", removed_at: new Date().toISOString(), removal_reason: "torture: deadweight" })
+        .eq("id", deadweightId);
+      removedIds.add(deadweightId);
+
+      const bAfter = await balances();
+
+      // 1 — nothing created, nothing destroyed. A removal is a transfer (§5).
+      check(bAfter.total === bBefore.total, `removal CONSERVATION: ${bBefore.total} → ${bAfter.total}`);
+      // 2 — the seat is exactly empty, not merely small.
+      check((bAfter.stacks.get(deadweightId) ?? -1) === 0, `removed seat holds ${bAfter.stacks.get(deadweightId)}, expected 0`);
+      // 3 — every remaining player gained exactly the share, nobody gained twice.
+      const wrong = recipients.filter(
+        (id) => (bAfter.stacks.get(id) ?? 0) - (bBefore.stacks.get(id) ?? 0) !== plan.share,
+      );
+      check(wrong.length === 0, `${wrong.length} recipients did not gain exactly ${plan.share}`);
+      // 4 — the odd chips went to the Pot, and only the odd chips.
+      check(bAfter.pot - bBefore.pot === plan.remainder, `Pot moved ${bAfter.pot - bBefore.pot}, expected remainder ${plan.remainder}`);
+      check(plan.remainder < recipients.length, `remainder ${plan.remainder} is not smaller than the field (${recipients.length})`);
+      // 5 — the engine's own assertion accepts the zeroed seat, and would reject a
+      //     half-drained one. This is the new invariants.ts branch under real data.
+      const allRows = await fetchAllLedger();
+      assertInvariants(allRows);
+      // 6 — the player is gone from the surface players actually read.
+      const { data: stand } = await asPlayer(subs[0]).from("standings").select("player_id");
+      check(
+        !(stand ?? []).some((r) => r.player_id === deadweightId),
+        "removed player is still visible in the standings view",
+      );
+      // 7 — a re-run must not pay anybody twice.
+      const { error: dupErr } = await service.from("ledger_entries").insert(
+        plan.entries.map((e) => ({
+          player_id: e.account,
+          kind: e.kind,
+          amount: e.amount,
+          reason: e.reason,
+          idempotency_key: `removal:${deadweightId}:${e.account ?? "pot"}`,
+        })),
+      );
+      check(!!dupErr, "a repeated removal was NOT rejected by the idempotency index");
+      check((await balances()).total === bBefore.total, "repeated removal moved chips");
+
+      console.log(
+        `        ✂ removed deadweight seat after ${missed} missed weeks: ${deadStack} chips → ${plan.share} each to ${recipients.length} players, ${plan.remainder} to the Pot`,
+      );
+    }
 
     // ── Mid-season correction: re-settle week 5 after week 8 (the cascade) ─────
     if (week === 8) {

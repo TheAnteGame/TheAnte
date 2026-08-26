@@ -38,7 +38,26 @@ export function assertInvariants(entries: EngineLedgerEntry[], opts?: { closedWr
     );
   }
 
+  // §13 removal (D-041) is the one way an account legitimately reaches zero: the seat
+  // no longer exists, so the §9 floor — which protects a PLAYER from being wiped out —
+  // has nothing left to protect. Read the removed set off the ledger itself rather
+  // than plumbing roster status down here: a removal is a debit of the player's whole
+  // stack, and the append-only ledger is already the source of truth this function
+  // trusts for everything else. The floor is replaced by a stricter test, not waived:
+  // a removed seat must be EXACTLY empty. Half-drained is a redistribution bug.
+  const removed = new Set(
+    entries.filter((e) => e.kind === "removal" && e.account !== null && e.amount < 0).map((e) => e.account!),
+  );
+
   for (const [player, stack] of balances.stacks) {
+    if (removed.has(player)) {
+      if (stack !== 0) {
+        throw new InvariantViolation(
+          `Removed seat ${player} holds ${stack} chips, not 0. A removal moves the whole stack or it is a leak (§13).`,
+        );
+      }
+      continue;
+    }
     if (stack < 1) {
       throw new InvariantViolation(`Stack below 1 for ${player}: ${stack}. The floor is absolute (§9).`);
     }

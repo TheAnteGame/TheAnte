@@ -23,6 +23,8 @@ export function tierForWeek(week: number): "purple" | "red" | "teal" | "gold" {
 
 export const STARTING_STACK = 500; // §1
 export const MIN_PLAYERS = 8; // §1 — to start, not to survive
+/** §14 — the deadweight rule: straight weeks with no ticket before a seat may be removed. */
+export const DEADWEIGHT_WEEKS = 3;
 export const LIMIT_DIVISOR = 3; // §4 — one-third
 export const ROUNDING_STEP = 10; // §4, §14 — floor to nearest 10
 export const MIN_GAMES = 5; // §3 — lifts on the felt / short stack
