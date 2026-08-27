@@ -1137,3 +1137,40 @@ The torture season no longer seeds `week1_lock_at`, so the write itself is under
 it asserts the lock is set, that it equals Week 1's deadline, and that a repeated slate
 open does not move it. Confirmed non-vacuous by removing the fix and watching the run
 report 2 FAILURES, then restoring it for SEASON CLEAN.
+
+## D-047 — Clerk had the phone; the roster never asked for it (2026-08-26)
+
+Owner question, from reading the admin roster: how did three players get in without
+giving a phone number? They didn't. Production Clerk reports
+`phone_number: used_for_first_factor=true, required=true, verifications=['phone_code']`,
+and `email_address` is not an enabled attribute at all — phone OTP is the only door and
+it is mandatory (D-001). All five had verified a number.
+
+**`players.phone` was simply never written.** Not by a server action, a migration, or a
+script: `ensurePlayer` inserted `clerk_user_id` and `status`, `saveProfile` wrote name,
+email and team, and nothing anywhere called Clerk for the number — no `clerkClient`, no
+`currentUser`. The column existed since 0001 and the admin Contact cell rendered it, so
+the roster showed blanks for everyone whose number had not been typed in by hand. Same
+shape of bug as D-046: a column with no hand to fill it.
+
+Now: new players get the verified number at creation, and existing ones are healed
+lazily the next time they load any page (`getPlayerState`, the universal chokepoint).
+The heal runs once — after the write the branch is never taken again — and is wrapped
+so an unreachable Clerk can never break a render; the worst case is the blank cell that
+was already there.
+
+**The security model is unchanged, and that was checked rather than assumed.** Probed
+against the real policies on a live stack: an authenticated user inserting their own
+pending row WITH a phone is accepted (`players_apply` constrains only `clerk_user_id`
+and `status`), and that same user trying to change the phone afterwards is BLOCKED by
+`guard_players_self_update` — "phone changes are a Clerk flow" — with the stored value
+unmoved. So the number can be written once, from what Clerk already verified, and never
+edited by the player. The lazy heal uses the service role for the same reason: it
+copies a verified value, it does not accept one from anybody.
+
+**A correction worth recording.** The first check ran against `.env.local`, which holds
+`sk_test_` — the DEVELOPMENT Clerk instance. It returned nine users, six with no phone
+and an email instead, which read as "email sign-up is enabled, contradicting D-001." It
+is not; those were dev accounts on a differently configured instance. Production was
+confirmed from Clerk's public environment endpoint on clerk.theantegame.com. Any future
+check of live auth config must not use `.env.local`.

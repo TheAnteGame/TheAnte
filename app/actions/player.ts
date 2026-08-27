@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createUserClient } from "@/lib/db/supabase";
@@ -20,10 +20,18 @@ export async function ensurePlayer(): Promise<string> {
   if (state.player) return routeFor(state);
   if (state.rosterLocked) return "/closed"; // no pending record is created (§3.1)
 
+  // The verified number rides along at creation (D-047). It is the one moment it can
+  // be written through the user client: players_apply checks only clerk_user_id and
+  // status, while the self-update guard blocks any LATER change to phone — a player
+  // may never edit it, which is the point. Absent means Clerk had none to give.
+  const cu = await currentUser();
+  const phone = cu?.primaryPhoneNumber?.phoneNumber ?? cu?.phoneNumbers?.[0]?.phoneNumber ?? null;
+
   const db = createUserClient();
   const { error } = await db.from("players").insert({
     clerk_user_id: state.clerkUserId,
     status: "pending",
+    ...(phone ? { phone } : {}),
   });
   // A concurrent insert (double tap) hits the unique constraint — that's fine.
   if (error && !error.message.includes("duplicate key")) {
