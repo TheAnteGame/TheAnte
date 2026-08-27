@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeSlateOpen, anteForWeek } from "@/lib/engine";
+import { SLATE_MARGIN_MINUTES, computeSlateOpen, anteForWeek } from "@/lib/engine";
 import type { EngineLedgerEntry, EnginePlayer } from "@/lib/engine";
 import { fetchNflverseWeek, type NflverseFetch } from "@/lib/sports/nflverse";
 import { nowET, weekAnchors } from "@/lib/time";
@@ -128,7 +128,7 @@ export async function openWeekCore(
     away_moneyline: oddsByGame.get(g.externalId)?.awayMoneyline ?? null,
     home_moneyline: oddsByGame.get(g.externalId)?.homeMoneyline ?? null,
     kickoff_at: g.kickoffAt.toISOString(),
-    on_slate: g.kickoffAt >= deadlineAt,
+    on_slate: g.kickoffAt.getTime() >= deadlineAt.getTime() + SLATE_MARGIN_MINUTES * 60_000,
   }));
   const { error: gamesError } = await db.from("games").upsert(gameRows, { onConflict: "external_id" });
   if (gamesError) throw new Error(`games upsert failed: ${gamesError.message}`);

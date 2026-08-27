@@ -1174,3 +1174,35 @@ and an email instead, which read as "email sign-up is enabled, contradicting D-0
 is not; those were dev accounts on a differently configured instance. Production was
 confirmed from Clerk's public environment endpoint on clerk.theantegame.com. Any future
 check of live auth config must not use `.env.local`.
+
+## D-048 — The margin, not the deadline (2026-08-26)
+
+Owner asked to guarantee players fifteen minutes before the first game of each week.
+Reviewed first, at his instruction, for over-correction — and most of this was already
+true. §3 says the slate is every game "except any game that kicks off before the
+deadline," and "you can never bet a game that has already started." Week 1 bears it
+out: the Wednesday opener is off-slate at −940 minutes, and the first bettable game
+kicks **+515 minutes** after the wall. Players have eight and a half hours, not fifteen
+minutes.
+
+**The deadline did not move, and should not.** Making it float to fifteen minutes
+before the first kickoff would contradict "The deadline is Thursday, 12:00 noon ET.
+Every week. All season. No exceptions." — stated in bold in §3 — and would break the
+"two days and six hours" promise, the Tuesday→Thursday rhythm, the Wed 6pm / Thu 9am
+reminder crons, the tutorial, the FAQ, and the band. All to fix something that is not
+happening.
+
+**One real gap, one line.** The slate test was `kickoff >= deadline`, so a game kicking
+at exactly noon Thursday would have been bettable with zero margin. The NFL has never
+scheduled a Thursday noon kickoff, so it is theoretical — but the rulebook's promise
+deserves to hold by margin rather than by a single second.
+`SLATE_MARGIN_MINUTES = 15` now decides what counts as on-slate; a game inside the
+margin drops off exactly the way the Wednesday openers already do. It is a rail, not a
+rule change: zero real games move, and the deadline is untouched.
+
+Week 1's slate is already frozen, and `on_slate` is written once at slate open — so
+this changes nothing about the live week. It takes effect from Week 2 onward.
+
+The torture season plants a game five minutes after the deadline in every week and
+asserts it never reaches the slate, and that the slate is exactly one game short as a
+result. Proven non-vacuous: reverting the margin reports two failures per week.

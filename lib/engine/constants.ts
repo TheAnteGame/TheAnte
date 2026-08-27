@@ -25,6 +25,15 @@ export const STARTING_STACK = 500; // §1
 export const MIN_PLAYERS = 8; // §1 — to start, not to survive
 /** §14 — the deadweight rule: straight weeks with no ticket before a seat may be removed. */
 export const DEADWEIGHT_WEEKS = 3;
+
+/** §3 — breathing room between the deadline and the first bettable kickoff. The
+ *  deadline itself never moves (Thursday noon ET, "no exceptions"); this only decides
+ *  what counts as on-slate. A game kicking inside this margin is treated the way the
+ *  Wednesday openers already are: simply not on the slate. Zero real games are
+ *  affected — the NFL has never scheduled a Thursday noon kickoff — so this is a rail,
+ *  not a rule change. It makes "you can never bet a game that has already started"
+ *  true with room to spare rather than true by exactly zero seconds. */
+export const SLATE_MARGIN_MINUTES = 15;
 export const LIMIT_DIVISOR = 3; // §4 — one-third
 export const ROUNDING_STEP = 10; // §4, §14 — floor to nearest 10
 export const MIN_GAMES = 5; // §3 — lifts on the felt / short stack

@@ -63,10 +63,10 @@ Each week you get the full NFL slate. Pick sides, put chips on them.
 - **Bets are in multiples of 10 chips.** Minimum 10 per game, maximum 50.
 - **You must bet at least 5 games.** More is fine.
 - **You cannot bet both sides of a game.**
-- **The slate is every game that week** — Thursday, Saturday, Sunday, Monday, international, all of it — **except any game that kicks off before the deadline.**
+- **The slate is every game that week** — Thursday, Saturday, Sunday, Monday, international, all of it — **except any game that kicks off before the deadline**, or within fifteen minutes of it.
 - **The deadline is Thursday, 12:00 noon ET.** Every week. All season. No exceptions.
 
-The NFL occasionally schedules a game before Thursday noon. The 2026 season has two: the Wednesday opener in Week 1, and a Wednesday game the night before Thanksgiving in Week 12. Those games simply aren't on the slate — a 15-game week instead of 16, and the five-game minimum never notices. **You can never bet a game that has already started.**
+The NFL occasionally schedules a game before Thursday noon. The 2026 season has two: the Wednesday opener in Week 1, and a Wednesday game the night before Thanksgiving in Week 12. Those games simply aren't on the slate — a 15-game week instead of 16, and the five-game minimum never notices. **You can never bet a game that has already started**, and never one about to: a kickoff inside fifteen minutes of the deadline drops off the slate the same way. In practice this has never cost anybody a game — the closest the 2026 schedule comes is the Thursday nighter, eight and a half hours after the wall — it just means the promise holds by margin rather than by a single second.
 
 ### Submitting is a commitment
 

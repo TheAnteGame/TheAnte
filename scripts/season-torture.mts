@@ -55,6 +55,7 @@ const { settleCurrentWeek } = await import("../lib/jobs/settle");
 const { resettleFromWeek } = await import("../lib/jobs/resettle");
 const { admitToOpenWeek } = await import("../lib/jobs/admit");
 const { houseLimit } = await import("../lib/engine/core");
+const { SLATE_MARGIN_MINUTES } = await import("../lib/engine/constants");
 const { computeRemoval } = await import("../lib/engine/removal");
 const { assertInvariants } = await import("../lib/engine/invariants");
 type EngineRow = Parameters<typeof assertInvariants>[0][number];
@@ -285,7 +286,12 @@ async function main() {
       week,
       awayTeam: pairs[i % pairs.length][0],
       homeTeam: pairs[i % pairs.length][1],
-      kickoffAt: new Date(deadlineAt.getTime() + (i + 1) * 60_000),
+      // Clear of the §3 margin. Game 0 of every week is the exception: it is planted
+      // deliberately INSIDE the margin so the rail is under test, not assumed.
+      kickoffAt:
+        i === 0
+          ? new Date(deadlineAt.getTime() + 5 * 60_000)
+          : new Date(deadlineAt.getTime() + 60 * 60_000 + i * 60_000),
     }));
     const open = await openWeekCore(
       service,
@@ -340,8 +346,23 @@ async function main() {
     }
 
     const { data: weekRow } = await service.from("weeks").select("*").eq("number", week).single();
-    const { data: gameRows } = await service.from("games").select("id, external_id, on_slate").eq("week_id", weekRow.id);
+    const { data: gameRows } = await service
+      .from("games")
+      .select("id, external_id, on_slate, kickoff_at")
+      .eq("week_id", weekRow.id);
     const slateGames = (gameRows ?? []).filter((g) => g.on_slate);
+
+    // §3 — nothing on the slate may kick inside the 15-minute margin (D-048). The
+    // planted game 0 kicks 5 minutes after the deadline and must be excluded, exactly
+    // the way the Wednesday openers are.
+    const tooClose = slateGames.filter(
+      (g) => new Date(g.kickoff_at).getTime() < deadlineAt.getTime() + SLATE_MARGIN_MINUTES * 60_000,
+    );
+    check(tooClose.length === 0, `week ${week} put ${tooClose.length} game(s) on the slate inside the ${SLATE_MARGIN_MINUTES}-minute margin`);
+    check(
+      slateGames.length === gameCount - 1,
+      `week ${week} slate is ${slateGames.length}, expected ${gameCount - 1} (the planted too-close game must drop off)`,
+    );
     // ── D-034 A: approved MID-WEEK, pre-deadline → dealt into THIS week ────────
     // Runs before the snapshot read and before the blackout window opens, exactly
     // where a real approval lands: the ante is part of the week's opening batch.
