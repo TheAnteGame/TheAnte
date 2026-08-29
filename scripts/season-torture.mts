@@ -196,7 +196,13 @@ async function main() {
         status: "approved",
         first_name: TEST_NAMES[i % TEST_NAMES.length][0],
         last_name: TEST_NAMES[i % TEST_NAMES.length][1],
-        email: null,
+        // Three seats carry an address so the notification paths are genuinely
+        // exercised (D-056). The rest stay null: every send costs a dedupe read and a
+        // log write, and three is enough to reach every branch. RESEND_API_KEY is
+        // deleted at the top of this file, so nothing leaves the machine — the sends
+        // fail at the transport and land in notification_log as failed, which is
+        // exactly the path a real outage takes.
+        email: i < 3 ? `torture${i}@example.invalid` : null,
         favorite_team: NFL_TEAMS[i % NFL_TEAMS.length],
         profile_complete: true,
         joined_at: new Date().toISOString(),
@@ -545,6 +551,21 @@ async function main() {
     if (returned > 0) {
       const { data: cardHolders } = await service.from("players").select("id").is("shove_used_week", null);
       for (const p of cardHolders ?? []) shoveWeekByPlayer.delete(p.id);
+    }
+
+    // ── The mail actually went out (D-056) ─────────────────────────────────────
+    // Week 1 only: prove the slate-open and reveal paths both ran for the seats that
+    // have an address, rather than silently short-circuiting on a null email the way
+    // every torture season did before this.
+    if (week === 1) {
+      const { data: log } = await service.from("notification_log").select("template_key, player_id");
+      // notification_log stores the DEDUPE key, so rows read
+      // "notify.slate_open:w1:<uuid>" rather than the bare template name.
+      const keys = (log ?? []).map((r) => r.template_key ?? "");
+      check(keys.some((k) => k.startsWith("notify.slate_open")), "week 1 slate-open mail never attempted");
+      check(keys.some((k) => k.startsWith("notify.reveal")), "week 1 reveal mail never attempted");
+      const mailed = new Set((log ?? []).map((r) => r.player_id));
+      check(mailed.size === 3, `mail reached ${mailed.size} players, expected the 3 with an address`);
     }
 
     // ── Weekly conservation, straight SQL truth ────────────────────────────────
