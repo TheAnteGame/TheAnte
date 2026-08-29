@@ -65,7 +65,10 @@ export default async function Dashboard() {
       {/* The masthead sits in the same column as everything else, so the rail and
           the ticker read as plates on the table rather than a browser chrome bar. */}
       <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
-        <header className="rail flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-3">
+        {/* No top padding (D-055): the wrapper above already supplies pt-5, so the
+            header's own 12px only pushed the masthead further down the page. Bottom
+            padding stays, or the logo sits on the ticker. */}
+        <header className="rail flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 pb-3 pt-0">
           <Link href="/dashboard" className="shrink-0">
             <Image
               src="/logo.png"
