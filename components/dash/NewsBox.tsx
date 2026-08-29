@@ -3,7 +3,7 @@ import { getContent } from "@/lib/content/getContent";
 import { NewsFader } from "./NewsFader";
 
 // Fav Team News (ANTE-PLAYER §7): the player's team's headlines, cross-fading every
-// 5s, falling back to league-wide items when a team has none. Fully automatic from
+// 7s, falling back to league-wide items when a team has none. Fully automatic from
 // the feed; the commissioner curates only by hiding (ADMIN §0).
 
 export async function NewsBox({ playerId }: { playerId: string }) {
@@ -47,7 +47,10 @@ export async function NewsBox({ playerId }: { playerId: string }) {
   }
 
   const { data: rotate } = await db.from("app_settings").select("value").eq("key", "news.rotate_ms").maybeSingle();
-  const rotateMs = typeof rotate?.value === "number" ? rotate.value : 5000;
+  // 7s, not 5s (D-052): a second longer to read, as asked, and deliberately out of
+  // step with the dashboard's 5s router.refresh() so a poll cannot keep landing on
+  // top of the cross-fade.
+  const rotateMs = typeof rotate?.value === "number" ? rotate.value : 7000;
 
   return (
     <section aria-label={heading} className="panel">

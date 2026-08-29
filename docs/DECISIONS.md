@@ -1310,3 +1310,44 @@ and is discarded at the end of it. It never persists across requests, so it cann
 serve one player's read to another — the property to care about, since these reads go
 through `createUserClient()` under RLS. The change is `select()` throughout and adds no
 write of any kind; it cannot alter a chip.
+
+## D-052 — The news box, and the source line that never rendered (2026-08-29)
+
+Owner reported the Your Team box "overlapping itself — when the new story comes in, it
+layers over the old text," and asked for a slower rotation, a fade, and a grey source
+line under each headline. The fade and the source line were already written. One of
+them had never once been visible.
+
+**`feed_sources` had RLS enabled and no policy.** Migration 0003 turned row level
+security on for it and then wrote read policies for the other nine tables — seasons,
+weeks, games, ledger_entries, pot_awards, chat_messages, ticker_items, feed_items,
+mark_votes — and missed this one. Postgres denies by default, so an authenticated
+player read zero rows, and because `NewsBox` pulls attribution through an embedded
+`feed_sources(name)` join, `source` came back null for every headline. The
+`{item.source && ...}` block therefore never rendered, for anybody, since launch.
+
+It looked fine from a service-role query, which is exactly why it survived: the data
+was always there. Every DEN item joins cleanly to "Denver Broncos". Only the door was
+locked. Migration 0021 adds the missing policy. Deliberately not filtered on `enabled`,
+so a source switched off later can still attribute the stories it already published.
+
+**The overlap had three causes, all of which look identical to a player.** The
+dashboard polls with `router.refresh()` every 5000ms and the news rotated every
+5000ms — an RSC re-render landing on the cross-fade every single time. The swap was
+driven by a `setTimeout` that was never cleared, so a pending swap still fired after a
+hover, a prop change or unmount, advancing twice or stranding the box mid-fade. And
+each poll handed down a freshly fetched `items` array: usually identical, but when a
+new story lands the ORDER shifts and `items[index]` silently points at different text
+with no fade at all — a headline replaced mid-sentence.
+
+Fixed as: rotation to 7000ms (a second longer as asked, and deliberately not a multiple
+of the 5s poll, so the two cannot stay in lockstep); the swap timer tracked and cleared
+on cleanup, restoring opacity if it is cancelled mid-fade; and the displayed list
+pinned in state, adopted only when the ids genuinely differ — done during render, which
+is React's documented way to adjust state on a prop change, rather than in an effect
+that would cost a second pass and a visible flash.
+
+The fade is now 500ms each way and eased, up from 300ms linear, and the swap happens
+only at zero opacity, so two headlines can never be on screen at once. The box reserves
+7.5rem rather than 6.5rem — three headline lines plus the source line that will now
+actually appear — so the column below stops jumping as stories rotate.
