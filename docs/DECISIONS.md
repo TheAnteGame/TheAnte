@@ -1206,3 +1206,26 @@ this changes nothing about the live week. It takes effect from Week 2 onward.
 The torture season plants a game five minutes after the deadline in every week and
 asserts it never reaches the slate, and that the slate is exactly one game short as a
 result. Proven non-vacuous: reverting the margin reports two failures per week.
+
+
+## D-049 — The tutorial teaches the board that exists (2026-08-26)
+
+D-042 put a ✕ beside the chips on the real slip and left the tutorial's practice
+board on the old control. A player learned "press five times to clear," then met a
+board with a visible cancel — the tutorial teaching a version of the game that no
+longer shipped.
+
+The practice tile now carries the same ✕, and needed the same structural change for
+the same reason: a `<button>` cannot contain a `<button>`, so the tile is a `div` with
+`role="button"`, `tabIndex` and Enter/Space, and its key handler ignores events from
+inside the cancel. Verified in the local tutorial harness — three presses to 30, ✕
+clears it, `aria-pressed` back to false, tile back to its rest state, and the press did
+not bubble through to raise.
+
+The slip's own instruction was stale in the same way: `raise_hint` described only the
+press-past-the-top wrap. It now leads with the ✕, which is the control a player can
+actually see, and keeps the wrap as the alternative for anyone who learned it first.
+
+Step 1's body copy is untouched — it is owner-authored (D-032), and it says "select a
+team here to stack chips," which is still exactly true. The whole point of D-042 was
+that the way out should be visible rather than described.

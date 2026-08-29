@@ -108,7 +108,8 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
   // Step 1 teaches the press-to-raise control; it is not done until a chip lands.
   const canAdvance = step !== 0 || picks.size > 0;
 
-  /** Same ladder as the real slip (D-009): press to back, press again to raise, one past the top clears. */
+  /** Same ladder as the real slip (D-009): press to back, press again to raise, one
+   *  past the top clears — and the ✕ beside the chips clears it directly (D-042). */
   const pressSide = (gameId: string, side: Side) => {
     setPicks((cur) => {
       const next = new Map(cur);
@@ -126,6 +127,17 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
       setChipBump(gameId);
       window.setTimeout(() => setChipBump(null), 250);
     }
+  };
+
+  /** The cancel beside the chips, same as the real slip (D-042). The tutorial has to
+   *  teach the board that exists, not the one that existed before the ✕. */
+  const clearSide = (gameId: string) => {
+    setPicks((cur) => {
+      if (!cur.has(gameId)) return cur;
+      const next = new Map(cur);
+      next.delete(gameId);
+      return next;
+    });
   };
 
   const anim = (cls: string) => (reducedMotion ? "" : cls);
@@ -149,11 +161,21 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
         const sideBtn = (side: Side, team: string) => {
           const active = pick?.side === side;
           return (
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => pressSide(g.id, side)}
+              onKeyDown={(e) => {
+                // The cancel inside owns its own Enter/Space — otherwise clearing a
+                // pick would raise it again on the way past.
+                if (e.target !== e.currentTarget) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  pressSide(g.id, side);
+                }
+              }}
               aria-pressed={active}
-              className={`flex flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${focusCls} ${
+              className={`flex cursor-default select-none flex-col items-center justify-center gap-2 px-3 py-3 text-center font-[family-name:var(--font-display)] text-sm font-semibold transition ${focusCls} ${
                 active ? "chamfer chrome-face border border-[color:var(--color-chrome)]" : "chamfer team-tile text-[color:var(--color-text-hi)]"
               }`}
             >
@@ -164,9 +186,30 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
                 {spreadFor(side)}
               </span>
               {active && (
-                <ChipStack tone="purple" total={pick!.chips} count={rung} size={38} animated={!reducedMotion && chipBump === g.id} />
+                <span className="flex items-center gap-2">
+                  <ChipStack tone="purple" total={pick!.chips} count={rung} size={38} animated={!reducedMotion && chipBump === g.id} />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearSide(g.id);
+                    }}
+                    aria-label={`${team} — take the bet back.`}
+                    className={`shrink-0 cursor-pointer text-[color:var(--color-canvas)]/40 transition-colors hover:text-[color:var(--color-canvas)]/75 ${focusCls}`}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+                      <circle cx="10" cy="10" r="8.2" stroke="currentColor" strokeWidth="1.3" />
+                      <path
+                        d="M7.4 7.4 L12.6 12.6 M12.6 7.4 L7.4 12.6"
+                        stroke="currentColor"
+                        strokeWidth="1.3"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </span>
               )}
-            </button>
+            </div>
           );
         };
         return (

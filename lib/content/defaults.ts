@@ -189,7 +189,7 @@ export const contentDefaults: Record<string, string> = {
     "Once a season: push your whole stack onto one game. Win and it pays big. Lose and you're on the felt. Nobody sees it until the reveal.",
   "dash.wager.at_label": "at",
   "dash.wager.raise_hint":
-    "Back a team by pressing it. Every press raises your stake — one more past {max} takes the bet back off the table.",
+    "Back a team by pressing it. Every press raises your stake. To take a bet back, press the ✕ beside your chips — or keep pressing past {max}.",
   "dash.wager.felt_notice": "You're on the felt: bet what you have, on whatever you want.",
   "dash.wager.capped_room": "capped by the room",
   "dash.wager.capped_stack": "capped by your stack",
