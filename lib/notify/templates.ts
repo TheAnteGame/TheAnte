@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { contentDefaults } from "@/lib/content/defaults";
 import { send } from "./index";
+import { render, type EmailDoc } from "./render";
 
 // Template rendering + logged sends. Templates are content-managed (notify.* keys);
 // variables are a WHITELIST passed by the calling job — that is how the blackout
@@ -91,4 +92,46 @@ export async function emailAllApproved(
     sent++;
   }
   return sent;
+}
+
+/** Send one of the five designed league emails (lib/notify/docs.ts). Renders the doc
+ *  to HTML and plain text from the same source, logs the send, and honours the same
+ *  per-player dedupe key as emailPlayer.
+ *
+ *  These bypass the content_blocks template path on purpose: their bodies are
+ *  structured documents, not a single string with {vars} in it, so the whitelist that
+ *  guards that path does not apply. The blackout is instead guarded at each call site,
+ *  which is where the caller actually knows whether a week has revealed. */
+export async function emailDoc(
+  db: SupabaseClient,
+  player: { id: string; email: string | null },
+  templateKey: string,
+  subject: string,
+  doc: EmailDoc,
+  dedupeKey?: string,
+): Promise<void> {
+  if (!player.email) return;
+  const logKey = dedupeKey ?? templateKey;
+  if (dedupeKey) {
+    const { data: existing } = await db
+      .from("notification_log")
+      .select("id")
+      .eq("player_id", player.id)
+      .eq("template_key", logKey)
+      .in("status", ["sent", "queued"])
+      .limit(1);
+    if (existing && existing.length > 0) return;
+  }
+
+  const { html, text } = render(doc);
+  const result = await send("email", templateKey, player.email, { subject, body: text, html });
+  await db.from("notification_log").insert({
+    player_id: player.id,
+    channel: "email",
+    template_key: logKey,
+    body: text,
+    status: result.status,
+    provider_message_id: result.providerMessageId ?? null,
+    error: result.error ?? null,
+  });
 }

@@ -2,7 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { canReveal, revealEntries } from "@/lib/engine";
 import type { EngineTicket } from "@/lib/engine";
-import { emailAllApproved } from "@/lib/notify/templates";
+import { emailDoc } from "@/lib/notify/templates";
+import { reveal as revealDoc, ticket as ticketDoc } from "@/lib/notify/docs";
 import { type JobOutcome } from "./util";
 
 // The reveal fires the instant the last ACTIVE player's ticket lands, or Thursday
@@ -202,16 +203,101 @@ async function fireReveal(db: SupabaseClient, week: OpenWeek, autoFolded = 0): P
     .eq("phase", "open"); // guard against a concurrent fire
   if (wErr) throw new Error(`reveal phase flip failed: ${wErr.message}`);
 
-  await emailAllApproved(
-    db,
-    "notify.reveal",
-    `ANTE — the Week ${week.number} room is open`,
-    { week: week.number },
-    `notify.reveal:w${week.number}`,
-  );
+  // Mail can never undo a reveal. The phase flip above is already committed, and a
+  // Resend outage or a malformed row must not turn a good reveal into a failed job.
+  try {
+    await sendRevealMail(db, week.id, week.number);
+  } catch (e) {
+    console.error(`reveal mail failed for week ${week.number}:`, e);
+  }
 
   return {
     status: "succeeded",
     detail: { week: week.number, tickets: ticketRows?.length ?? 0, autoFolded },
   };
+}
+
+/** The reveal mail (D-056): a fold notice to anyone who was auto-folded, and the
+ *  per-game board to everybody.
+ *
+ *  BLACKOUT GUARD. This function refuses to send anything unless the week's
+ *  revealed_at is actually set in the database. It is the only email in the system
+ *  that carries other players' picks, so it does not trust its caller's ordering —
+ *  re-order the reveal job tomorrow and this still cannot leak a ticket early
+ *  (ANTE-TECH §7). */
+async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: number): Promise<void> {
+  const { data: w } = await db.from("weeks").select("revealed_at").eq("id", weekId).maybeSingle();
+  if (!w?.revealed_at) {
+    // Never throw: a settled week must not be undone by a mail failure. Loud, though.
+    console.error(`reveal mail refused: week ${weekNumber} has no revealed_at`);
+    return;
+  }
+
+  const [{ data: players }, { data: tickets }, { data: games }] = await Promise.all([
+    db.from("players").select("id, email, first_name, last_name").eq("status", "approved"),
+    db.from("tickets").select("id, player_id, is_fold").eq("week_id", weekId),
+    db.from("games").select("id, away_team, home_team, kickoff_at").eq("week_id", weekId).eq("on_slate", true).order("kickoff_at"),
+  ]);
+
+  const nameOf = new Map(
+    (players ?? []).map((p) => [p.id, `${p.first_name ?? "?"} ${(p.last_name ?? "").slice(0, 1)}.`.trim()]),
+  );
+  const ticketIds = (tickets ?? []).map((t) => t.id);
+  const playerOfTicket = new Map((tickets ?? []).map((t) => [t.id, t.player_id]));
+
+  const { data: bets } = ticketIds.length
+    ? await db.from("bets").select("ticket_id, game_id, side").in("ticket_id", ticketIds)
+    : { data: [] as Array<{ ticket_id: string; game_id: string; side: string }> };
+
+  // Head counts only. Chip weights stay on the board, on purpose.
+  const backers = new Map<string, string[]>();
+  for (const b of bets ?? []) {
+    const nm = nameOf.get(playerOfTicket.get(b.ticket_id) ?? "");
+    if (!nm) continue;
+    const key = `${b.game_id}:${b.side}`;
+    backers.set(key, [...(backers.get(key) ?? []), nm]);
+  }
+
+  const rows = (games ?? []).map((g) => ({
+    matchup: `${g.away_team} @ ${g.home_team}`,
+    away: g.away_team,
+    home: g.home_team,
+    awayBackers: (backers.get(`${g.id}:away`) ?? []).sort().join(", "),
+    homeBackers: (backers.get(`${g.id}:home`) ?? []).sort().join(", "),
+  }));
+
+  const foldedIds = (tickets ?? []).filter((t) => t.is_fold).map((t) => t.player_id);
+  const foldedNames = foldedIds.map((id) => nameOf.get(id)).filter(Boolean) as string[];
+  const foldedLine =
+    foldedNames.length === 0
+      ? ""
+      : `${foldedNames.sort().join(", ")} ${foldedNames.length === 1 ? "was" : "were"} folded automatically.`;
+
+  const deadlineLabel = "Thursday 12:00pm ET";
+
+  for (const p of players ?? []) {
+    if (!p.email) continue;
+    const first = p.first_name ?? "Hello";
+
+    // Their own outcome first, using the same template a submitted ticket gets.
+    if (foldedIds.includes(p.id)) {
+      await emailDoc(
+        db,
+        p,
+        "player.folded",
+        `ANTE: you were folded for Week ${weekNumber}`,
+        ticketDoc({ firstName: first, week: weekNumber, folded: true, isShove: false, bets: [], total: 0, deadline: deadlineLabel }),
+        `player.folded:w${weekNumber}:${p.id}`,
+      );
+    }
+
+    await emailDoc(
+      db,
+      p,
+      "notify.reveal",
+      `ANTE: the Week ${weekNumber} board is open`,
+      revealDoc({ firstName: first, week: weekNumber, games: rows, folded: foldedLine }),
+      `notify.reveal:w${weekNumber}:${p.id}`,
+    );
+  }
 }

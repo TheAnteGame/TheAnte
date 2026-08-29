@@ -7,7 +7,6 @@ import {
   InvariantViolation,
 } from "@/lib/engine";
 import type { EngineGame, EngineLedgerEntry, EngineTicket } from "@/lib/engine";
-import { emailPlayer } from "@/lib/notify/templates";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { stacksByPlayer, type JobOutcome } from "./util";
 
@@ -203,26 +202,10 @@ export async function settleWeekRecord(
     .eq("id", week.id);
   if (wErr) throw new Error(`week close failed: ${wErr.message}`);
 
-  // Settled + pot emails (ADMIN §4.7) — per-player deltas, so send individually.
-  const { data: emailRows } = await db.from("players").select("id, email, first_name").in(
-    "id",
-    enginePlayers.map((p) => p.id),
-  );
-  for (const p of emailRows ?? []) {
-    const gain = result.gains.get(p.id);
-    const potWon = result.potAwards.filter((a) => a.playerId === p.id).reduce((s, a) => s + a.amount, 0);
-    const newStack = (stacks.get(p.id) ?? 0) +
-      result.entries.filter((e) => e.account === p.id).reduce((s, e) => s + e.amount, 0);
-    if (gain === undefined) continue;
-    await emailPlayer(
-      db,
-      p,
-      "notify.settled",
-      `ANTE — Week ${week.number} settled`,
-      { week: week.number, delta: (gain >= 0 ? "+" : "−") + Math.abs(gain) + (potWon > 0 ? ` (plus the Pot: +${potWon})` : ""), stack: newStack, rank: "—" },
-      `notify.settled:w${week.number}`,
-    );
-  }
+  // Monday night sends nothing (D-056). The recap now rides on Tuesday's slate-open
+  // email, where it arrives beside the new week a player can actually act on: one
+  // message a week instead of two, eight hours apart. Every figure it needs is read
+  // back out of the ledger by that job, so nothing is lost by staying quiet here.
 
   return {
     status: "succeeded",
