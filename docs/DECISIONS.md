@@ -1275,3 +1275,38 @@ sequential queries, not a second region.
 Left alone deliberately: the Supabase client still has no request timeout. Colocation
 makes a stall far less likely but not impossible, and a timeout is the belt to this
 change's braces — a separate, non-urgent piece of work.
+
+## D-051 — Fetching the leaderboard once instead of twice (2026-08-29)
+
+The dashboard mounts `<Leaderboard>` twice — once inside `hidden min-[900px]:block`
+for the wide layout, once inside `min-[900px]:hidden` for the narrow one — and CSS
+hides whichever does not apply. Both still render on the server, and the component
+fetches its own data, so every dashboard load ran the standings query, the week query,
+the `week_players` snapshot **and a paged scan of the whole week's ledger** twice, for
+a copy nobody ever sees.
+
+Invisible today at 21 ledger rows. Not invisible by Week 18 with a full roster, on a
+board that polls every five seconds. This is a growth problem more than a speed one,
+which is why it was worth doing when the other two tiers of query work were not: after
+D-050 colocated compute with the database, shaving the remaining waterfall buys perhaps
+30–50ms, and was deferred to the offseason on the owner's call.
+
+The fetch is now wrapped in React's `cache()`. **No cache key**, and that is
+deliberate: nothing inside the memo is per-player — the standings, the week, the
+deltas and the felt badges are the same league-wide table every approved player sees.
+The one personal value, `isMe`, is derived from the prop outside the memo. An earlier
+draft keyed on `playerId` as belt-and-braces; it earned an unused-argument warning and,
+on inspection, defended nothing.
+
+Proven rather than assumed, with a throwaway route mounting the component twice the way
+the dashboard does, and a `console.log` inside the loader:
+
+- with `cache()`, one page load, two mounts → **1 execution**
+- without it, same page → **2 executions**
+- with `cache()`, **two** page loads, four mounts → **2 executions**
+
+That last line is the one that matters for safety: the memo dedupes *within* a request
+and is discarded at the end of it. It never persists across requests, so it cannot
+serve one player's read to another — the property to care about, since these reads go
+through `createUserClient()` under RLS. The change is `select()` throughout and adds no
+write of any kind; it cannot alter a chip.

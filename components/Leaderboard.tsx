@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createUserClient } from "@/lib/db/supabase";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
@@ -8,7 +9,20 @@ import { LeaderboardTable, type LbCopy, type LbRow } from "./LeaderboardTable";
 // ledger delta and felt badges. During the blackout the delta is the ante for
 // everyone, posted all at once on Tuesday — nothing here can twitch on a submission.
 
-export async function Leaderboard({ playerId }: { playerId: string }) {
+// One fetch per request, not per render (D-051). The dashboard mounts this component
+// TWICE — once for the wide layout, once for the narrow one — and CSS hides whichever
+// does not apply. Both still render on the server, so without this the standings, the
+// week, the week_players snapshot and a PAGED SCAN OF THE WHOLE WEEK'S LEDGER all ran
+// twice on every load, for a copy nobody ever sees. Harmless at 21 ledger rows;
+// not harmless by Week 18, with the board polling every 5 seconds.
+//
+// React's cache() is per-request: it dedupes within a single render pass and is
+// discarded when the request ends. No cache key is needed because nothing in here is
+// per-player — the standings, the week, the deltas and the felt badges are the same
+// league-wide table every approved player sees. The one personal value, isMe, is
+// derived below from the prop, outside the memo. Nothing here writes: select()
+// throughout, so this cannot alter a single chip.
+const loadBoard = cache(async () => {
   const db = createUserClient();
 
   const [{ data: standings }, { data: week }] = await Promise.all([
@@ -37,6 +51,12 @@ export async function Leaderboard({ playerId }: { playerId: string }) {
     }
     felts = new Set((wps ?? []).filter((w) => w.felt).map((w) => w.player_id));
   }
+
+  return { standings, week, deltas, felts };
+});
+
+export async function Leaderboard({ playerId }: { playerId: string }) {
+  const { standings, week, deltas, felts } = await loadBoard();
 
   const rows: LbRow[] = (standings ?? []).map((s) => {
     const decided = (s.bets_won ?? 0) + (s.bets_lost ?? 0);
