@@ -1392,3 +1392,24 @@ Verified structurally rather than visually, sampling the DOM through many cycles
 never more than one item block, never more than one source line, opacity cycling
 between 1 and 0. The timings are stretched by the hidden-tab throttling, so only the
 structure is meaningful from that run — the look is the owner's to confirm.
+
+## D-054 — The band scrolls away (2026-08-29)
+
+The stakes band pinned to the top of the dashboard on desktop. Owner's call to unpin
+it, and the reasoning is right: the week, the tier, the ante, the Pot, your limit and
+the deadline are the frame you read once on arrival. They are blackout-still — none of
+them can move between Tuesday and the reveal — so there is nothing to consult mid-
+scroll. The bet slip's running tally is the figure that actually changes as you play,
+and it sticks on its own.
+
+Removing the pin deleted a small mechanism entirely. `BandOffset` existed only to
+measure the band with a `ResizeObserver` and publish `--band-h`, so the slip's tally
+bar could sit exactly beneath it (D-014's "measured, not guessed"). With nothing
+pinned above it, the bar simply sticks at `top-0` on every breakpoint, and the client
+component, the observer and the CSS variable all go. The band keeps its entry
+animation, its chamfer, its facets and its tooltips — only the pinning is gone.
+
+Verified by reading rather than by eye, and that is enough here: this is the removal of
+a `sticky` class with a deterministic outcome, not a timing behaviour. `sticky` no
+longer appears in StakesBand, `--band-h` no longer appears anywhere in the codebase,
+and the tally bar's own sticky is unchanged.

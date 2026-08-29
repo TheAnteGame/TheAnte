@@ -205,9 +205,11 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
         {copy.heading}
       </h2>
       {/* The running tally (§5.2). Ante, limit and deadline live on the stakes band
-          directly above, so this bar carries only what changes as you bet — and on
-          desktop it sticks just under the band, measured rather than guessed. */}
-      <div className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] min-[900px]:top-[var(--band-h,7rem)]">
+          above, so this bar carries only what changes as you bet — and it is the one
+          thing worth keeping in view, so it alone sticks (D-054). It used to sit under
+          the band at a measured offset; the band no longer pins, so it goes to the top
+          on its own. */}
+      <div className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)]">
         <div className="flex flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
           <div className="group relative">
             <div className="flex flex-col">

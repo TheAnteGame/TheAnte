@@ -7,7 +7,6 @@ import { ET } from "@/lib/time";
 import { PokerChip } from "@/components/chip/PokerChip";
 import { Facets } from "@/components/ui/Facets";
 import { Tip } from "@/components/ui/Tip";
-import { BandOffset } from "./BandOffset";
 
 // The stakes band (art §3, §7): the ONE large colored surface in the product, and
 // the only thing that changes with the season. Faceted plane in the current tier,
@@ -188,8 +187,11 @@ export async function StakesBand({ playerId }: { playerId: string }) {
 
   return (
     <div
-      data-stakes-band
-      className="band-in relative isolate z-30 flex flex-wrap items-center gap-x-6 gap-y-4 px-6 py-5 min-[900px]:sticky min-[900px]:top-0"
+      // Scrolls away with the page (D-054). It used to pin to the top on desktop, but
+      // the week, the ante, the Pot and the deadline are the frame you read once on
+      // arrival, not figures you consult mid-scroll — the bet slip's running tally is
+      // the thing worth keeping in view, and it still sticks on its own.
+      className="band-in relative isolate z-30 flex flex-wrap items-center gap-x-6 gap-y-4 px-6 py-5"
     >
       {/* Every painted layer lives in here, and the chamfer clip lives with it (D-045).
           It used to sit on the band itself — and a clip-path clips EVERY descendant
@@ -209,7 +211,6 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         <div className="shine-sweep absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.15)_50%,transparent_60%)]" />
       </div>
 
-      <BandOffset />
       <Tip text={ringTip} label={`${weekLabel} ${week.number}, ${tierLabel}`}>
         <SeasonRing weekNumber={week.number} />
       </Tip>
