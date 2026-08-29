@@ -4,28 +4,30 @@ import { useEffect, useRef, useState } from "react";
 
 type Item = { id: string; title: string; url: string | null; source: string | null };
 
-// Cross-fades one headline at a time. Pauses on hover; prefers-reduced-motion drops
-// the fade and just swaps.
+// One headline at a time, with a deliberate blank beat between them.
 //
-// D-052 — three faults fixed here, all of which read to a player as "the new story
-// layers over the old one":
+// D-053 — the box was showing two stories layered over each other, each with its own
+// source line. Two changes make that impossible rather than unlikely:
 //
-//  1. The dashboard polls with router.refresh() every 5000ms and this rotated every
-//     5000ms, so an RSC re-render landed on top of the fade EVERY time. The rotation
-//     is now 7000ms by default — longer, as asked, and deliberately not a multiple of
-//     the poll, so the two cannot stay in lockstep.
-//  2. The swap was driven by a setTimeout that was never cleared. On hover, on a prop
-//     change, on unmount, a pending swap still fired — advancing twice or stranding
-//     the box mid-fade. It is tracked and cleared now.
-//  3. A refresh handed down a NEW items array on every poll. Identical content, new
-//     identity — enough to re-render the subtree mid-transition. The list is now held
-//     in state and only adopted when the ids actually differ, so a no-op refresh
-//     cannot disturb a fade in flight.
+//  1. There is now a real GAP. A story fades out, the slot sits EMPTY for a full
+//     second, and only then does the next one fade in. Previously the swap happened
+//     the instant the fade-out timer fired, so any hiccup — a slow frame, a
+//     router.refresh() landing at the wrong moment — could paint the incoming story
+//     while the outgoing one was still on screen. With an empty second in between
+//     there is no moment when two stories can share the box.
 //
-// The fade is also slower (500ms each way, eased) and the swap happens only at zero
-// opacity, so two headlines can never be on screen together.
+//  2. The list is frozen at mount. The dashboard polls with router.refresh() every
+//     five seconds and re-renders this component with a freshly fetched array. Usually
+//     identical, but when a new story lands the ORDER shifts and the rendered item
+//     changes underneath the animation with no fade at all. News does not need to
+//     arrive within five seconds; it can wait for the next real page load.
+//
+// The cycle is one self-cancelling chain rather than an interval plus a loose
+// setTimeout, so pausing, unmounting or re-rendering can never leave a stray timer
+// queued — that was how the box previously advanced twice or stranded a half-fade.
 
-const FADE_MS = 500;
+const FADE_MS = 400;
+const GAP_MS = 1000; // the blank beat between stories
 
 export function NewsFader({
   items,
@@ -36,58 +38,49 @@ export function NewsFader({
   rotateMs: number;
   sourceLabel: string;
 }) {
+  // Captured once. Later props are ignored on purpose — see note 2 above.
+  const [list] = useState<Item[]>(items);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(true);
   const [reduced, setReduced] = useState(false);
-  const swapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   useEffect(() => {
     setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  // Adopt a new list only when it is genuinely new — and do it during render, which is
-  // React's documented way to adjust state on a prop change, rather than in an effect
-  // that would cost a second render pass and a visible flash.
-  //
-  // Why pin the list at all: the poll re-renders this component every few seconds with
-  // a freshly fetched array. Usually identical, but when a new story lands the ORDER
-  // shifts, and items[index] would then point at different text with no fade at all —
-  // a headline replaced mid-sentence, which is exactly what "it layers over the old
-  // one" looks like. Pinning means the list only ever changes on our own terms.
-  const [shown, setShown] = useState(items);
-  if (
-    shown.length !== items.length ||
-    !shown.every((it, i) => it.id === items[i]?.id)
-  ) {
-    setShown(items);
-    setIndex(0);
-    setVisible(true);
-  }
-  const list = shown;
-
   useEffect(() => {
     if (paused || list.length <= 1) return;
-    const tick = setInterval(() => {
+
+    const queue = timers.current;
+    const later = (fn: () => void, ms: number) => queue.push(setTimeout(fn, ms));
+
+    const cycle = () => {
       if (reduced) {
         setIndex((i) => (i + 1) % list.length);
+        later(cycle, rotateMs);
         return;
       }
-      setVisible(false);
-      swapTimer.current = setTimeout(() => {
+      setVisible(false); // fade out
+      later(() => {
+        // Swap while the slot is empty, then hold the blank beat before fading in.
         setIndex((i) => (i + 1) % list.length);
-        setVisible(true);
+        later(() => {
+          setVisible(true);
+          later(cycle, rotateMs + FADE_MS);
+        }, GAP_MS);
       }, FADE_MS);
-    }, rotateMs);
+    };
+
+    later(cycle, rotateMs);
+
     return () => {
-      clearInterval(tick);
-      // The swap belongs to the interval that scheduled it. Leaving it queued is what
-      // let a paused or re-rendered box advance behind its own back.
-      if (swapTimer.current) {
-        clearTimeout(swapTimer.current);
-        swapTimer.current = null;
-        setVisible(true);
-      }
+      // Every timer this run created dies with it. Nothing can fire into a paused,
+      // re-rendered or unmounted box.
+      queue.forEach(clearTimeout);
+      timers.current = [];
+      setVisible(true);
     };
   }, [paused, list.length, rotateMs, reduced]);
 
@@ -101,10 +94,13 @@ export function NewsFader({
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       // Holds its size across a swap — three headline lines plus the source line — so
-      // the column below never jumps as stories rotate.
+      // the column below never jumps, and the blank beat never collapses the box.
       className="min-h-[7.5rem] px-4 py-4 text-sm"
     >
       <div
+        // Keyed on the item: React replaces the node outright instead of mutating text
+        // inside a node that is mid-transition.
+        key={item.id}
         style={{
           opacity: visible ? 1 : 0,
           transition: reduced ? "none" : `opacity ${FADE_MS}ms ease-in-out`,

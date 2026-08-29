@@ -1351,3 +1351,44 @@ The fade is now 500ms each way and eased, up from 300ms linear, and the swap hap
 only at zero opacity, so two headlines can never be on screen at once. The box reserves
 7.5rem rather than 6.5rem — three headline lines plus the source line that will now
 actually appear — so the column below stops jumping as stories rotate.
+
+## D-053 — A blank beat between stories (2026-08-29)
+
+D-052 slowed the rotation and cleaned up the timers and did not fix it. The owner's
+screenshot showed the real fault plainly: **two complete stories on screen at once,
+each with its own source line.** Slowing a collision down does not stop it colliding.
+
+Ruled out first: `<NewsBox>` and `<NewsFader>` are each rendered exactly once,
+repo-wide — this was not the duplicate-render problem D-051 fixed on the leaderboard.
+No view transitions are configured either. The remaining explanation is that the
+outgoing story was still painted when the incoming one arrived: the swap fired the
+instant the fade-out timer elapsed, with no margin, so any hiccup — a slow frame, the
+dashboard's five-second `router.refresh()` landing mid-fade — put both on screen.
+
+Not reproducible in this environment, and worth recording why: the browser pane runs
+hidden, so timers throttle and `PollRefresh` deliberately backs off to 60s when
+`document.hidden`. The conditions that cause it only exist in a visible tab. Rather
+than keep hunting a mechanism that could not be observed, the fix makes the overlap
+impossible by construction.
+
+**A story now fades out, the slot sits genuinely EMPTY for a full second, and only
+then does the next fade in.** There is no longer a moment when two stories could share
+the box even if something did go wrong. This is the owner's own suggestion, twice
+asked for, and it is the right one.
+
+**The list is also frozen at mount.** Every poll handed down a freshly fetched array;
+identical most of the time, but when a new story lands the order shifts and the
+rendered item changes underneath the animation with no fade at all. News does not need
+to arrive within five seconds — it can wait for the next real page load. That trade is
+deliberate and worth stating: new headlines now appear on navigation or reload, not
+mid-session.
+
+The cycle is one self-cancelling chain of timeouts instead of an interval plus a loose
+`setTimeout`, so pausing, unmounting or re-rendering cannot leave a stray timer queued.
+The item element is keyed on its id, so React replaces the node outright rather than
+mutating text inside a node that is mid-transition.
+
+Verified structurally rather than visually, sampling the DOM through many cycles:
+never more than one item block, never more than one source line, opacity cycling
+between 1 and 0. The timings are stretched by the hidden-tab throttling, so only the
+structure is meaningful from that run — the look is the owner's to confirm.
