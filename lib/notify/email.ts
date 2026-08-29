@@ -16,10 +16,17 @@ export async function sendEmail(
   if (!apiKey || !from) return { status: "failed", error: "RESEND_API_KEY / RESEND_FROM_EMAIL not set" };
 
   const resend = new Resend(apiKey);
-  const subject = String(vars.subject ?? `ANTE — ${templateKey}`);
+  const subject = String(vars.subject ?? `ANTE: ${templateKey}`);
   const body = String(vars.body ?? "");
+  // html is optional. When a caller supplies it, BOTH parts go out in one message and
+  // the client picks: rich clients render the HTML, plain-text clients fall back to
+  // the text part rather than to nothing (D-056). Callers that never learned about
+  // HTML keep working unchanged, text-only.
+  const html = typeof vars.html === "string" && vars.html.length > 0 ? vars.html : undefined;
   try {
-    const { data, error } = await resend.emails.send({ from, to, subject, text: body });
+    const { data, error } = await resend.emails.send(
+      html ? { from, to, subject, text: body, html } : { from, to, subject, text: body },
+    );
     if (error) return { status: "failed", error: error.message };
     return { status: "sent", providerMessageId: data?.id };
   } catch (e) {

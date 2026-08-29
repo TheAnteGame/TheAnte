@@ -4,7 +4,11 @@ import { SLATE_MARGIN_MINUTES, computeSlateOpen, anteForWeek } from "@/lib/engin
 import type { EngineLedgerEntry, EnginePlayer } from "@/lib/engine";
 import { fetchNflverseWeek, type NflverseFetch } from "@/lib/sports/nflverse";
 import { nowET, weekAnchors } from "@/lib/time";
-import { emailPlayer } from "@/lib/notify/templates";
+import { emailDoc } from "@/lib/notify/templates";
+import { weekOpen as weekOpenDoc } from "@/lib/notify/docs";
+import { fetchAllRows } from "@/lib/db/fetchAll";
+import { DateTime } from "luxon";
+import { ET } from "@/lib/time";
 import { stacksByPlayer, type JobOutcome } from "./util";
 
 // slate.open (ANTE-ADMIN §5): freeze spreads, snapshot the median BEFORE antes,
@@ -188,17 +192,14 @@ export async function openWeekCore(
 
   await db.from("seasons").update({ current_week: weekNumber }).eq("id", season.id);
 
-  // Slate-open email (ADMIN §4.7) — limits vary per player, so send individually.
-  const { data: approvedPlayers } = await db.from("players").select("id, email").eq("status", "approved");
-  for (const p of approvedPlayers ?? []) {
-    await emailPlayer(
-      db,
-      p,
-      "notify.slate_open",
-      `ANTE — Week ${weekNumber} is open`,
-      { week: weekNumber, ante: anteForWeek(weekNumber), limit: slate.houseLimits.get(p.id) ?? 0 },
-      `notify.slate_open:w${weekNumber}`,
-    );
+  // The Tuesday email (D-056): last week's result and the table, then the new week's
+  // ante, limit and wall. Limits are per player, so it is composed one at a time.
+  // Same rule as the reveal: the antes are already posted and the week is open. A
+  // mail failure is a mail failure, not a failed slate open.
+  try {
+    await sendWeekOpenMail(db, weekId!, weekNumber, deadlineAt, slate.houseLimits);
+  } catch (e) {
+    console.error(`week-open mail failed for week ${weekNumber}:`, e);
   }
 
   return {
@@ -245,4 +246,103 @@ function toLedgerRows(entries: EngineLedgerEntry[], weekId: string, weekNumber: 
     });
   }
   return rows;
+}
+
+/** Tuesday morning: how last week finished, where everyone stands, and that the new
+ *  board is live. Replaces the old one-line slate-open note and the Monday settlement
+ *  note, which is now silent (D-056).
+ *
+ *  Every figure here comes from the ledger and from weeks already revealed, so there
+ *  is no blackout exposure: the week being opened has no tickets in it yet. */
+async function sendWeekOpenMail(
+  db: SupabaseClient,
+  weekId: string,
+  weekNumber: number,
+  deadlineAt: Date,
+  houseLimits: Map<string, number>,
+): Promise<void> {
+  const { data: players } = await db
+    .from("players")
+    .select("id, email, first_name, last_name")
+    .eq("status", "approved");
+  if (!players || players.length === 0) return;
+
+  const deadline = DateTime.fromJSDate(deadlineAt).setZone(ET).toFormat("cccc h:mma 'ET'");
+  const ante = anteForWeek(weekNumber);
+  const nameOf = new Map(players.map((p) => [p.id, `${p.first_name ?? "?"} ${(p.last_name ?? "").slice(0, 1)}.`.trim()]));
+
+  // Week 1 has nothing to recap.
+  const prevWeek = weekNumber > 1 ? weekNumber - 1 : null;
+  let leaders: Array<{ rank: string; name: string; stack: string; delta: string }> = [];
+  const deltaOf = new Map<string, number>();
+  const stackOf = new Map<string, number>();
+  let potWinner = "";
+  let potAmount = 0;
+
+  if (prevWeek !== null) {
+    const { data: prev } = await db.from("weeks").select("id").eq("number", prevWeek).maybeSingle();
+
+    const entries = await fetchAllRows<{ player_id: string | null; amount: number; week_id: string | null }>(
+      (f, t) => db.from("ledger_entries").select("player_id, amount, week_id").order("id").range(f, t),
+    );
+    for (const e of entries ?? []) {
+      if (!e.player_id) continue;
+      stackOf.set(e.player_id, (stackOf.get(e.player_id) ?? 0) + e.amount);
+      if (prev && e.week_id === prev.id) deltaOf.set(e.player_id, (deltaOf.get(e.player_id) ?? 0) + e.amount);
+    }
+
+    if (prev) {
+      const { data: awards } = await db.from("pot_awards").select("player_id, amount, place").eq("week_id", prev.id).order("place");
+      const top = (awards ?? [])[0];
+      if (top) {
+        potWinner = nameOf.get(top.player_id) ?? "";
+        potAmount = (awards ?? []).filter((a) => a.player_id === top.player_id).reduce((s, a) => s + a.amount, 0);
+      }
+    }
+
+    // The real standings. The old settlement email shipped a hardcoded em dash here
+    // and never computed a rank at all.
+    leaders = [...stackOf.entries()]
+      .filter(([id]) => nameOf.has(id))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([id, stack], i) => {
+        const d = deltaOf.get(id) ?? 0;
+        return {
+          rank: String(i + 1),
+          name: nameOf.get(id) ?? "?",
+          stack: String(stack),
+          delta: (d >= 0 ? "+" : "-") + Math.abs(d),
+        };
+      });
+  }
+
+  const rankOf = new Map(leaders.map((l) => [l.name, l.rank]));
+
+  for (const p of players) {
+    if (!p.email) continue;
+    const nm = nameOf.get(p.id) ?? "";
+    const d = deltaOf.get(p.id) ?? 0;
+    await emailDoc(
+      db,
+      p,
+      "notify.slate_open",
+      `ANTE: Week ${weekNumber} is open`,
+      weekOpenDoc({
+        firstName: p.first_name ?? "Hello",
+        week: weekNumber,
+        ante,
+        limit: houseLimits.get(p.id) ?? 0,
+        deadline,
+        prevWeek,
+        delta: (d >= 0 ? "+" : "-") + Math.abs(d),
+        stack: stackOf.get(p.id) ?? 0,
+        rank: rankOf.get(nm) ?? "-",
+        potWinner,
+        potAmount,
+        leaders,
+      }),
+      `notify.slate_open:w${weekNumber}:${p.id}`,
+    );
+  }
 }

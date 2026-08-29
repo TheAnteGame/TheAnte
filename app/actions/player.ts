@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createUserClient } from "@/lib/db/supabase";
 import { getPlayerState, routeFor } from "@/lib/player";
+import { serviceDb } from "@/lib/jobs/util";
+import { emailDoc } from "@/lib/notify/templates";
+import { applicationReceived } from "@/lib/notify/docs";
 
 // Mutations run as the requesting user, through RLS (ANTE-TECH §4.2). The
 // players_apply policy admits only a pending self-row; the self-update guard
@@ -71,6 +74,31 @@ export async function saveProfile(formData: FormData): Promise<void> {
     })
     .eq("clerk_user_id", userId);
   if (error) redirect("/onboarding?error=1");
+
+  // The waiting-room email (D-056). This is the first moment we have an address at
+  // all: sign-in is phone OTP and the email is collected right here. Only sent while
+  // they are still pending, so re-saving the profile cannot send it twice.
+  const { data: me } = await db
+    .from("players")
+    .select("id, email, status, first_name")
+    .eq("clerk_user_id", userId)
+    .maybeSingle();
+  if (me && me.status === "pending") {
+    // Wrapped: the profile is already saved. A mail problem must not bounce them back
+    // to the onboarding form with an error over an email they never asked for.
+    try {
+      await emailDoc(
+        serviceDb(),
+        { id: me.id, email: me.email },
+        "player.application_received",
+        "ANTE: you're on the list",
+        applicationReceived({ firstName: me.first_name ?? "Hello" }),
+        `player.application_received:${me.id}`,
+      );
+    } catch (e) {
+      console.error(`application mail failed for ${me.id}:`, e);
+    }
+  }
 
   const state = await getPlayerState();
   redirect(state ? routeFor(state) : "/");

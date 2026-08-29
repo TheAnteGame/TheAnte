@@ -1413,3 +1413,62 @@ Verified by reading rather than by eye, and that is enough here: this is the rem
 a `sticky` class with a deterministic outcome, not a timing behaviour. `sticky` no
 longer appears in StakesBand, `--band-h` no longer appears anywhere in the codebase,
 and the tally bar's own sticky is unchanged.
+
+## D-056 — Five emails, one source, both formats (2026-08-29)
+
+The league sent eight plain-text one-liners and nothing at the two moments that
+mattered most: nothing when somebody applied, and nothing when they submitted a
+ticket. Owner asked for a designed set, in HTML, with a plain-text fallback so nobody
+is left out.
+
+**One source, two renderings.** Each email is described once as a list of blocks
+(`lib/notify/docs.ts`) and rendered twice by `lib/notify/render.ts`: branded HTML and
+aligned plain text. That is the answer to "can we coordinate the two so everybody gets
+the information" — they cannot drift, because there is only one description. Resend
+carries both parts in one message and the client picks. Callers that never learned
+about HTML keep working, text-only.
+
+**Always dark.** The `color-scheme` / `supported-color-schemes` meta pair tells Gmail
+and Apple Mail the palette is deliberate, every cell carries an explicit `bgcolor`
+attribute as well as an inline background, and `[data-ogsc]` restates each colour for
+Outlook.com, which rewrites them regardless. Built from the site's own tokens.
+
+**The set, and when each fires**
+
+| Email | Trigger | New? |
+|---|---|---|
+| You're on the list | profile completed, still pending | new |
+| You're in | commissioner approves | replaces a one-liner, now personalised |
+| That's your ticket | submission | new |
+| You folded | auto-fold at the reveal | new, same template as the ticket |
+| The board is open | reveal | replaces a one-liner |
+| Week N is open | slate open, Tuesday | absorbs the Monday settlement note |
+
+The Monday settlement email is now **silent**. Its recap rides on Tuesday instead,
+where it arrives beside a week the player can act on: one message rather than two,
+eight hours apart. That also fixed a real defect — the settlement email shipped
+`rank: "—"`, a hardcoded em dash that was never computed. Tuesday's email derives real
+standings from the ledger. `notify.pot` was a written, content-managed template wired
+to nothing; the Pot winner now appears in the Tuesday recap instead.
+
+**Two blackout guards, because two of these carry picks.** `lib/notify/templates.ts`
+whitelists template variables precisely so no pick data can reach an email, and these
+bypass that path by carrying structured documents. So the guard moves to the call site,
+where the caller actually knows the week's state. The ticket receipt reads only the
+recipient's own ticket for one week, so nothing but what they just typed can reach it.
+The reveal mail re-reads `revealed_at` from the database and refuses to send if it is
+null — it does not trust its caller's ordering, because it is the one email that
+carries other players' picks and a future re-order of that job must not be able to leak
+a ticket early.
+
+**Every send is non-fatal.** All five are wrapped. By the time any of them runs the
+important thing is already committed: the ante is posted, the phase is flipped, the
+buy-in is credited, the ticket is locked. A Resend outage is a mail problem and must
+never report a good reveal, approval or submission as failed.
+
+Tested: 26 new cases render all five in both formats and assert no em dash survives
+(owner's house style), HTML/text parity, the dark-mode meta pair, that no unfilled
+`${}` leaks, that the phone personalises, and that a folded ticket never lists bets.
+`tests/notify` is registered in the Vitest config, and `server-only` is stubbed for
+tests only — it throws outside a Server Component, which is right in production and
+fatal in a unit test.

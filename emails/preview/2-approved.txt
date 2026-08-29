@@ -1,0 +1,42 @@
+ANTE
+
+------------------------------------------------------------
+
+WELCOME TO THE LEAGUE
+
+YOU'RE IN
+
+
+
+Steve, your seat is confirmed and 500 chips are on the table in front of you, the same 500 everyone else starts with. No money changes hands, ever. The chips are the whole game.
+
+Here is the entire thing, in five sentences.
+
+01. Every week you back at least five games, stacking more chips on the teams you feel strongest about.
+
+02. Nobody sees a single pick until everyone is locked in, and then the whole board opens at once.
+
+03. Your payout is set by the room and not by the bookmaker: the fewer players on your side, the more a win pays.
+
+04. Every week costs an ante, every ante goes into the Pot, and whoever gains the most chips that week takes it.
+
+05. Biggest stack after Week 18 is champion, and you can never be knocked out, because your last chip is protected.
+
+TAKE YOUR SEAT: https://theantegame.com
+Sign in with (602) 555-8921, the same number you signed up with. The full rulebook is always in the top-right of the site.
+
+WHY I BUILT THIS
+
+Three reasons, honestly. I wanted to learn to actually build software in an age where AI has changed what one person can make on their own, and Ante is what that turned into. I'm also always looking for new ways to earn as I get older, and this is one of those swings.
+
+But the real reason is the third one: I wanted something to play with my friends that isn't the same survivor pool everyone is already bored of. This is a beta season, so it will have rough edges. Tell me about them. There's a chat room on the dashboard and I read every word of it.
+
+Robert Toler - Commissioner
+
+
+
+------------------------------------------------------------
+
+Chips have no cash value. None. Ever.
+
+theantegame.com

@@ -11,6 +11,8 @@ import { emailPlayer } from "@/lib/notify/templates";
 import { getContent } from "@/lib/content/getContent";
 import { takeSnapshot } from "@/lib/backup/snapshot";
 import { admitToOpenWeek } from "@/lib/jobs/admit";
+import { emailDoc } from "@/lib/notify/templates";
+import { approved as approvedEmail } from "@/lib/notify/docs";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { RemovalError, computeRemoval } from "@/lib/engine/removal";
 import { DEADWEIGHT_WEEKS } from "@/lib/engine/constants";
@@ -46,15 +48,25 @@ async function admissionOpen(db: ReturnType<typeof serviceDb>): Promise<boolean>
 export async function approvePlayer(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
-  if (!(await admissionOpen(ctx.db))) return fail("Admission is a preseason power. The roster is locked (§13).");
+  if (!(await admissionOpen(ctx.db)))
+    return fail("Admission is a preseason power. The roster is locked (§13).");
 
   const playerId = str(fd, "playerId");
-  const { data: p } = await ctx.db.from("players").select("id, status, first_name, last_name, email").eq("id", playerId).maybeSingle();
+  const { data: p } = await ctx.db
+    .from("players")
+    .select("id, status, first_name, last_name, email, phone")
+    .eq("id", playerId)
+    .maybeSingle();
   if (!p || p.status !== "pending") return fail("Not a pending applicant");
 
   const { error } = await ctx.db
     .from("players")
-    .update({ status: "approved", approved_at: new Date().toISOString(), approved_by: ctx.playerId, joined_at: new Date().toISOString() })
+    .update({
+      status: "approved",
+      approved_at: new Date().toISOString(),
+      approved_by: ctx.playerId,
+      joined_at: new Date().toISOString(),
+    })
     .eq("id", playerId);
   if (error) return fail(error.message);
 
@@ -78,11 +90,20 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
   // thing the panel is for — the room's own conversation — and told nobody anything
   // the standings do not already show.
   await writeAudit(ctx, "player.approve", "player", playerId, "Application approved; buy-in credited");
-  if (p.email) {
-    await send("email", "player.approved", p.email, {
-      subject: "ANTE — you're in",
-      body: "The Commissioner approved your seat. 500 chips, same as everyone. The room opens at theantegame.com.",
-    });
+  // The welcome (D-056): their name, their number, and the whole game in five lines.
+  // Wrapped: the seat and the 500-chip buy-in are already written, and a mail problem
+  // must not report the approval as failed.
+  try {
+    await emailDoc(
+      ctx.db,
+      { id: playerId, email: p.email },
+      "player.approved",
+      "ANTE: you're in",
+      approvedEmail({ firstName: p.first_name ?? "Hello", phone: p.phone ?? null }),
+      `player.approved:${playerId}`,
+    );
+  } catch (e) {
+    console.error(`approval mail failed for ${playerId}:`, e);
   }
   revalidatePath("/admin/players");
   return { ok: true };
@@ -91,10 +112,15 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
 export async function rejectPlayer(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
-  if (!(await admissionOpen(ctx.db))) return fail("Admission is a preseason power. The roster is locked (§13).");
+  if (!(await admissionOpen(ctx.db)))
+    return fail("Admission is a preseason power. The roster is locked (§13).");
 
   const playerId = str(fd, "playerId");
-  const { error } = await ctx.db.from("players").update({ status: "rejected" }).eq("id", playerId).eq("status", "pending");
+  const { error } = await ctx.db
+    .from("players")
+    .update({ status: "rejected" })
+    .eq("id", playerId)
+    .eq("status", "pending");
   if (error) return fail(error.message);
   await writeAudit(ctx, "player.reject", "player", playerId, str(fd, "reason") || "Application rejected");
   revalidatePath("/admin/players");
@@ -112,11 +138,20 @@ export async function mutePlayer(fd: FormData): Promise<ActionResult> {
   const hours = Number(str(fd, "hours") || "24");
   const until = hours > 0 ? new Date(Date.now() + hours * 3600_000).toISOString() : null;
 
-  const { error } = await ctx.db.from("players").update({ is_muted: true, muted_until: until }).eq("id", playerId);
+  const { error } = await ctx.db
+    .from("players")
+    .update({ is_muted: true, muted_until: until })
+    .eq("id", playerId);
   if (error) return fail(error.message);
-  await ctx.db.from("moderation_actions").insert({ player_id: playerId, kind: "mute", reason, expires_at: until, created_by: ctx.playerId });
+  await ctx.db
+    .from("moderation_actions")
+    .insert({ player_id: playerId, kind: "mute", reason, expires_at: until, created_by: ctx.playerId });
 
-  const { data: p } = await ctx.db.from("players").select("first_name, last_name").eq("id", playerId).maybeSingle();
+  const { data: p } = await ctx.db
+    .from("players")
+    .select("first_name, last_name")
+    .eq("id", playerId)
+    .maybeSingle();
   await writeAudit(ctx, "player.mute", "player", playerId, reason, {
     isPublic: true,
     publicLine: `${p?.first_name ?? "A player"} ${(p?.last_name ?? "").slice(0, 1)}. is muted${until ? ` until ${new Date(until).toLocaleString("en-US", { timeZone: "America/New_York" })} ET` : ""}. They can still bet — muting never touches the game.`,
@@ -129,10 +164,18 @@ export async function unmutePlayer(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
   const playerId = str(fd, "playerId");
-  const { error } = await ctx.db.from("players").update({ is_muted: false, muted_until: null }).eq("id", playerId);
+  const { error } = await ctx.db
+    .from("players")
+    .update({ is_muted: false, muted_until: null })
+    .eq("id", playerId);
   if (error) return fail(error.message);
-  await ctx.db.from("moderation_actions").insert({ player_id: playerId, kind: "unmute", reason: "Mute lifted", created_by: ctx.playerId });
-  await writeAudit(ctx, "player.unmute", "player", playerId, "Mute lifted", { isPublic: true, publicLine: "A mute was lifted." });
+  await ctx.db
+    .from("moderation_actions")
+    .insert({ player_id: playerId, kind: "unmute", reason: "Mute lifted", created_by: ctx.playerId });
+  await writeAudit(ctx, "player.unmute", "player", playerId, "Mute lifted", {
+    isPublic: true,
+    publicLine: "A mute was lifted.",
+  });
   revalidatePath("/admin/players");
   return { ok: true };
 }
@@ -162,14 +205,24 @@ export async function deactivatePlayer(fd: FormData): Promise<ActionResult> {
   const reason = str(fd, "reason");
   const evidence = str(fd, "evidence");
   // Acceptance test 27: rejected without non-empty evidence. Silence is never grounds.
-  if (!reason || !evidence) return fail("Deactivation requires a reason AND the quotable thing the player actually said (§13).");
+  if (!reason || !evidence)
+    return fail("Deactivation requires a reason AND the quotable thing the player actually said (§13).");
 
-  const { data: p } = await ctx.db.from("players").select("first_name, last_name, status").eq("id", playerId).maybeSingle();
+  const { data: p } = await ctx.db
+    .from("players")
+    .select("first_name, last_name, status")
+    .eq("id", playerId)
+    .maybeSingle();
   if (!p || p.status !== "approved") return fail("Not an active player");
 
   const { error } = await ctx.db
     .from("players")
-    .update({ status: "deactivated", deactivated_at: new Date().toISOString(), deactivation_reason: reason, deactivation_evidence: evidence })
+    .update({
+      status: "deactivated",
+      deactivated_at: new Date().toISOString(),
+      deactivation_reason: reason,
+      deactivation_evidence: evidence,
+    })
     .eq("id", playerId);
   if (error) return fail(error.message);
 
@@ -188,7 +241,12 @@ export async function reactivatePlayer(fd: FormData): Promise<ActionResult> {
   const playerId = str(fd, "playerId");
   const { error } = await ctx.db
     .from("players")
-    .update({ status: "approved", deactivated_at: null, deactivation_reason: null, deactivation_evidence: null })
+    .update({
+      status: "approved",
+      deactivated_at: null,
+      deactivation_reason: null,
+      deactivation_evidence: null,
+    })
     .eq("id", playerId)
     .eq("status", "deactivated");
   if (error) return fail(error.message);
@@ -217,10 +275,7 @@ async function missedWeekStreak(db: ReturnType<typeof serviceDb>, playerId: stri
     .order("number", { ascending: false });
   if (!weeks || weeks.length === 0) return 0;
 
-  const { data: tickets } = await db
-    .from("tickets")
-    .select("week_id, is_fold")
-    .eq("player_id", playerId);
+  const { data: tickets } = await db.from("tickets").select("week_id, is_fold").eq("player_id", playerId);
   const byWeek = new Map((tickets ?? []).map((t) => [t.week_id, t.is_fold]));
 
   let streak = 0;
@@ -247,7 +302,8 @@ export async function removePlayer(fd: FormData): Promise<ActionResult> {
     .eq("id", playerId)
     .maybeSingle();
   if (!p) return fail("No such player");
-  if (p.status !== "approved" && p.status !== "deactivated") return fail("Only a seated player can be removed");
+  if (p.status !== "approved" && p.status !== "deactivated")
+    return fail("Only a seated player can be removed");
 
   // Gate 1 — the rule is objective, and the code is where it becomes binding. A
   // commissioner cannot remove a player who is still showing up, for any reason.
@@ -267,7 +323,9 @@ export async function removePlayer(fd: FormData): Promise<ActionResult> {
     .is("revealed_at", null)
     .maybeSingle();
   if (openWeek) {
-    return fail(`Week ${openWeek.number} is mid-blackout. Removal moves every stack in the league — wait for the reveal (§6).`);
+    return fail(
+      `Week ${openWeek.number} is mid-blackout. Removal moves every stack in the league — wait for the reveal (§6).`,
+    );
   }
 
   // The stack to redistribute, read the same way every other stack is: a SUM
@@ -277,7 +335,10 @@ export async function removePlayer(fd: FormData): Promise<ActionResult> {
     ctx.db.from("ledger_entries").select("amount").eq("player_id", playerId).order("id").range(from, to),
   );
   const stack = (rows ?? []).reduce((sum, r) => sum + r.amount, 0);
-  if (stack < 0) return fail(`${p.first_name ?? "That player"} holds ${stack} chips. Refusing to redistribute a negative stack.`);
+  if (stack < 0)
+    return fail(
+      `${p.first_name ?? "That player"} holds ${stack} chips. Refusing to redistribute a negative stack.`,
+    );
 
   // Recipients are the seats still IN the game. A deactivated player stopped anteing
   // and left the median; they do not collect from a removal either.
@@ -369,7 +430,10 @@ export async function editPlayer(fd: FormData): Promise<ActionResult> {
 export async function savePlayerNotes(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
-  const { error } = await ctx.db.from("players").update({ notes: str(fd, "notes") }).eq("id", str(fd, "playerId"));
+  const { error } = await ctx.db
+    .from("players")
+    .update({ notes: str(fd, "notes") })
+    .eq("id", str(fd, "playerId"));
   if (error) return fail(error.message);
   revalidatePath("/admin/players");
   return { ok: true };
@@ -379,7 +443,11 @@ export async function nudgePlayer(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
   const playerId = str(fd, "playerId");
-  const { data: p } = await ctx.db.from("players").select("email, first_name").eq("id", playerId).maybeSingle();
+  const { data: p } = await ctx.db
+    .from("players")
+    .select("email, first_name")
+    .eq("id", playerId)
+    .maybeSingle();
   if (!p?.email) return fail("No email on file");
   const result = await send("email", "player.nudge", p.email, {
     subject: "ANTE — the room is waiting on you",
@@ -437,7 +505,12 @@ export async function correctGame(fd: FormData): Promise<ActionResult> {
   const { error } = await ctx.db.from("games").update(update).eq("id", gameId);
   if (error) return fail(error.message);
   await writeAudit(ctx, `game.${op}`, "game", before.external_id, reason, {
-    before: { status: before.status, away: before.away_score, home: before.home_score, void: before.void_reason },
+    before: {
+      status: before.status,
+      away: before.away_score,
+      home: before.home_score,
+      void: before.void_reason,
+    },
     after: update,
     isPublic: true,
     publicLine: `Commissioner correction on ${before.external_id}: ${reason}`,
@@ -487,11 +560,15 @@ export async function forceReveal(fd: FormData): Promise<ActionResult> {
   if (!week) return fail("No open week");
   await takeSnapshot(ctx.db, `before force reveal of week ${week.number}`, ctx.playerId);
   if (new Date() < new Date(week.deadline_at)) {
-    return fail("The reveal cannot fire before Thursday noon — an early reveal hands every un-submitted player the room (§4.2).");
+    return fail(
+      "The reveal cannot fire before Thursday noon — an early reveal hands every un-submitted player the room (§4.2).",
+    );
   }
 
   const outcome = await revealDeadline(ctx.db);
-  await writeAudit(ctx, "week.force_reveal", "week", String(week.number), reason, { after: outcome as unknown });
+  await writeAudit(ctx, "week.force_reveal", "week", String(week.number), reason, {
+    after: outcome as unknown,
+  });
   revalidatePath("/admin/week");
   return outcome.status === "failed" ? fail("Reveal job failed — see job runs") : { ok: true };
 }
@@ -538,7 +615,10 @@ export async function saveContent(fd: FormData): Promise<ActionResult> {
 
   const { error } = await ctx.db
     .from("content_blocks")
-    .upsert({ key, value, updated_at: new Date().toISOString(), updated_by: ctx.playerId }, { onConflict: "key" });
+    .upsert(
+      { key, value, updated_at: new Date().toISOString(), updated_by: ctx.playerId },
+      { onConflict: "key" },
+    );
   if (error) return fail(error.message);
   await ctx.db.from("content_revisions").insert({ key, value, created_by: ctx.playerId });
   revalidatePath("/admin/content");
@@ -647,7 +727,10 @@ export async function replySupportMessage(fd: FormData): Promise<ActionResult> {
     .maybeSingle();
   if (!msg) return fail("That message is gone");
 
-  const player = (Array.isArray(msg.players) ? msg.players[0] : msg.players) as { id: string; email: string | null } | null;
+  const player = (Array.isArray(msg.players) ? msg.players[0] : msg.players) as {
+    id: string;
+    email: string | null;
+  } | null;
   if (!player?.email) return fail("That player has no email on file, so a reply cannot reach them.");
 
   const subject = await getContent("notify.support_reply_subject");
@@ -707,7 +790,8 @@ export async function saveFeedSource(fd: FormData): Promise<ActionResult> {
   const url = str(fd, "url");
   const name = str(fd, "name");
   const kind = str(fd, "kind");
-  if (!url || !name || !["league_ticker", "team_news"].includes(kind)) return fail("Name, URL, and kind required");
+  if (!url || !name || !["league_ticker", "team_news"].includes(kind))
+    return fail("Name, URL, and kind required");
   const { error } = await ctx.db.from("feed_sources").insert({
     kind,
     name,
@@ -723,9 +807,16 @@ export async function saveFeedSource(fd: FormData): Promise<ActionResult> {
 export async function toggleFeedSource(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
-  const { data: s } = await ctx.db.from("feed_sources").select("enabled").eq("id", str(fd, "sourceId")).maybeSingle();
+  const { data: s } = await ctx.db
+    .from("feed_sources")
+    .select("enabled")
+    .eq("id", str(fd, "sourceId"))
+    .maybeSingle();
   if (!s) return fail("No such source");
-  const { error } = await ctx.db.from("feed_sources").update({ enabled: !s.enabled }).eq("id", str(fd, "sourceId"));
+  const { error } = await ctx.db
+    .from("feed_sources")
+    .update({ enabled: !s.enabled })
+    .eq("id", str(fd, "sourceId"));
   if (error) return fail(error.message);
   revalidatePath("/admin/feeds");
   return { ok: true };
@@ -768,8 +859,13 @@ export async function drawHighCard(): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
 
-  const { data: prior } = await ctx.db.from("audit_log").select("id").eq("action", "season.high_card").limit(1);
-  if (prior && prior.length > 0) return fail("The high card has been drawn. One draw, publicly, no re-draws (§11).");
+  const { data: prior } = await ctx.db
+    .from("audit_log")
+    .select("id")
+    .eq("action", "season.high_card")
+    .limit(1);
+  if (prior && prior.length > 0)
+    return fail("The high card has been drawn. One draw, publicly, no re-draws (§11).");
 
   const { gatherSeasonData } = await import("@/lib/season");
   const { championshipOrder } = await import("@/lib/engine/awards");
@@ -796,7 +892,8 @@ export async function drawHighCard(): Promise<ActionResult> {
     return { playerId: s.playerId, rank };
   });
   cards.sort((a, b) => b.rank - a.rank);
-  const rankName = (r: number) => (r === 14 ? "Ace" : r === 13 ? "King" : r === 12 ? "Queen" : r === 11 ? "Jack" : String(r));
+  const rankName = (r: number) =>
+    r === 14 ? "Ace" : r === 13 ? "King" : r === 12 ? "Queen" : r === 11 ? "Jack" : String(r);
   const lines = cards.map((c) => `${season.names.get(c.playerId)}: ${rankName(c.rank)}`).join(" · ");
   // The draw stays verifiable without posting to the room (D-039): commitment, seed
   // and every card land in the audit log, which is where the math can be checked.
@@ -820,7 +917,8 @@ export async function closeSeason(): Promise<ActionResult> {
   const { gatherSeasonData } = await import("@/lib/season");
   const { computeAwards, championshipOrder, finishedOnFelt } = await import("@/lib/engine/awards");
   const season = await gatherSeasonData(ctx.db);
-  if (!season.allSettled) return fail("Week 18 has not settled — the season closes after the last stack moves");
+  if (!season.allSettled)
+    return fail("Week 18 has not settled — the season closes after the last stack moves");
 
   // A marker outstanding at season end cannot roll — write it off against the
   // Pot's own account so conservation still closes (§8.10).
@@ -849,17 +947,26 @@ export async function closeSeason(): Promise<ActionResult> {
     { key: "mark.closes_at", value: closes as unknown },
   ];
   for (const r of rows) {
-    await ctx.db.from("app_settings").upsert({ key: r.key, value: r.value, updated_by: ctx.playerId }, { onConflict: "key" });
+    await ctx.db
+      .from("app_settings")
+      .upsert({ key: r.key, value: r.value, updated_by: ctx.playerId }, { onConflict: "key" });
   }
 
   const { error } = await ctx.db.from("seasons").update({ status: "complete" }).eq("status", "active");
   if (error) return fail(error.message);
 
   const champ = order.find((s) => s.eligible);
-  await writeAudit(ctx, "season.close", "season", "2026", "Season closed; awards computed; The Mark opens for 7 days", {
-    isPublic: true,
-    publicLine: `The 2026 season is closed. ${champ ? `${season.names.get(champ.playerId)} takes it with ${champ.stack}.` : ""} Awards are up at /season. Felt finishers: The Mark's ballot is open for seven days. Every ticket stays readable forever.`,
-  });
+  await writeAudit(
+    ctx,
+    "season.close",
+    "season",
+    "2026",
+    "Season closed; awards computed; The Mark opens for 7 days",
+    {
+      isPublic: true,
+      publicLine: `The 2026 season is closed. ${champ ? `${season.names.get(champ.playerId)} takes it with ${champ.stack}.` : ""} Awards are up at /season. Felt finishers: The Mark's ballot is open for seven days. Every ticket stays readable forever.`,
+    },
+  );
   revalidatePath("/season");
   return { ok: true };
 }
@@ -869,7 +976,11 @@ export async function handoffCommissioner(fd: FormData): Promise<ActionResult> {
   if (!ctx) return fail("No seat");
   const playerId = str(fd, "playerId");
   const typedName = str(fd, "typedName");
-  const { data: p } = await ctx.db.from("players").select("first_name, last_name, status").eq("id", playerId).maybeSingle();
+  const { data: p } = await ctx.db
+    .from("players")
+    .select("first_name, last_name, status")
+    .eq("id", playerId)
+    .maybeSingle();
   if (!p || p.status !== "approved") return fail("Handoff requires an active player");
   const fullName = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim();
   if (typedName !== fullName) return fail(`Type the player's full name exactly: "${fullName}"`);
