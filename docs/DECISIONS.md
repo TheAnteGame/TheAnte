@@ -1229,3 +1229,49 @@ actually see, and keeps the wrap as the alternative for anyone who learned it fi
 Step 1's body copy is untouched — it is owner-authored (D-032), and it says "select a
 team here to stack chips," which is still exactly true. The whole point of D-042 was
 that the way out should be visible rather than described.
+
+## D-050 — Run the functions next to the database (2026-08-29)
+
+The site was slow and, worse, unreliable: a quarter of homepage requests never
+returned at all. Cause was a split that had been there since the first deploy —
+functions ran in **iad1 (Washington DC)** on Vercel's default, while Supabase sits in
+**us-west-2 (Oregon)**. Every query was a transcontinental round trip, and the
+homepage makes three in sequence (`getPlayerState`, the seasons read, content) before
+it can render.
+
+Diagnosed by comparison rather than inference. Same host, same network, same minute:
+
+| Route | Path | Result |
+|---|---|---|
+| `/rules` | CDN hit — no function, no database | 20/20 ok, median 120ms, **0 hangs** |
+| `/` | function + three cross-country queries | 15/20 ok, median 621ms, **5 hangs** |
+
+That control matters: it proves the network path and the CDN were healthy, and puts
+the fault squarely inside function execution. The hangs appeared in the runtime log
+with no status code and no error — a function that never returned, not one that
+failed. The Supabase client sets no request timeout, so a stalled connection waits
+until the platform kills it, which is exactly the shape observed.
+
+`vercel.json` now pins `regions: ["pdx1"]` — Vercel's us-west-2, the same region as
+the database. Supabase is the only latency-sensitive dependency; Clerk, Resend and
+the sports feeds are external either way.
+
+Measured after, 60 consecutive requests:
+
+| | before (iad1) | after (pdx1) |
+|---|---|---|
+| succeeded | 15/20 | **60/60** |
+| median | 621ms | **228ms** |
+| p90 | 1.101s | **262ms** |
+| max | 5.530s | **397ms** |
+| hangs | 5 (25%) | **0** |
+
+The hangs were a symptom of the distance, not a separate defect. Worth noting the
+measurement was taken from one location on the west coast; an east-coast player pays
+one extra edge-to-function hop but saves three database round trips, so the trade is
+still strongly positive. If that ever needs revisiting, the honest fix is fewer
+sequential queries, not a second region.
+
+Left alone deliberately: the Supabase client still has no request timeout. Colocation
+makes a stall far less likely but not impossible, and a timeout is the belt to this
+change's braces — a separate, non-urgent piece of work.

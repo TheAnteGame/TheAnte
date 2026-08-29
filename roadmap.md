@@ -8,6 +8,15 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-08-29 (twenty-sixth pass):** **Functions moved next to the database (D-050).**
+> Live-site complaint of slowness turned out to be worse than slow: functions ran in
+> iad1 while Supabase is us-west-2, and 25% of homepage requests never returned. A CDN
+> control on /rules (20/20, 0 hangs) proved the fault was in function execution, not
+> the network. `vercel.json` now pins `regions: ["pdx1"]`. Median 621ms → 228ms, p90
+> 1.10s → 262ms, max 5.53s → 397ms, and 60 consecutive requests with zero hangs.
+> Still open, non-urgent: the Supabase client sets no request timeout.
+
+
 > **2026-08-26 (twenty-fifth pass):** **The deadweight rule (D-041), rulebook v1.2.**
 > Owner requirement for the beta: some invited players will never bet, and a dead seat
 > holds chips nobody can win. New §14 rule — three straight weeks with no ticket and
