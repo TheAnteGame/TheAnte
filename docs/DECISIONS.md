@@ -142,7 +142,7 @@ zero source errors and all 32 teams covered; `ante-feeds-sync` re-runs every 15 
 **2. The wager slot is the Game Board.** It now carries a real section title like Table
 Talk instead of opening on an unlabelled stats strip, and the strip is subordinate to it.
 `dash.wager.heading` changes from "This week" to "Game Board". **"The Felt" was rejected
-as the name** — in the rulebook being *on the felt* means broke (§9), so naming the whole
+as the name** — in the rulebook being _on the felt_ means broke (§9), so naming the whole
 surface that would collide with a real game state.
 
 **3. Point spreads moved under the team names.** Each side now carries its own line
@@ -204,7 +204,7 @@ so a stack reads as chips rather than one shape.
 
 **5. Point spreads stay point spreads.** Raised as a question: `−3.5` is not the `+180 /
 −200` most people picture. Those are American moneyline odds, which state a payout. **ANTE
-never pays by odds** — rulebook §5 pays *players against you ÷ players with you*, capped
+never pays by odds** — rulebook §5 pays _players against you ÷ players with you_, capped
 0.25×–2.50×, and bets settle straight-up. Printing a moneyline would advertise a payout the
 game does not offer, and the real multiplier cannot be shown pre-reveal because pick
 distribution is blackout-protected (§6). The spread is the only legitimate pre-reveal
@@ -238,7 +238,7 @@ no MX records, so every message a player sent bounced (D-011 §6). Replaced end 
 **One change to the notifier.** `emailPlayer` refuses a body containing `{`, on the
 assumption an unfilled brace means a broken template. A support ticket is free text a
 player wrote and may legitimately contain braces, so an opt-in `allowFreeText` checks the
-*template's* placeholders instead of scanning the filled body. Nothing else uses it, and
+_template's_ placeholders instead of scanning the filled body. Nothing else uses it, and
 the blackout fence is unaffected — support carries no pick data in either direction.
 
 **2. The stakes band sticks on desktop.** From 900px up the band pins to the top of the
@@ -311,8 +311,8 @@ stops being information the moment it has been learned.
 
 **3. The guide answers "who wins the Pot".** The owner predicted this would be the main
 point of confusion, and it is a fair one: the ante pool and the bet-to-bet chip movement
-are two separate flows. `/guide` gains a section — *"Your bets and the Pot are two
-different things"* — and the Pot section now states who wins it, that folding forfeits it,
+are two separate flows. `/guide` gains a section — _"Your bets and the Pot are two
+different things"_ — and the Pot section now states who wins it, that folding forfeits it,
 that the ante counts inside your weekly gain, and that a full-league fold rolls the Pot.
 
 ## D-015 — Backups, on a database that had none (2026-08-21)
@@ -370,8 +370,8 @@ past the top clears.
 
 1. **Everyone starts even** — 500 chips, the ante, biggest stack on the last Sunday.
 2. **Press a team to back it** — they actually do it; the step will not advance until they have.
-3. **Here is the real game** — the step that was missing. Payout is *players against you ÷
-   players with you*: back the crowd and win almost nothing, be alone and right and take
+3. **Here is the real game** — the step that was missing. Payout is _players against you ÷
+   players with you_: back the crowd and win almost nothing, be alone and right and take
    2.5×. So hunt the game where the room is wrong, not the safe pick.
 4. **Nobody sees a thing until everyone is in** — the blackout, then the reveal, with a
    sample card showing 2 players at 2.5× against 6 at 0.33× so the arithmetic lands.
@@ -381,8 +381,8 @@ The house limit, the Thursday deadline, the shove and settlement mechanics move 
 `/guide`, which is linked from the dashboard header and can be read at leisure. Twenty-one
 now-orphaned `howto.*` content keys were deleted rather than left dead in the console.
 
-**`/guide` gained a strategy section too** — *"How to actually win"* — covering the same
-ground at more length, plus the earlier *"Your bets and the Pot are two different things"*.
+**`/guide` gained a strategy section too** — _"How to actually win"_ — covering the same
+ground at more length, plus the earlier _"Your bets and the Pot are two different things"_.
 Between them the two surfaces now answer the question the owner predicted would be the
 league's main point of confusion: the ante pool and bet-to-bet chip movement are two
 separate flows, and the multipliers are how you win the first one.
@@ -391,7 +391,7 @@ separate flows, and the multipliers are how you win the first one.
 
 **The owner declined Supabase Pro for now**, reasonably: eight players, week zero, and
 $25/mo is a real cost against a league that may not gel. Revisit around week 2–3 if it
-does. That decision makes the downloaded file the *only* copy of the league that survives
+does. That decision makes the downloaded file the _only_ copy of the league that survives
 losing the project, so the app now treats taking one as an operational duty rather than
 an option.
 
@@ -413,7 +413,7 @@ restored ledger against the chip total recorded in the file**, failing loudly on
 mismatch. A dry run prints what it would do and writes nothing.
 
 **It is still not the tool for a bad reveal.** Re-settling from the console corrects the
-numbers *and* keeps the record of what happened; a restore would erase it.
+numbers _and_ keeps the record of what happened; a restore would erase it.
 
 **Validated end to end against the live database**, not just typechecked: all 22 tables
 read cleanly (including `week_players`, whose composite key had no `id` column), a real
@@ -536,13 +536,13 @@ and sat in the standings on 500 chips at Δ+0 while the rest showed 490 at −10
 
 **Two things were missing, not one.** `approvePlayer` credits the 500-chip buy-in and
 stops there. `slate.open` is what writes a player's `week_players` row — their felt status
-and house limit for the week — and posts their ante. A player approved *after* slate open
+and house limit for the week — and posts their ante. A player approved _after_ slate open
 therefore had no snapshot, and `WagerArea` treats a missing snapshot as "closed".
 
-**This contradicted the rulebook, not just the UX.** §1: *"The roster locks at the Week 1
-deadline."* `admissionOpen` already implements that correctly — approvals are allowed right
+**This contradicted the rulebook, not just the UX.** §1: _"The roster locks at the Week 1
+deadline."_ `admissionOpen` already implements that correctly — approvals are allowed right
 up to `week1_lock_at` — so admitting someone mid-week is legitimate and they are meant to
-play that week. The gap was that nothing then admitted them *to the week*.
+play that week. The gap was that nothing then admitted them _to the week_.
 
 `approvePlayer` and `reactivatePlayer` now call `admitToOpenWeek`, which posts the ante and
 writes the snapshot using the engine's own `houseLimit` and `isFelt` rather than
@@ -573,8 +573,8 @@ beat directly above it even said "even money" in the same breath, so the screen 
 itself.
 
 **The chips were never at risk.** `settleWeek` has always paid a shove `{num: 1, den: 1}`,
-and `tests/engine/settle.test.ts` covers it explicitly — *"a winning shove doubles the
-pre-ante stack at exactly 1× — never the fade price."* This was `RevealBoard` assembling
+and `tests/engine/settle.test.ts` covers it explicitly — _"a winning shove doubles the
+pre-ante stack at exactly 1× — never the fade price."_ This was `RevealBoard` assembling
 the by-player view from the crowd price on that side, which is correct for everyone else
 and wrong for the shover: they **move** the price (§14) but do not ride it.
 
@@ -651,7 +651,7 @@ of chips out of the Pot. The Pot funds the weekly prize, so the practical effect
 
 **Two causes, both about replaying history against the present.**
 
-1. **Ordering.** Re-settlement reversed *every* week's settlement up front and only then
+1. **Ordering.** Re-settlement reversed _every_ week's settlement up front and only then
    replayed. Reversing weeks 6–8 returned their swept chips to the Pot before week 5
    replayed, so week 5 awarded a Pot holding three later weeks' money: −3,842 became
    −11,783. Reversing and replaying now interleave, one week at a time, in order.
@@ -678,13 +678,13 @@ transcript is a rule that will be forgotten. Three layers, deliberately overlapp
 1. **`npm run torture` / `npm run torture:reset`** — the incantation
    (`tsx --conditions=react-server scripts/season-torture.mts`) is now a script, so nobody
    has to remember it.
-2. **`CLAUDE.md`** — states the rule and, more importantly, *why*: `npm test`,
+2. **`CLAUDE.md`** — states the rule and, more importantly, _why_: `npm test`,
    `npm run build` and total-conservation checks all stayed green through D-023, because
    the Pot absorbed the leak and the books still balanced. Unit tests cannot see that class
    of bug, so "the suite is green" is not evidence here.
 3. **A `PostToolUse` hook in `.claude/settings.json`** — fires on `Write|Edit|MultiEdit`
    and, when the path is under `lib/engine/`, one of `lib/jobs/{settle,resettle,reveal,
-   slateOpen,util}.ts`, or `supabase/migrations/`, injects the instruction into the model's
+slateOpen,util}.ts`, or `supabase/migrations/`, injects the instruction into the model's
    context and shows the owner a one-line notice. Silent for every other file.
 
 The hook is committed to the project settings rather than local settings on purpose: the
@@ -712,8 +712,8 @@ whatever ESPN and CBS published went live unread.
 **It was worse than clutter.** Of the first 58 auto-added lines, **eight were sportsbook
 marketing** — "Use DraftKings promo code to get $150 in bonus bets" scrolling across a
 product whose entire position is that chips have no cash value, none ever. Rulebook §9 is
-categorical: *no cash surface, ever… nothing in the visual language should imply real
-money — this is what keeps it a pool.* An ad for real-money betting on the dashboard is
+categorical: _no cash surface, ever… nothing in the visual language should imply real
+money — this is what keeps it a pool._ An ad for real-money betting on the dashboard is
 the sharpest possible violation of that.
 
 **Three changes, smallest first:**
@@ -745,13 +745,13 @@ without picking a team.
 eighty-year-old is playing, and if he can use it everyone can.** Every symptom mapped to a
 measurable failure, so this was fixed to numbers rather than to taste:
 
-| | Was | Now | Floor |
-|---|---|---|---|
-| `text-low` — footnotes, instructions, tooltips, timestamps | 3.36:1 | **5.83:1** | 4.5:1 |
-| `text-mid` — body copy and chat | 7.87:1 | **9.99:1** | 4.5:1 |
-| `--color-border` — every panel edge | 1.38:1 | **3.02:1** | 3:1 (WCAG 1.4.11) |
-| `loss` — your own red delta | 3.89:1 | **4.51:1** | 4.5:1 |
-| `gold-dim` — shove button, commissioner badge | 4.12:1 | **4.55:1** | 4.5:1 |
+|                                                            | Was    | Now        | Floor             |
+| ---------------------------------------------------------- | ------ | ---------- | ----------------- |
+| `text-low` — footnotes, instructions, tooltips, timestamps | 3.36:1 | **5.83:1** | 4.5:1             |
+| `text-mid` — body copy and chat                            | 7.87:1 | **9.99:1** | 4.5:1             |
+| `--color-border` — every panel edge                        | 1.38:1 | **3.02:1** | 3:1 (WCAG 1.4.11) |
+| `loss` — your own red delta                                | 3.89:1 | **4.51:1** | 4.5:1             |
+| `gold-dim` — shove button, commissioner badge              | 4.12:1 | **4.55:1** | 4.5:1             |
 
 The old border sat at **a third** of what WCAG asks of a UI boundary, which is exactly why
 areas read as having no definition. Unselected team buttons were at **1.08:1** against
@@ -765,7 +765,7 @@ floor, not a comfort target, and a legal pass on an unknown screen is not the br
 uppercase tracked-out text; for the reader this is aimed at, size mattered as much.
 
 No hue was added and no token was invented — the palette is the same three materials, just
-legible. This *increases* compliance with the art direction's "state is contrast + weight,
+legible. This _increases_ compliance with the art direction's "state is contrast + weight,
 not hue" rather than bending it.
 
 ## D-027 — Head-to-head records, and why not head-to-head betting (2026-08-21)
@@ -774,18 +774,18 @@ not hue" rather than bending it.
 it, and the owner agreed.** Four reasons, in order of weight:
 
 1. **It routes around the house limit.** §4 is load-bearing — the rulebook records that a
-   flat one-quarter rule *"quietly compounded"* in simulation until the median cap fixed
+   flat one-quarter rule _"quietly compounded"_ in simulation until the median cap fixed
    it. An uncapped peer market re-opens that hole: the leader takes unlimited action off
    whoever is willing.
-2. **It distorts the Pot.** The Pot pays the biggest weekly *stack gain* (§7, §14). Side
+2. **It distorts the Pot.** The Pot pays the biggest weekly _stack gain_ (§7, §14). Side
    winnings would count toward it, so a Pot could be won on side action rather than on
-   reading the room — when §7 says outright that *"the multipliers are how you win Pots."*
+   reading the room — when §7 says outright that _"the multipliers are how you win Pots."_
 3. **It opens a chip-transfer channel.** Today the only way chips move between players is
    the settlement engine, which is what makes the ledger trustworthy and conservation
    meaningful. Two friends could dump a stack for a championship run and nothing could
    distinguish it from a genuine bet.
 4. **It turns a pool into a book.** §9's "no cash surface, ever" is about what the product
-   *is*. Named individuals taking action against each other is a different thing.
+   _is_. Named individuals taking action against each other is a different thing.
 
 **Built instead: `headToHead` — the rivalry without the market.** Who out-gained who, week
 by week, computed from data already held, shown as a fourth view on the results page beside
@@ -818,7 +818,7 @@ D-026 measured tokens against the canvas, but the small type lives on panels
 2.3× lighter. Re-measured on the worst real ground: `text-low` → 6.40:1,
 `text-mid` → 9.97:1, `border` → 3.38:1 (it was below WCAG 1.4.11's 3:1 on
 panels). Interactive team tiles carry a brighter rule than the system border
-*because* they are pressable, with a light-not-hue hover suppressed on touch.
+_because_ they are pressable, with a light-not-hue hover suppressed on touch.
 
 ## D-031 — A tie is not a leader (2026-08-22)
 
@@ -1038,7 +1038,7 @@ Both offending rules fire on code that is correct and has no better form.
 render without breaking the server render, so it reads in an effect and sets state
 once. That is the cascading render the rule describes, and it is also the only way to
 do it — NewsFader, TickerMarquee, RevealExperience and BetSlip all rely on it.
-`purity` catches `Date.now()` inside a *server* component. Both are now **warnings**:
+`purity` catches `Date.now()` inside a _server_ component. Both are now **warnings**:
 still reported on new code, no longer able to hide the tests. Rewriting four
 player-facing components to satisfy a linter days before invites is how you cause the
 bug you were trying to prevent. Unit tests and content-grep additionally run with
@@ -1073,16 +1073,16 @@ action was wearing the once-a-season action's vocabulary.
 
 Now **"Submit your ticket"**, and the confirmation title matches. "Ticket" is the word
 the product already speaks — 32 times in the rulebook, 14 in the content defaults, and
-in the surrounding copy on this very screen: *"Your ticket is in. Locked."*,
-*"Submitting locks this ticket."* The button was the odd one out.
+in the surrounding copy on this very screen: _"Your ticket is in. Locked."_,
+_"Submitting locks this ticket."_ The button was the odd one out.
 
 Not "lineup", which was the first suggestion: that is fantasy-football vocabulary for
-choosing players, and ANTE opens by distinguishing itself from exactly that — *"you bet
-chips instead of making picks."* Borrowing the word would import the wrong mental model
+choosing players, and ANTE opens by distinguishing itself from exactly that — _"you bet
+chips instead of making picks."_ Borrowing the word would import the wrong mental model
 to fix a smaller one.
 
-"Push" survives only where it is accurate: the shove's own commit note, *"You'll push
-{stake}."*
+"Push" survives only where it is accurate: the shove's own commit note, _"You'll push
+{stake}."_
 
 ## D-045 — The band explains itself (2026-08-26)
 
@@ -1207,7 +1207,6 @@ The torture season plants a game five minutes after the deadline in every week a
 asserts it never reaches the slate, and that the slate is exactly one game short as a
 result. Proven non-vacuous: reverting the margin reports two failures per week.
 
-
 ## D-049 — The tutorial teaches the board that exists (2026-08-26)
 
 D-042 put a ✕ beside the chips on the real slip and left the tutorial's practice
@@ -1241,10 +1240,10 @@ it can render.
 
 Diagnosed by comparison rather than inference. Same host, same network, same minute:
 
-| Route | Path | Result |
-|---|---|---|
-| `/rules` | CDN hit — no function, no database | 20/20 ok, median 120ms, **0 hangs** |
-| `/` | function + three cross-country queries | 15/20 ok, median 621ms, **5 hangs** |
+| Route    | Path                                   | Result                              |
+| -------- | -------------------------------------- | ----------------------------------- |
+| `/rules` | CDN hit — no function, no database     | 20/20 ok, median 120ms, **0 hangs** |
+| `/`      | function + three cross-country queries | 15/20 ok, median 621ms, **5 hangs** |
 
 That control matters: it proves the network path and the CDN were healthy, and puts
 the fault squarely inside function execution. The hangs appeared in the runtime log
@@ -1258,13 +1257,13 @@ the sports feeds are external either way.
 
 Measured after, 60 consecutive requests:
 
-| | before (iad1) | after (pdx1) |
-|---|---|---|
-| succeeded | 15/20 | **60/60** |
-| median | 621ms | **228ms** |
-| p90 | 1.101s | **262ms** |
-| max | 5.530s | **397ms** |
-| hangs | 5 (25%) | **0** |
+|           | before (iad1) | after (pdx1) |
+| --------- | ------------- | ------------ |
+| succeeded | 15/20         | **60/60**    |
+| median    | 621ms         | **228ms**    |
+| p90       | 1.101s        | **262ms**    |
+| max       | 5.530s        | **397ms**    |
+| hangs     | 5 (25%)       | **0**        |
 
 The hangs were a symptom of the distance, not a separate defect. Worth noting the
 measurement was taken from one location on the west coast; an east-coast player pays
@@ -1305,7 +1304,7 @@ the dashboard does, and a `console.log` inside the loader:
 - without it, same page → **2 executions**
 - with `cache()`, **two** page loads, four mounts → **2 executions**
 
-That last line is the one that matters for safety: the memo dedupes *within* a request
+That last line is the one that matters for safety: the memo dedupes _within_ a request
 and is discarded at the end of it. It never persists across requests, so it cannot
 serve one player's read to another — the property to care about, since these reads go
 through `createUserClient()` under RLS. The change is `select()` throughout and adds no
@@ -1435,14 +1434,14 @@ Outlook.com, which rewrites them regardless. Built from the site's own tokens.
 
 **The set, and when each fires**
 
-| Email | Trigger | New? |
-|---|---|---|
-| You're on the list | profile completed, still pending | new |
-| You're in | commissioner approves | replaces a one-liner, now personalised |
-| That's your ticket | submission | new |
-| You folded | auto-fold at the reveal | new, same template as the ticket |
-| The board is open | reveal | replaces a one-liner |
-| Week N is open | slate open, Tuesday | absorbs the Monday settlement note |
+| Email              | Trigger                          | New?                                   |
+| ------------------ | -------------------------------- | -------------------------------------- |
+| You're on the list | profile completed, still pending | new                                    |
+| You're in          | commissioner approves            | replaces a one-liner, now personalised |
+| That's your ticket | submission                       | new                                    |
+| You folded         | auto-fold at the reveal          | new, same template as the ticket       |
+| The board is open  | reveal                           | replaces a one-liner                   |
+| Week N is open     | slate open, Tuesday              | absorbs the Monday settlement note     |
 
 The Monday settlement email is now **silent**. Its recap rides on Tuesday instead,
 where it arrives beside a week the player can act on: one message rather than two,
@@ -1472,3 +1471,84 @@ Tested: 26 new cases render all five in both formats and assert no em dash survi
 `tests/notify` is registered in the Vitest config, and `server-only` is stubbed for
 tests only — it throws outside a Server Component, which is right in production and
 fatal in a unit test.
+
+## D-057 — The ground stops repeating (2026-08-29)
+
+The table's ground was `felt.jpg`, a 512px photograph tiled at 380px. A photograph
+does not tile: its left edge is not its right edge, and its top is not its bottom, so
+the page carried a faint grid of seams — one every 380px in both directions, most
+visible on the dashboard where large stretches of ground are uncovered. Owner spotted
+the horizontal one and asked for a ground that repeats without them.
+
+**Generated, not photographed.** `public/tex/grain.png` is produced by
+`scripts/make-grain.mjs` — value noise on lattices that are sampled modulo the tile, so
+the right edge _is_ the left edge by construction, not by retouching. Six octaves of
+wrapped noise make a shallow cloud; triangular per-pixel grain sits on top of it, and a
+sparse bright fleck (p ≈ 1.8%) supplies the fibre catching the light that made the
+photograph read as cloth rather than as static. The lowest octave is 4 cells across,
+not 1: a single blob per tile would be a motif, and a motif is a seam you can name.
+
+**The table does not change tone.** The old swatch measured mean 29.8 / sd 5.1 and was
+composited at 50% over the `#0b0b0d` canvas, so the ground it actually produced was
+mean ≈ 20, sd ≈ 2.5. The generated tile is built to those numbers and drawn at full
+opacity. Side by side at the same viewport the two grounds match in value; only the
+seams are gone.
+
+**92 KB, not 112.** The whole tile lives inside a ~20-level slice of near-black, so it
+ships as a 16-entry palette at 4 bits a pixel. Thirteen entries are spaced evenly
+across the body of the distribution — a step of 1.75/255, well under the grain, which
+dithers it — and three are held back, spread wide, for the flecks.
+
+**One tile pixel per device pixel.** 512px tiles at 1×, 256px above `2dppx`. Upscaling
+noise softens it into a blur and downscaling averages it away; either one costs the
+grain the thing it is there for.
+
+Scoped to the ground alone. The home page never showed it — its faceted purple plane
+covers the viewport — and `metal.jpg` is untouched: it is soft-lit onto chrome faces a
+few hundred pixels wide, where a tile boundary has nowhere to line up and repeat.
+Verified by eye at 1:1 against the old ground on the same page, with content hidden and
+the light pool off, so the ground was the only thing on screen.
+
+## D-058 — The ground is lit, not printed (2026-08-29)
+
+Owner liked the pool of light shining down from the top and asked whether the ground
+under it should be black felt, a felt weave, or a greyscale version of the home page's
+faceted plane. The answer to the third is no, and it is not a matter of taste —
+ANTE-ART-DIRECTION §5 says facets are for moments, not surfaces, keeps them away from
+anything with a number in it, and sets a 90/10 quiet-to-faceted ratio. The ground sits
+behind every surface with a number in it and occupies the whole viewport. Greyscale
+does not rescue that; the rule is about geometry and attention, not hue. The home page
+also works _because_ it is the only faceted plane in the product.
+
+Felt, then. Which is what it already was: felt is matted fibre, not woven — the woven
+material is baize — so "black felt, no visible weave" is the honest version of the
+thing, not a compromise.
+
+**The real defect was not the texture.** At luminance 12–30 out of 255 the fibre is
+nearly invisible on its own; what makes a ground read as a physical table is light
+raking across it. The grain was drawn at constant strength across the entire viewport —
+identical under the lamp and in the dark bottom-right corner — which no cloth does.
+It read as a printed sheet. So `body::before` is now masked by the same radial the lamp
+sits on: the ground rises out of the canvas under the light and sinks back into it at
+the edges. The mask floors at 0.34 rather than 0, because cloth in shadow is still
+cloth and a mask that closes completely announces itself as a vignette. `body::after`
+came down (white 0.075 → 0.055, gold 0.055 → 0.045) since the two were doubling up.
+
+**And the tile learned two things about cloth.** Its distribution is no longer symmetric
+about the mean — the dark half runs 1.4× deeper and the bright half is held back to
+0.72×, because between fibres are pits the light never reaches and the bright side is
+carried by the flecks instead. Symmetric noise is a large part of what reads as printed.
+Then 2600 short filaments at unrelated angles, tapered at both ends, ~64% catching the
+light and the rest lying in their own shadow. Unrelated angles is the whole point: a
+shared angle is a nap, and a nap is the near relation of the weave that was not wanted.
+Every filament is deposited with wrapped coordinates, so one running off the right edge
+arrives on the left and D-057's seamlessness is preserved exactly.
+
+The palette is now derived from the data rather than hardcoded — percentiles of the
+finished field — so these knobs can move without a hand-tuned range going stale, and the
+field is re-centred on the target mean before quantising, since the skew, the flecks and
+the filaments each pull the average off `BASE`. Tone of the table is unchanged. 85 KB.
+
+Scoped to the ground. No panel, well, chrome face or heading strip was touched, and the
+home page renders identically — verified by eye at 1:1 with the mask toggled on and off
+on the same page, and at 375×812.

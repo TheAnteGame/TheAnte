@@ -63,14 +63,20 @@
   --font-body: var(--font-archivo);
 }
 
-/* ── Materials (D-008) ─────────────────────────────────────────────────────────
-   Three photographic swatches stand in for the three materials the art direction
-   already names. They are grain, not imagery: every one sits under 12% and the
-   design is fully legible if they never load. Light comes from the upper left,
-   everywhere, without exception (art §5). */
+/* ── Materials (D-008, D-057) ──────────────────────────────────────────────────
+   Photographic swatches stand in for the materials the art direction already names.
+   They are grain, not imagery: every one sits under 12% and the design is fully
+   legible if they never load. Light comes from the upper left, everywhere, without
+   exception (art §5).
+
+   The ground is the exception, and it has to be: a photograph does not tile. The
+   felt swatch was a 512px photo whose edges never met, so the page showed a faint
+   grid of seams across it. `grain.png` is generated instead — every noise lattice
+   in it wraps modulo the tile, so it is seamless by construction (D-057). Regenerate
+   with `node scripts/make-grain.mjs`. */
 
 :root {
-  --tex-felt: url("/tex/felt.jpg");
+  --tex-grain: url("/tex/grain.png");
   --tex-metal: url("/tex/metal.jpg");
 
   /* One light rig, reused. Highlight on the top and left edge, shadow cast down-right. */
@@ -88,9 +94,15 @@ body {
   font-family: var(--font-body), system-ui, sans-serif;
 }
 
-/* The table. A felt ground and a single pool of house light over it — the reason
+/* The table. A grained ground and a single pool of house light over it — the reason
    the product stops reading as a dark admin panel. Both layers are fixed, so the
-   table stays put while the page scrolls across it. */
+   table stays put while the page scrolls across it.
+
+   The two are one effect, not two (D-058). Cloth shows its fibre where light rakes
+   across it and shows nothing at all in the dark, so the grain is masked to the same
+   pool that lights it: the ground rises out of the canvas under the lamp and sinks
+   back into it at the edges. Grain at a constant strength across the whole viewport
+   is what makes a ground read as a printed sheet rather than a lit surface. */
 body::before,
 body::after {
   content: "";
@@ -100,16 +112,43 @@ body::after {
   pointer-events: none;
 }
 body::before {
-  background-image: var(--tex-felt);
-  background-size: 380px 380px;
+  background-color: var(--color-canvas);
+  background-image: var(--tex-grain);
+  background-size: 512px 512px;
   background-repeat: repeat;
-  opacity: 0.5;
   z-index: -2;
+
+  /* Anchored on the lamp, upper left, like every other light in the product (art
+     §5). It never reaches zero: cloth in shadow is still cloth, and a mask that
+     closes completely announces itself as a vignette. */
+  -webkit-mask-image: radial-gradient(
+    124% 88% at 26% -12%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.86) 38%,
+    rgba(0, 0, 0, 0.52) 72%,
+    rgba(0, 0, 0, 0.34) 100%
+  );
+  mask-image: radial-gradient(
+    124% 88% at 26% -12%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.86) 38%,
+    rgba(0, 0, 0, 0.52) 72%,
+    rgba(0, 0, 0, 0.34) 100%
+  );
 }
+/* One tile pixel to one device pixel, so the grain stays fibre and never softens
+   into blur on a retina display. */
+@media (min-resolution: 2dppx) {
+  body::before {
+    background-size: 256px 256px;
+  }
+}
+/* The sheen itself. Lighter than it was, because the ground now carries the falloff
+   and the two used to double up. */
 body::after {
   background-image:
-    radial-gradient(118% 72% at 26% -14%, rgba(236, 236, 242, 0.075), transparent 62%),
-    radial-gradient(84% 52% at 54% -6%, rgba(201, 162, 75, 0.055), transparent 56%);
+    radial-gradient(118% 72% at 26% -14%, rgba(236, 236, 242, 0.055), transparent 62%),
+    radial-gradient(84% 52% at 54% -6%, rgba(201, 162, 75, 0.045), transparent 56%);
 }
 
 /* Tabular numerals are non-negotiable wherever a number lives (ANTE-TECH §6). */
@@ -178,15 +217,11 @@ td.nums,
 .chrome-face {
   background-color: var(--color-chrome);
   background-image:
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      var(--color-chrome) 44%,
-      var(--color-chrome-dim) 56%,
-      #a9a9b2 100%
-    ),
+    linear-gradient(180deg, #ffffff 0%, var(--color-chrome) 44%, var(--color-chrome-dim) 56%, #a9a9b2 100%),
     var(--tex-metal);
-  background-size: auto, 260px 260px;
+  background-size:
+    auto,
+    260px 260px;
   background-blend-mode: normal, soft-light;
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow:
@@ -239,7 +274,7 @@ td.nums,
   border-color: var(--color-chrome);
   background-color: var(--color-surface-3);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 0 0 1px rgba(232, 232, 236, 0.28),
     0 0 18px -4px rgba(232, 232, 236, 0.34);
 }
@@ -522,8 +557,13 @@ textarea {
 /* ── The rulebook page (D-036) ─────────────────────────────────────────────────
    Rendered markdown gets the same measured ramp as the app. Nothing clever: the
    document is the product's constitution and reads best set plainly. */
-.rulebook { color: var(--color-text-mid); line-height: 1.65; }
-.rulebook h1, .rulebook h2, .rulebook h3 {
+.rulebook {
+  color: var(--color-text-mid);
+  line-height: 1.65;
+}
+.rulebook h1,
+.rulebook h2,
+.rulebook h3 {
   font-family: var(--font-display), system-ui, sans-serif;
   color: var(--color-chrome);
   text-transform: uppercase;
@@ -531,26 +571,74 @@ textarea {
   margin: 1.6em 0 0.5em;
   line-height: 1.2;
 }
-.rulebook h1 { font-size: 1.6rem; margin-top: 0; }
-.rulebook h2 { font-size: 1.25rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3em; }
-.rulebook h3 { font-size: 1.05rem; color: var(--color-gold); }
-.rulebook p, .rulebook li { margin: 0.55em 0; }
-.rulebook ul, .rulebook ol { padding-left: 1.4em; }
-.rulebook li::marker { color: var(--color-gold-dim); }
-.rulebook strong { color: var(--color-text-hi); }
-.rulebook em { color: var(--color-text-hi); }
-.rulebook a { color: var(--color-gold); text-decoration: underline; text-underline-offset: 3px; }
-.rulebook hr { border: 0; border-top: 1px solid var(--color-border); margin: 2em 0; }
+.rulebook h1 {
+  font-size: 1.6rem;
+  margin-top: 0;
+}
+.rulebook h2 {
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.3em;
+}
+.rulebook h3 {
+  font-size: 1.05rem;
+  color: var(--color-gold);
+}
+.rulebook p,
+.rulebook li {
+  margin: 0.55em 0;
+}
+.rulebook ul,
+.rulebook ol {
+  padding-left: 1.4em;
+}
+.rulebook li::marker {
+  color: var(--color-gold-dim);
+}
+.rulebook strong {
+  color: var(--color-text-hi);
+}
+.rulebook em {
+  color: var(--color-text-hi);
+}
+.rulebook a {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rulebook hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 2em 0;
+}
 .rulebook blockquote {
   border-left: 2px solid var(--color-gold-dim);
   margin: 1em 0;
   padding: 0.2em 0 0.2em 1em;
   color: var(--color-text-mid);
 }
-.rulebook code { color: var(--color-text-hi); background: var(--color-surface-2); padding: 0.1em 0.35em; }
-.rulebook table { border-collapse: collapse; margin: 1em 0; width: 100%; display: block; overflow-x: auto; }
-.rulebook th, .rulebook td { border: 1px solid var(--color-border); padding: 0.4em 0.7em; text-align: left; }
-.rulebook th { color: var(--color-text-hi); background: var(--color-surface-2); }
+.rulebook code {
+  color: var(--color-text-hi);
+  background: var(--color-surface-2);
+  padding: 0.1em 0.35em;
+}
+.rulebook table {
+  border-collapse: collapse;
+  margin: 1em 0;
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+}
+.rulebook th,
+.rulebook td {
+  border: 1px solid var(--color-border);
+  padding: 0.4em 0.7em;
+  text-align: left;
+}
+.rulebook th {
+  color: var(--color-text-hi);
+  background: var(--color-surface-2);
+}
 
 /* A long-dash rule (D-038). A solid hairline between chat messages read as a table
    grid — too hard for a conversation. Long dashes with generous gaps separate the
@@ -561,11 +649,7 @@ textarea {
      the 3:1 WCAG 1.4.11 floor because it draws real UI boundaries; a separator between
      two chat messages is not one — the spacing already does the separating, so this
      rule only needs to whisper. */
-  background-image: repeating-linear-gradient(
-    to right,
-    #5c5c64 0 18px,
-    transparent 18px 30px
-  );
+  background-image: repeating-linear-gradient(to right, #5c5c64 0 18px, transparent 18px 30px);
   background-repeat: no-repeat;
   background-size: 100% 1px;
   /* col-reverse inverts the pair: li+li matches the DOM-later items, which sit
