@@ -1552,3 +1552,35 @@ the filaments each pull the average off `BASE`. Tone of the table is unchanged. 
 Scoped to the ground. No panel, well, chrome face or heading strip was touched, and the
 home page renders identically — verified by eye at 1:1 with the mask toggled on and off
 on the same page, and at 375×812.
+
+## D-059 — A name is who they are, everywhere (2026-09-08)
+
+Owner wanted the room to know each other's favorite team on sight, not by asking.
+`favorite_team` was already there — ANTE-PLAYER specs it as a required, seeded-vocabulary
+profile field, driving Fav Team News since D-004 — so this is a display feature, not a
+schema change. No migration.
+
+**One primitive, reused.** `components/ui/PlayerTip.tsx` wraps the existing `Tip`
+component (D-045's hover-or-focus tray, already proven on the stakes band) with a
+player's full name and resolved team name. `lib/teams.ts` adds a cached lookup over the
+seeded `teams` table (code → "Kansas City Chiefs") so every call site resolves the same
+way instead of re-querying or hand-formatting team names.
+
+Wired into every surface a player's name renders as its own element: the leaderboard,
+Table Talk, Pot Math, League Stats' callouts, and all four views of the reveal
+experience (by-game, by-player, season tendencies, head-to-head). Settled results' pot
+line had to be restructured from one comma-joined string into individually-wrapped
+names — a joined string has nothing for a tooltip to attach to.
+
+**Three surfaces left alone, deliberately, not by oversight:**
+- The shove-beat interstitial's "other shovers" line sits inside one tap-to-advance
+  `<button>`; `Tip`'s own trigger is also a `<button>`, and a button cannot legally
+  contain a button. Fixing it means restructuring that interstitial the way D-049 did
+  for the tutorial tile, which this change did not take on.
+- The open-week "waiting on" list draws from the `waiting_on` view, built deliberately
+  to expose only `first_name`/`last_name` as part of the blackout-safety design
+  (0003_rls_blackout.sql's own comment: "owner-rights on purpose... a column mask").
+  Widening it needs a real migration to a blackout-adjacent view — held back for its
+  own deliberate call rather than folded into what is otherwise a display-only change.
+- Admin/CRM pages already show `favorite_team` as its own plain column to the
+  commissioner; a hover tooltip there would be redundant.
