@@ -93,6 +93,8 @@ export default async function MockPreview({
     .map((t) => ({
       playerId: t.playerId,
       name: stats.nameOf(t.playerId),
+      fullName: stats.fullNameOf(t.playerId),
+      favTeam: stats.teamOf(t.playerId),
       isMe: t.playerId === playerId,
       won: t.won,
       lost: t.lost,
@@ -105,7 +107,12 @@ export default async function MockPreview({
       favourite: t.favourite,
     }))
     .sort((a, b) => b.won - a.won);
-  const h2h = stats.h2hFor(playerId).map((r) => ({ ...r, name: stats.nameOf(r.opponentId) }));
+  const h2h = stats.h2hFor(playerId).map((r) => ({
+    ...r,
+    name: stats.nameOf(r.opponentId),
+    fullName: stats.fullNameOf(r.opponentId),
+    favTeam: stats.teamOf(r.opponentId),
+  }));
 
   return (
     <div className="min-h-screen">

@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { multiplierFor, formatMultiplier } from "@/lib/engine";
+import { getTeamNames } from "@/lib/teams";
 import { ET } from "@/lib/time";
 import { RevealExperience, type RevealData } from "./RevealExperience";
 
@@ -26,7 +27,7 @@ export async function RevealBoard({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: tickets }, { data: games }, { data: players }] = await Promise.all([
+  const [{ data: tickets }, { data: games }, { data: players }, teamNames] = await Promise.all([
     db
       .from("tickets")
       .select("id, player_id, is_fold, is_shove, total_chips, committed_stake")
@@ -37,7 +38,8 @@ export async function RevealBoard({
       .eq("week_id", week.id)
       .eq("on_slate", true)
       .order("kickoff_at"),
-    db.from("players").select("id, first_name, last_name").in("status", ["approved", "deactivated"]),
+    db.from("players").select("id, first_name, last_name, favorite_team").in("status", ["approved", "deactivated"]),
+    getTeamNames(),
   ]);
 
   const { data: bets } = await db
@@ -45,9 +47,18 @@ export async function RevealBoard({
     .select("ticket_id, game_id, side, chips")
     .in("ticket_id", (tickets ?? []).map((t) => t.id));
 
+  const playerOf = (id: string) => (players ?? []).find((x) => x.id === id);
   const nameOf = (id: string) => {
-    const p = (players ?? []).find((x) => x.id === id);
+    const p = playerOf(id);
     return p ? `${p.first_name ?? ""} ${(p.last_name ?? "").slice(0, 1)}.`.trim() || "—" : "—";
+  };
+  const fullNameOf = (id: string) => {
+    const p = playerOf(id);
+    return p ? `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—" : "—";
+  };
+  const favTeamOf = (id: string) => {
+    const t = playerOf(id)?.favorite_team;
+    return t ? (teamNames.get(t) ?? null) : null;
   };
   const ticketById = new Map((tickets ?? []).map((t) => [t.id, t]));
 
@@ -60,6 +71,8 @@ export async function RevealBoard({
         return {
           playerId: t.player_id,
           name: nameOf(t.player_id),
+          fullName: fullNameOf(t.player_id),
+          favTeam: favTeamOf(t.player_id),
           chips: b.chips,
           side: b.side as "away" | "home",
           isShove: t.is_shove,
@@ -87,6 +100,8 @@ export async function RevealBoard({
     .map((t) => ({
       playerId: t.player_id,
       name: nameOf(t.player_id),
+      fullName: fullNameOf(t.player_id),
+      favTeam: favTeamOf(t.player_id),
       isFold: t.is_fold,
       isShove: t.is_shove,
       totalChips: t.is_shove ? (t.committed_stake ?? 0) : t.total_chips,
@@ -113,7 +128,13 @@ export async function RevealBoard({
 
   const shoves = playerData
     .filter((p) => p.isShove)
-    .map((p) => ({ name: p.name, stake: p.totalChips, team: p.bets[0]?.team ?? "—" }));
+    .map((p) => ({
+      name: p.name,
+      fullName: p.fullName,
+      favTeam: p.favTeam,
+      stake: p.totalChips,
+      team: p.bets[0]?.team ?? "—",
+    }));
 
   const copyEntries = await Promise.all(
     (

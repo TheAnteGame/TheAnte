@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createUserClient } from "@/lib/db/supabase";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
+import { getTeamNames } from "@/lib/teams";
 import { LeaderboardTable, type LbCopy, type LbRow } from "./LeaderboardTable";
 
 // Server assembly: the standings view (RLS: approved-only, blackout-safe by
@@ -25,7 +26,7 @@ import { LeaderboardTable, type LbCopy, type LbRow } from "./LeaderboardTable";
 const loadBoard = cache(async () => {
   const db = createUserClient();
 
-  const [{ data: standings }, { data: week }] = await Promise.all([
+  const [{ data: standings }, { data: week }, { data: favTeams }] = await Promise.all([
     db.from("standings").select("*").order("rank"),
     db
       .from("weeks")
@@ -34,7 +35,12 @@ const loadBoard = cache(async () => {
       .order("number", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // The standings view has no favorite_team column of its own (it's a stats
+    // rollup, not a profile projection) — fetched alongside it here for the
+    // player-name tooltip rather than widening the view for one display field.
+    db.from("players").select("id, favorite_team"),
   ]);
+  const favTeamOf = new Map((favTeams ?? []).map((p) => [p.id, p.favorite_team]));
 
   let deltas = new Map<string, number>();
   let felts = new Set<string>();
@@ -52,17 +58,21 @@ const loadBoard = cache(async () => {
     felts = new Set((wps ?? []).filter((w) => w.felt).map((w) => w.player_id));
   }
 
-  return { standings, week, deltas, felts };
+  return { standings, week, deltas, felts, favTeamOf };
 });
 
 export async function Leaderboard({ playerId }: { playerId: string }) {
-  const { standings, week, deltas, felts } = await loadBoard();
+  const { standings, week, deltas, felts, favTeamOf } = await loadBoard();
+  const teamNames = await getTeamNames();
 
   const rows: LbRow[] = (standings ?? []).map((s) => {
     const decided = (s.bets_won ?? 0) + (s.bets_lost ?? 0);
+    const favTeam = favTeamOf.get(s.player_id);
     return {
       playerId: s.player_id,
       name: `${s.first_name ?? ""} ${(s.last_name ?? "").slice(0, 1)}.`.trim() || "—",
+      fullName: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim() || "—",
+      team: favTeam ? (teamNames.get(favTeam) ?? null) : null,
       status: s.status ?? "approved",
       stack: s.stack ?? 0,
       delta: week ? (deltas.get(s.player_id) ?? 0) : null,

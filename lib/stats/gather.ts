@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chunk, fetchAllRows } from "@/lib/db/fetchAll";
+import { getTeamNames } from "@/lib/teams";
 import {
   headToHead,
   leagueHighlights,
@@ -23,14 +24,18 @@ export interface LeagueStats {
   tendencies: PlayerTendency[];
   highlights: LeagueHighlights;
   nameOf: (playerId: string) => string;
+  /** Full name and favorite team, for the name tooltip. */
+  fullNameOf: (playerId: string) => string;
+  teamOf: (playerId: string) => string | null;
   /** Your record against everyone else, week by week. */
   h2hFor: (playerId: string) => ReturnType<typeof headToHead>;
 }
 
 export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats> {
-  const [{ data: weekRows }, { data: playerRows }] = await Promise.all([
+  const [{ data: weekRows }, { data: playerRows }, teamNames] = await Promise.all([
     db.from("weeks").select("id, number, settled_at, revealed_at").not("revealed_at", "is", null).order("number"),
-    db.from("players").select("id, first_name, last_name").in("status", ["approved", "deactivated"]),
+    db.from("players").select("id, first_name, last_name, favorite_team").in("status", ["approved", "deactivated"]),
+    getTeamNames(),
   ]);
 
   const weeks = (weekRows ?? []).map((w) => ({ id: w.id, number: w.number, settled: !!w.settled_at }));
@@ -39,6 +44,14 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
     const p = players.find((x) => x.id === id);
     return p ? `${p.first_name ?? ""} ${(p.last_name ?? "").slice(0, 1)}.`.trim() || "—" : "—";
   };
+  const fullNameOf = (id: string) => {
+    const p = players.find((x) => x.id === id);
+    return p ? `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—" : "—";
+  };
+  const teamOf = (id: string) => {
+    const t = players.find((x) => x.id === id)?.favorite_team;
+    return t ? (teamNames.get(t) ?? null) : null;
+  };
 
   if (weeks.length === 0) {
     return {
@@ -46,6 +59,8 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
       tendencies: [],
       highlights: { biggestWeek: null, bestPrice: null, coldestTake: null, hotHand: null },
       nameOf,
+      fullNameOf,
+      teamOf,
       h2hFor: () => [],
     };
   }
@@ -134,6 +149,8 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
     tendencies: playerTendencies(players.map((p) => p.id), bets, statTickets, gains),
     highlights: leagueHighlights(settledBets, settledGains),
     nameOf,
+    fullNameOf,
+    teamOf,
     h2hFor: (id: string) => headToHead(id, settledGains),
   };
 }

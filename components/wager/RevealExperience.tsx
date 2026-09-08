@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PlayerTip } from "../ui/PlayerTip";
 
 // The reveal is the product's peak moment — spend the budget here (art §7).
 // Sequence: full-width interstitial → the shove beat, if the week has one (nobody
@@ -20,26 +21,37 @@ export interface RevealData {
       {
         count: number;
         pays: string | null;
-        entries: Array<{ playerId: string; name: string; chips: number; isShove: boolean }>;
+        entries: Array<{
+          playerId: string;
+          name: string;
+          fullName: string;
+          favTeam: string | null;
+          chips: number;
+          isShove: boolean;
+        }>;
       }
     >;
   }>;
   players: Array<{
     playerId: string;
     name: string;
+    fullName: string;
+    favTeam: string | null;
     isFold: boolean;
     isShove: boolean;
     totalChips: number;
     isMe: boolean;
     bets: Array<{ label: string; team: string; chips: number; pays: string | null }>;
   }>;
-  shoves: Array<{ name: string; stake: number; team: string }>;
+  shoves: Array<{ name: string; fullName: string; favTeam: string | null; stake: number; team: string }>;
   /** Season-to-date tendencies. Present on the results page, absent on a bare reveal.
    *  Every column is a metric the season awards already judge (§12), shown live so
    *  players can see all season what they are being measured on. */
   season?: Array<{
     playerId: string;
     name: string;
+    fullName: string;
+    favTeam: string | null;
     isMe: boolean;
     won: number;
     lost: number;
@@ -53,7 +65,16 @@ export interface RevealData {
   }>;
   /** Your record against every other player. No chips ride on it — see
    *  lib/stats/league.ts headToHead for why that is deliberate. */
-  h2h?: Array<{ opponentId: string; name: string; won: number; lost: number; tied: number; weeks: number }>;
+  h2h?: Array<{
+    opponentId: string;
+    name: string;
+    fullName: string;
+    favTeam: string | null;
+    won: number;
+    lost: number;
+    tied: number;
+    weeks: number;
+  }>;
   copy: {
     interstitialTitle: string;
     interstitialSub: string;
@@ -185,7 +206,9 @@ export function RevealExperience({ data }: { data: RevealData }) {
                 key={r.opponentId}
                 className="flex flex-wrap items-baseline gap-x-3 border-b border-[color:var(--color-border)] px-4 py-2.5 last:border-b-0"
               >
-                <span className="font-semibold text-[color:var(--color-text-hi)]">{r.name}</span>
+                <PlayerTip fullName={r.fullName} team={r.favTeam}>
+                  <span className="font-semibold text-[color:var(--color-text-hi)]">{r.name}</span>
+                </PlayerTip>
                 <span className="nums ml-auto font-[family-name:var(--font-display)] font-bold">
                   <span className="text-[color:var(--color-win)]">{r.won}</span>
                   <span className="text-[color:var(--color-text-low)]">–</span>
@@ -223,7 +246,9 @@ export function RevealExperience({ data }: { data: RevealData }) {
                   className={`border-t border-[color:var(--color-border)] ${r.isMe ? "bg-[color:var(--color-surface-1)]" : ""}`}
                 >
                   <td className="px-4 py-2 font-semibold text-[color:var(--color-text-hi)]">
-                    {r.name}
+                    <PlayerTip fullName={r.fullName} team={r.favTeam}>
+                      <span>{r.name}</span>
+                    </PlayerTip>
                     {r.isMe && <span className="ml-1 text-[12px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
                   </td>
                   <td className="nums px-4 py-2 text-right text-[color:var(--color-text-hi)]">
@@ -290,10 +315,12 @@ export function RevealExperience({ data }: { data: RevealData }) {
                         <ul className="mt-1 space-y-0.5">
                           {side.entries.map((e) => (
                             <li key={e.playerId} className="flex justify-between text-sm">
-                              <span className={e.isShove ? "font-semibold text-[color:var(--color-gold)]" : "text-[color:var(--color-text-mid)]"}>
-                                {e.name}
-                                {e.isShove && <span className="ml-1 text-[12px] uppercase">{copy.shoveLabel}</span>}
-                              </span>
+                              <PlayerTip fullName={e.fullName} team={e.favTeam}>
+                                <span className={e.isShove ? "font-semibold text-[color:var(--color-gold)]" : "text-[color:var(--color-text-mid)]"}>
+                                  {e.name}
+                                  {e.isShove && <span className="ml-1 text-[12px] uppercase">{copy.shoveLabel}</span>}
+                                </span>
+                              </PlayerTip>
                               <span className="nums text-[color:var(--color-text-hi)]">{e.chips}</span>
                             </li>
                           ))}
@@ -311,10 +338,12 @@ export function RevealExperience({ data }: { data: RevealData }) {
           {data.players.map((p, i) => (
             <li key={p.playerId} className="card-in border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0" style={{ animationDelay: `${i * 60}ms` }}>
               <div className="flex items-baseline gap-3">
-                <span className={`font-[family-name:var(--font-display)] font-semibold ${p.isShove ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-hi)]"}`}>
-                  {p.name}
-                  {p.isMe && <span className="ml-1 text-[12px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
-                </span>
+                <PlayerTip fullName={p.fullName} team={p.favTeam}>
+                  <span className={`font-[family-name:var(--font-display)] font-semibold ${p.isShove ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-hi)]"}`}>
+                    {p.name}
+                  </span>
+                </PlayerTip>
+                {p.isMe && <span className="ml-1 text-[12px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
                 {p.isFold ? (
                   <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-low)]">{copy.foldedLabel}</span>
                 ) : p.isShove ? (

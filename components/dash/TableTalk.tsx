@@ -1,9 +1,11 @@
 import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
+import { getTeamNames } from "@/lib/teams";
 import { ET } from "@/lib/time";
 import { ChatComposer } from "./ChatComposer";
 import { ChatHelp } from "./ChatHelp";
+import { PlayerTip } from "../ui/PlayerTip";
 import { buildHandles, segmentBody } from "@/lib/chat/mentions";
 
 // Table Talk (ANTE-PLAYER §7): a real chat panel. System messages are distinct and
@@ -52,13 +54,16 @@ export async function TableTalk({
   );
 
   const authorIds = [...new Set((messages ?? []).map((m) => m.player_id).filter(Boolean))] as string[];
-  const { data: authors } = authorIds.length
-    ? await db.from("players").select("id, first_name, last_name").in("id", authorIds)
-    : { data: [] };
+  const [{ data: authors }, teamNames] = await Promise.all([
+    authorIds.length
+      ? db.from("players").select("id, first_name, last_name, favorite_team").in("id", authorIds)
+      : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null; favorite_team: string | null }[] }),
+    getTeamNames(),
+  ]);
+  const authorOf = (id: string | null) => (id ? (authors ?? []).find((x) => x.id === id) : undefined);
   const nameOf = (id: string | null) => {
-    if (!id) return "";
-    const a = (authors ?? []).find((x) => x.id === id);
-    return a ? `${a.first_name ?? ""} ${(a.last_name ?? "").slice(0, 1)}.`.trim() : "—";
+    const a = authorOf(id);
+    return a ? `${a.first_name ?? ""} ${(a.last_name ?? "").slice(0, 1)}.`.trim() : id ? "—" : "";
   };
 
   const muted = !!me?.is_muted && (!me.muted_until || new Date(me.muted_until) > new Date());
@@ -84,7 +89,16 @@ export async function TableTalk({
               <span className="text-[color:var(--color-gold)]">{m.body}</span>
             ) : (
               <>
-                <span className="mr-2 font-semibold text-[color:var(--color-text-hi)]">{nameOf(m.player_id)}</span>
+                {(() => {
+                  const a = authorOf(m.player_id);
+                  const fullName = a ? `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "—" : nameOf(m.player_id);
+                  const team = a?.favorite_team ? (teamNames.get(a.favorite_team) ?? null) : null;
+                  return (
+                    <PlayerTip fullName={fullName} team={team}>
+                      <span className="mr-2 font-semibold text-[color:var(--color-text-hi)]">{nameOf(m.player_id)}</span>
+                    </PlayerTip>
+                  );
+                })()}
                 <span className="mr-2 text-[12px] text-[color:var(--color-text-low)]">
                   {DateTime.fromISO(m.created_at).setZone(ET).toFormat("ccc h:mma")}
                 </span>

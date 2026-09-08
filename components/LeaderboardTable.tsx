@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PlayerTip } from "./ui/PlayerTip";
 
 // The leaderboard: sortable, dense, plain — eleven columns of real data, no facets,
 // no decoration (ANTE-PLAYER §6, art §7). Tabular numerals hold the columns still.
@@ -8,6 +9,9 @@ import { useMemo, useState } from "react";
 export interface LbRow {
   playerId: string;
   name: string;
+  fullName: string;
+  /** Favorite NFL team, display name — or null if unset. */
+  team: string | null;
   status: string; // 'approved' | 'deactivated'
   stack: number;
   delta: number | null;
@@ -113,7 +117,9 @@ export function LeaderboardTable({ rows, copy }: { rows: LbRow[]; copy: LbCopy }
               >
                 <td className="nums px-2 py-2 text-left text-[color:var(--color-text-low)]">{i + 1}</td>
                 <td className="px-2 py-2 text-left">
-                  <span className="font-medium text-[color:var(--color-text-hi)]">{r.name}</span>
+                  <PlayerTip fullName={r.fullName} team={r.team}>
+                    <span className="font-medium text-[color:var(--color-text-hi)]">{r.name}</span>
+                  </PlayerTip>
                   {r.felt && (
                     <span className="ml-2 border border-[color:var(--color-gold-dim)] px-1 text-[9px] uppercase tracking-wider text-[color:var(--color-gold)]">
                       {copy.feltBadge}

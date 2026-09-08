@@ -1,6 +1,7 @@
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { gatherLeagueStats } from "@/lib/stats/gather";
+import { PlayerTip } from "../ui/PlayerTip";
 
 // League Stats (D-022). Four numbers that stay fresh week to week and reward the
 // thing the game actually rewards — being right when the room was wrong.
@@ -24,17 +25,23 @@ export async function LeagueStats() {
     gatherLeagueStats(db),
   ]);
 
-  const { highlights: h, nameOf } = stats;
-  const rows: Array<{ label: string; value: string; who: string | null }> = [];
+  const { highlights: h, nameOf, fullNameOf, teamOf } = stats;
+  const rows: Array<{ label: string; value: string; who: string | null; whoPlayerId?: string }> = [];
 
   if (h.biggestWeek) {
-    rows.push({ label: biggestLabel, value: `+${h.biggestWeek.value}`, who: nameOf(h.biggestWeek.playerId!) });
+    rows.push({
+      label: biggestLabel,
+      value: `+${h.biggestWeek.value}`,
+      who: nameOf(h.biggestWeek.playerId!),
+      whoPlayerId: h.biggestWeek.playerId!,
+    });
   }
   if (h.bestPrice) {
     rows.push({
       label: priceLabel,
       value: `${h.bestPrice.value.multiplier.toFixed(2)}× on ${h.bestPrice.value.team}`,
       who: nameOf(h.bestPrice.playerId!),
+      whoPlayerId: h.bestPrice.playerId!,
     });
   }
   if (h.coldestTake) {
@@ -45,7 +52,12 @@ export async function LeagueStats() {
     });
   }
   if (h.hotHand) {
-    rows.push({ label: hotLabel, value: `${h.hotHand.value} ${weekLabel}`, who: nameOf(h.hotHand.playerId!) });
+    rows.push({
+      label: hotLabel,
+      value: `${h.hotHand.value} ${weekLabel}`,
+      who: nameOf(h.hotHand.playerId!),
+      whoPlayerId: h.hotHand.playerId!,
+    });
   }
 
   return (
@@ -65,7 +77,15 @@ export async function LeagueStats() {
               <span className="nums font-[family-name:var(--font-display)] font-bold text-[color:var(--color-gold)]">
                 {r.value}
               </span>
-              {r.who && <span className="ml-auto text-xs text-[color:var(--color-text-mid)]">{r.who}</span>}
+              {r.who && r.whoPlayerId ? (
+                <span className="ml-auto">
+                  <PlayerTip fullName={fullNameOf(r.whoPlayerId)} team={teamOf(r.whoPlayerId)}>
+                    <span className="text-xs text-[color:var(--color-text-mid)]">{r.who}</span>
+                  </PlayerTip>
+                </span>
+              ) : (
+                r.who && <span className="ml-auto text-xs text-[color:var(--color-text-mid)]">{r.who}</span>
+              )}
             </li>
           ))}
         </ul>

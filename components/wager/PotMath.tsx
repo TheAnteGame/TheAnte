@@ -2,7 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createUserClient } from "@/lib/db/supabase";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
+import { getTeamNames } from "@/lib/teams";
 import { potBreakdown } from "@/lib/stats/potMath";
+import { PlayerTip } from "../ui/PlayerTip";
 
 // "How did Frank win the week?" (§7/§14). The settled panel named the winner and the
 // amount; this shows the working. Every number here is re-derived from the ledger the
@@ -26,7 +28,7 @@ export async function PotMath({
   const db = dbOverride ?? createUserClient();
 
   // Scoped to this week: the ledger is the whole season and only one week is on screen.
-  const [{ data: weekRow }, { data: tickets }, entries, { data: players }, { data: potAwards }] = await Promise.all([
+  const [{ data: weekRow }, { data: tickets }, entries, { data: players }, { data: potAwards }, teamNames] = await Promise.all([
     db
       .from("weeks")
       .select("id, number, active_count_snapshot, marker, pot_before, pot_awarded")
@@ -36,8 +38,9 @@ export async function PotMath({
     fetchAllRows<{ player_id: string | null; kind: string; amount: number }>((f, t) =>
       db.from("ledger_entries").select("player_id, kind, amount").eq("week_id", week.id).order("id").range(f, t),
     ),
-    db.from("players").select("id, first_name, last_name").in("status", ["approved", "deactivated"]),
+    db.from("players").select("id, first_name, last_name, favorite_team").in("status", ["approved", "deactivated"]),
     db.from("pot_awards").select("player_id, place, amount").eq("week_id", week.id),
+    getTeamNames(),
   ]);
 
   if ((tickets ?? []).length === 0) return null;
@@ -91,9 +94,18 @@ export async function PotMath({
   });
   const awardedShown = standings.reduce((n, s) => n + s.award, 0);
 
+  const playerOf = (id: string) => (players ?? []).find((x) => x.id === id);
   const nameOf = (id: string) => {
-    const p = (players ?? []).find((x) => x.id === id);
+    const p = playerOf(id);
     return p ? `${p.first_name ?? ""} ${(p.last_name ?? "").slice(0, 1)}.`.trim() || "—" : "—";
+  };
+  const fullNameOf = (id: string) => {
+    const p = playerOf(id);
+    return p ? `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—" : "—";
+  };
+  const teamOf = (id: string) => {
+    const t = playerOf(id)?.favorite_team;
+    return t ? (teamNames.get(t) ?? null) : null;
   };
 
   const places = new Set(standings.filter((s) => s.award > 0).map((s) => s.place)).size;
@@ -177,7 +189,9 @@ export async function PotMath({
               </span>
 
               <span className={isMe ? "font-semibold text-[color:var(--color-text-hi)]" : "text-[color:var(--color-text-hi)]"}>
-                {nameOf(s.playerId)}
+                <PlayerTip fullName={fullNameOf(s.playerId)} team={teamOf(s.playerId)}>
+                  <span>{nameOf(s.playerId)}</span>
+                </PlayerTip>
                 {isMe && <span className="ml-2 text-[12px] uppercase tracking-wider text-[color:var(--color-gold)]">{youLabel}</span>}
                 {!s.eligible && (
                   <span className="ml-2 text-[12px] text-[color:var(--color-text-low)]">{foldedLabel}</span>

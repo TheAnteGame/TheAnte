@@ -88,6 +88,8 @@ export default async function WeekResults({ params }: { params: Promise<{ week: 
     .map((t) => ({
       playerId: t.playerId,
       name: stats.nameOf(t.playerId),
+      fullName: stats.fullNameOf(t.playerId),
+      favTeam: stats.teamOf(t.playerId),
       isMe: t.playerId === state.player!.id,
       won: t.won,
       lost: t.lost,
@@ -101,7 +103,12 @@ export default async function WeekResults({ params }: { params: Promise<{ week: 
     }))
     .sort((a, b) => b.won - a.won);
 
-  const h2h = stats.h2hFor(state.player.id).map((r) => ({ ...r, name: stats.nameOf(r.opponentId) }));
+  const h2h = stats.h2hFor(state.player.id).map((r) => ({
+    ...r,
+    name: stats.nameOf(r.opponentId),
+    fullName: stats.fullNameOf(r.opponentId),
+    favTeam: stats.teamOf(r.opponentId),
+  }));
 
   return chrome(
     <>

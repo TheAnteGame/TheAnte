@@ -1,6 +1,8 @@
 import { createUserClient } from "@/lib/db/supabase";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
+import { getTeamNames } from "@/lib/teams";
+import { PlayerTip } from "../ui/PlayerTip";
 
 // The Settled state (ANTE-PLAYER §5.5): per-bet outcome, the multiplier applied,
 // chips returned and profit, the weekly net delta INCLUDING the ante (§14), the
@@ -56,16 +58,21 @@ export async function SettledResults({
     bets = (data as unknown as BetRow[]) ?? [];
   }
 
-  let potWinners: string[] = [];
+  let potWinners: Array<{ playerId: string; name: string; fullName: string; team: string | null; amount: number }> = [];
   if ((awards ?? []).length > 0) {
-    const { data: winners } = await db
-      .from("players")
-      .select("id, first_name, last_name")
-      .in("id", (awards ?? []).map((a) => a.player_id));
+    const [{ data: winners }, teamNames] = await Promise.all([
+      db.from("players").select("id, first_name, last_name, favorite_team").in(
+        "id",
+        (awards ?? []).map((a) => a.player_id),
+      ),
+      getTeamNames(),
+    ]);
     potWinners = (awards ?? []).map((a) => {
       const w = winners?.find((x) => x.id === a.player_id);
       const name = `${w?.first_name ?? "?"} ${(w?.last_name ?? "").slice(0, 1)}.`.trim();
-      return `${name} +${a.amount}`;
+      const fullName = `${w?.first_name ?? "?"} ${w?.last_name ?? ""}`.trim();
+      const team = w?.favorite_team ? (teamNames.get(w.favorite_team) ?? null) : null;
+      return { playerId: a.player_id, name, fullName, team, amount: a.amount };
     });
   }
 
@@ -155,7 +162,19 @@ export async function SettledResults({
           <span className="text-[color:var(--color-gold)]">{potMarker}</span>
         ) : potWinners.length > 0 ? (
           <span className="text-[color:var(--color-text-mid)]">
-            {potLabel}: <span className="text-[color:var(--color-gold)]">{potWinners.join(", ")}</span>
+            {potLabel}:{" "}
+            <span className="text-[color:var(--color-gold)]">
+              {potWinners.map((w, i) => (
+                <span key={w.playerId}>
+                  {i > 0 && ", "}
+                  <PlayerTip fullName={w.fullName} team={w.team}>
+                    <span>
+                      {w.name} +{w.amount}
+                    </span>
+                  </PlayerTip>
+                </span>
+              ))}
+            </span>
           </span>
         ) : (
           <span className="text-[color:var(--color-text-mid)]">{potNone}</span>
