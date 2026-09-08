@@ -25,11 +25,15 @@ export const contentDefaults: Record<string, string> = {
 
   // Onboarding / profile
   "profile.heading": "Take your seat",
-  "profile.intro_body": "Four questions and you're in the room.",
+  "profile.intro_body": "Five questions and you're in the room.",
   "profile.first_name_label": "First name",
   "profile.last_name_label": "Last name",
   "profile.email_label": "Email",
   "profile.favorite_team_label": "Favorite team",
+  "profile.theme_label": "Screen mode",
+  "profile.theme_auto": "Auto",
+  "profile.theme_light": "Light",
+  "profile.theme_dark": "Dark",
   "profile.submit_label": "Continue",
   "profile.error_generic": "That didn't take. Try again.",
 

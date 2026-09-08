@@ -9,6 +9,7 @@ export interface PlayerState {
     profileComplete: boolean;
     firstName: string | null;
     howToPlayAcceptedAt: string | null;
+    themePreference: "auto" | "light" | "dark";
   } | null;
   rosterLocked: boolean;
 }

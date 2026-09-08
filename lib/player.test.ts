@@ -15,6 +15,7 @@ function state(overrides: Partial<NonNullable<PlayerState["player"]>> | null, ro
           profileComplete: true,
           firstName: "Robert",
           howToPlayAcceptedAt: null,
+          themePreference: "auto",
           ...overrides,
         }
       : null,

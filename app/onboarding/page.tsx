@@ -22,18 +22,35 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
     .select("code, city, name")
     .order("city");
 
-  const [heading, intro, firstNameLabel, lastNameLabel, emailLabel, favoriteTeamLabel, submitLabel, errorGeneric, logoAlt] =
-    await Promise.all([
-      getContent("profile.heading"),
-      getContent("profile.intro_body"),
-      getContent("profile.first_name_label"),
-      getContent("profile.last_name_label"),
-      getContent("profile.email_label"),
-      getContent("profile.favorite_team_label"),
-      getContent("profile.submit_label"),
-      getContent("profile.error_generic"),
-      getContent("home.logo_alt"),
-    ]);
+  const [
+    heading,
+    intro,
+    firstNameLabel,
+    lastNameLabel,
+    emailLabel,
+    favoriteTeamLabel,
+    themeLabel,
+    themeAutoLabel,
+    themeLightLabel,
+    themeDarkLabel,
+    submitLabel,
+    errorGeneric,
+    logoAlt,
+  ] = await Promise.all([
+    getContent("profile.heading"),
+    getContent("profile.intro_body"),
+    getContent("profile.first_name_label"),
+    getContent("profile.last_name_label"),
+    getContent("profile.email_label"),
+    getContent("profile.favorite_team_label"),
+    getContent("profile.theme_label"),
+    getContent("profile.theme_auto"),
+    getContent("profile.theme_light"),
+    getContent("profile.theme_dark"),
+    getContent("profile.submit_label"),
+    getContent("profile.error_generic"),
+    getContent("home.logo_alt"),
+  ]);
 
   const { error } = await searchParams;
 
@@ -48,7 +65,18 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
       </div>
       <ProfileForm
         teams={teams ?? []}
-        copy={{ firstNameLabel, lastNameLabel, emailLabel, favoriteTeamLabel, submitLabel, errorGeneric }}
+        copy={{
+          firstNameLabel,
+          lastNameLabel,
+          emailLabel,
+          favoriteTeamLabel,
+          themeLabel,
+          themeAutoLabel,
+          themeLightLabel,
+          themeDarkLabel,
+          submitLabel,
+          errorGeneric,
+        }}
         showError={error === "1"}
       />
     </main>

@@ -84,6 +84,61 @@
   --lit-drop: 0 18px 44px -26px rgba(0, 0, 0, 0.95), 0 2px 6px -2px rgba(0, 0, 0, 0.55);
 }
 
+/* ── Light mode (D-060, owner request) ──────────────────────────────────────────
+   Dark stays the default and untouched above — every token there is unchanged.
+   Light is layered in twice, mirroring D-059's own pattern but flipped, because
+   this app is dark-native (the bare tokens above ARE the dark theme, so there is
+   no [data-theme="dark"] block — nothing to override): auto, under
+   @media (prefers-color-scheme: light), guarded so an explicit dark choice still
+   beats a light system; and unconditionally under [data-theme="light"], so an
+   explicit choice wins over the system either way. Gold, chrome, the four gems,
+   win/loss and the textures are untouched — they were already tuned to read on
+   both a dark and a light ground.
+
+   First pass. Two effects live outside the token system as hardcoded rgba, tuned
+   for a dark ground, and need a same-scoped override each: the chrome-face border
+   (a white highlight, invisible against a light face) and the grain (near-black
+   noise that reads as grey static in normal blend mode; multiply lets it darken
+   the ground instead, the way it already reads as fibre in dark mode). Owner asked
+   to view and tune this locally before it ships — treat these values as a
+   starting point, not final. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-canvas: #efe9dc;
+    --color-surface-1: #faf8f2;
+    --color-surface-2: #f0ebdd;
+    --color-surface-3: #e3ddc9;
+    --color-border: #8a8577;
+    --color-text-hi: #1c1b17;
+    --color-text-mid: #4a473d;
+    --color-text-low: #6e6a5c;
+    --lit-edge: inset 0 1px 0 rgba(0, 0, 0, 0.06), inset 1px 0 0 rgba(0, 0, 0, 0.03);
+  }
+  :root:not([data-theme="dark"]) .chrome-face {
+    border-color: rgba(0, 0, 0, 0.22);
+  }
+  :root:not([data-theme="dark"]) body::before {
+    mix-blend-mode: multiply;
+  }
+}
+:root[data-theme="light"] {
+  --color-canvas: #efe9dc;
+  --color-surface-1: #faf8f2;
+  --color-surface-2: #f0ebdd;
+  --color-surface-3: #e3ddc9;
+  --color-border: #8a8577;
+  --color-text-hi: #1c1b17;
+  --color-text-mid: #4a473d;
+  --color-text-low: #6e6a5c;
+  --lit-edge: inset 0 1px 0 rgba(0, 0, 0, 0.06), inset 1px 0 0 rgba(0, 0, 0, 0.03);
+}
+:root[data-theme="light"] .chrome-face {
+  border-color: rgba(0, 0, 0, 0.22);
+}
+:root[data-theme="light"] body::before {
+  mix-blend-mode: multiply;
+}
+
 html {
   background-color: var(--color-canvas);
 }

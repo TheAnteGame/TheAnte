@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { serviceDb } from "@/lib/jobs/util";
 import { routeFor, type PlayerState } from "@/lib/playerRouting";
@@ -26,7 +27,9 @@ async function adoptClerkPhone(clerkUserId: string): Promise<void> {
   }
 }
 
-export async function getPlayerState(): Promise<PlayerState | null> {
+// cache(): read server-side by the root layout (for data-theme) AND by whichever
+// page also gates on it — React dedupes both calls to one query per request.
+export const getPlayerState = cache(async (): Promise<PlayerState | null> => {
   const { userId } = await auth();
   if (!userId) return null;
 
@@ -34,7 +37,7 @@ export async function getPlayerState(): Promise<PlayerState | null> {
   const [{ data: player }, { data: season }] = await Promise.all([
     db
       .from("players")
-      .select("id, status, profile_complete, first_name, how_to_play_accepted_at, phone")
+      .select("id, status, profile_complete, first_name, how_to_play_accepted_at, phone, theme_preference")
       .eq("clerk_user_id", userId)
       .maybeSingle(),
     db.from("seasons").select("week1_lock_at, status").order("year", { ascending: false }).limit(1).maybeSingle(),
@@ -60,8 +63,9 @@ export async function getPlayerState(): Promise<PlayerState | null> {
           profileComplete: player.profile_complete,
           firstName: player.first_name,
           howToPlayAcceptedAt: player.how_to_play_accepted_at,
+          themePreference: (player.theme_preference ?? "auto") as "auto" | "light" | "dark",
         }
       : null,
     rosterLocked,
   };
-}
+});

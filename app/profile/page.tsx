@@ -19,23 +19,39 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
   const db = createUserClient();
   const { data: me } = await db
     .from("players")
-    .select("first_name, last_name, email, favorite_team")
+    .select("first_name, last_name, email, favorite_team, theme_preference")
     .eq("id", state.player.id)
     .maybeSingle();
 
   const { data: teams } = await createAnonServerClient().from("teams").select("code, city, name").order("city");
 
-  const [heading, firstNameLabel, lastNameLabel, emailLabel, favoriteTeamLabel, submitLabel, errorGeneric, logoAlt] =
-    await Promise.all([
-      getContent("profile.heading"),
-      getContent("profile.first_name_label"),
-      getContent("profile.last_name_label"),
-      getContent("profile.email_label"),
-      getContent("profile.favorite_team_label"),
-      getContent("profile.submit_label"),
-      getContent("profile.error_generic"),
-      getContent("home.logo_alt"),
-    ]);
+  const [
+    heading,
+    firstNameLabel,
+    lastNameLabel,
+    emailLabel,
+    favoriteTeamLabel,
+    themeLabel,
+    themeAutoLabel,
+    themeLightLabel,
+    themeDarkLabel,
+    submitLabel,
+    errorGeneric,
+    logoAlt,
+  ] = await Promise.all([
+    getContent("profile.heading"),
+    getContent("profile.first_name_label"),
+    getContent("profile.last_name_label"),
+    getContent("profile.email_label"),
+    getContent("profile.favorite_team_label"),
+    getContent("profile.theme_label"),
+    getContent("profile.theme_auto"),
+    getContent("profile.theme_light"),
+    getContent("profile.theme_dark"),
+    getContent("profile.submit_label"),
+    getContent("profile.error_generic"),
+    getContent("home.logo_alt"),
+  ]);
 
   const { error } = await searchParams;
 
@@ -49,12 +65,24 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
       </h1>
       <ProfileForm
         teams={teams ?? []}
-        copy={{ firstNameLabel, lastNameLabel, emailLabel, favoriteTeamLabel, submitLabel, errorGeneric }}
+        copy={{
+          firstNameLabel,
+          lastNameLabel,
+          emailLabel,
+          favoriteTeamLabel,
+          themeLabel,
+          themeAutoLabel,
+          themeLightLabel,
+          themeDarkLabel,
+          submitLabel,
+          errorGeneric,
+        }}
         prefill={{
           firstName: me?.first_name,
           lastName: me?.last_name,
           email: me?.email,
           favoriteTeam: me?.favorite_team,
+          themePreference: me?.theme_preference as "auto" | "light" | "dark" | null | undefined,
         }}
         showError={error === "1"}
       />

@@ -13,7 +13,12 @@ import { RulebookNav } from "@/components/rules/RulebookNav";
 // sticky rail on wide screens, jump list on phones. The markdown is trusted repo
 // content compiled by us; next.config.ts traces the file into the serverless bundle.
 
-export const dynamic = "force-static";
+// Was force-static (public, unchanging repo content, identical for everyone) until
+// the theme feature (D-060) made the root layout call auth()/getPlayerState() for
+// data-theme on every route — force-static pages have no request context to call it
+// with, and next build failed prerendering this one. Forced dynamic to match every
+// other page in the app rather than carve out a theme exception for one route.
+export const dynamic = "force-dynamic";
 
 function slugify(title: string): string {
   return title

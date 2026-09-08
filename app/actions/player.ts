@@ -48,6 +48,7 @@ const ProfileSchema = z.object({
   lastName: z.string().trim().min(1).max(50),
   email: z.string().trim().email().max(200),
   favoriteTeam: z.string().trim().length(2).or(z.string().trim().length(3)),
+  themePreference: z.enum(["auto", "light", "dark"]),
 });
 
 export async function saveProfile(formData: FormData): Promise<void> {
@@ -59,6 +60,7 @@ export async function saveProfile(formData: FormData): Promise<void> {
     lastName: formData.get("lastName"),
     email: formData.get("email"),
     favoriteTeam: formData.get("favoriteTeam"),
+    themePreference: formData.get("themePreference"),
   });
   if (!parsed.success) redirect("/onboarding?error=1");
 
@@ -70,6 +72,7 @@ export async function saveProfile(formData: FormData): Promise<void> {
       last_name: parsed.data.lastName,
       email: parsed.data.email,
       favorite_team: parsed.data.favoriteTeam,
+      theme_preference: parsed.data.themePreference,
       profile_complete: true,
     })
     .eq("clerk_user_id", userId);

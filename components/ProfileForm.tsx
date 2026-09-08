@@ -11,6 +11,10 @@ interface Copy {
   lastNameLabel: string;
   emailLabel: string;
   favoriteTeamLabel: string;
+  themeLabel: string;
+  themeAutoLabel: string;
+  themeLightLabel: string;
+  themeDarkLabel: string;
   submitLabel: string;
   errorGeneric: string;
 }
@@ -20,6 +24,7 @@ interface Prefill {
   lastName?: string | null;
   email?: string | null;
   favoriteTeam?: string | null;
+  themePreference?: "auto" | "light" | "dark" | null;
 }
 
 const fieldClass =
@@ -67,6 +72,31 @@ export function ProfileForm({ teams, copy, prefill, showError }: { teams: Team[]
           </span>
         </div>
       </label>
+      <fieldset className="flex flex-col gap-1 text-left">
+        <legend className="text-xs uppercase tracking-wider text-[color:var(--color-text-mid)]">{copy.themeLabel}</legend>
+        <div className="flex gap-2">
+          {(
+            [
+              ["auto", copy.themeAutoLabel],
+              ["light", copy.themeLightLabel],
+              ["dark", copy.themeDarkLabel],
+            ] as const
+          ).map(([value, label]) => (
+            <label key={value} className="flex-1">
+              <input
+                type="radio"
+                name="themePreference"
+                value={value}
+                defaultChecked={(prefill?.themePreference ?? "auto") === value}
+                className="peer sr-only"
+              />
+              <span className="chamfer block cursor-pointer border border-[color:var(--color-border)] px-3 py-2 text-center text-sm text-[color:var(--color-text-mid)] peer-checked:border-[color:var(--color-chrome)] peer-checked:bg-[color:var(--color-surface-2)] peer-checked:text-[color:var(--color-text-hi)] peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-[color:var(--color-chrome)]">
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       {showError && (
         <p role="alert" className="text-sm text-[color:var(--color-loss)]">
           — {copy.errorGeneric}

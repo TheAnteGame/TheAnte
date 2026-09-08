@@ -1584,3 +1584,56 @@ names — a joined string has nothing for a tooltip to attach to.
   own deliberate call rather than folded into what is otherwise a display-only change.
 - Admin/CRM pages already show `favorite_team` as its own plain column to the
   commissioner; a hover tooltip there would be redundant.
+
+## D-060 — Screen mode: auto, light, or dark (2026-09-08)
+
+Owner's dark table read was never a choice — it was the only option, and some players
+will want light. A new `theme_preference` column on `players` (`auto` default,
+`light`, `dark`; migration 0022) is edited on the same form as name/email/favorite
+team (`ProfileForm`), both at signup and later from `/profile`, and is self-editable
+by the existing denylist-based guard with no trigger change (same shape as
+`how_to_play_accepted_at`).
+
+**Dark stays the bare default, unwatched.** Every token in `app/globals.css`'s
+`@theme` block is untouched — light is layered on top in two mirrored places: auto,
+guarded under `@media (prefers-color-scheme: light) { :root:not([data-theme="dark"])
+{...} }` so an explicit dark choice still beats a light system setting; and
+unconditionally under `[data-theme="light"]`, so an explicit choice wins over the
+system either way. There is no `[data-theme="dark"]` block — the bare tokens already
+are it. Gold, chrome, the four gems, win/loss and the textures are untouched, already
+tuned to read on either ground; only the neutral ramp gets a light equivalent, plus a
+`.chrome-face` border and a `mix-blend-mode: multiply` on the grain layer, the two
+effects that live outside the token system as hardcoded rgba tuned for a dark ground.
+**First pass, by the owner's own request** — contrast-checked (text-low against
+surface-1 lands ~5.1:1, border ~3.36:1, matching the dark theme's own documented
+floors) but not eyeballed and tuned the way the dark theme's D-026/030 numbers were;
+expect retouching.
+
+**The root layout now reads the signed-in player's preference server-side** and sets
+`data-theme` on `<html>` directly — no client script, no flash of the wrong theme,
+matching the app's standing preference for zero client JS (D-045's Tip). The real
+cost: this makes `getPlayerState()` (now wrapped in React `cache()` so a page that
+also calls it doesn't pay twice) run on every request through the root layout, which
+made `/rules` — the one route that was `force-static` — fail to prerender at build
+time (Clerk's `auth()` has no request context during static generation). Flipped to
+`force-dynamic` to match every other route rather than carve out an exception; the
+whole app went from two static routes to zero as a direct result. A real, accepted
+trade for correct per-account theming with no flash, not a silent side effect.
+
+**Found in passing, unrelated to the feature itself, fixed because it was found:**
+applying 0022 surfaced that production had been running four migrations behind —
+0018 (D-034, waiting-on scoping), 0019 (D-041, the deadweight-removal columns and
+status value), 0020 (D-046, the roster-lock backfill — meaning admission had never
+actually closed in production), and 0021 (D-052, feed-source attribution RLS, though
+its policy already existed out-of-band; only its comment was missing). All four
+applied and verified — columns via `schema:check`, the two check constraints and the
+self-update guard function by hand, since `schema:check`'s own documented gap is that
+it sees columns, not constraints or functions.
+
+**Not fixed, on purpose:** local `npm run dev` cannot complete a fresh sign-up or any
+authenticated write, because `.env.local` carries Clerk's development-instance keys
+while pointing at production Supabase, whose third-party auth trusts only the live
+Clerk instance's signing keys — a pre-existing local-environment gap, confirmed
+unrelated to this change by reproducing it with every file in this commit stashed
+out. Left alone: it doesn't reach production, and fixing it means touching either
+Clerk or Supabase auth configuration, neither of which this change needed.
