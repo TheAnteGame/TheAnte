@@ -33,6 +33,15 @@
   --color-text-mid: #cfcfd8;
   --color-text-low: #a6a6b0;
 
+  /* Ink — the text colour for bright buttons (chrome, gold), NOT the page ground.
+     Every chrome-face/gold button in the app sets its text to "the canvas colour"
+     on the assumption that canvas is always dark — true here, false once light mode
+     (D-060) made canvas light too, which is exactly what made the Continue button on
+     /profile unreadable. Split out so canvas can change per theme without dragging
+     every button's text along with it (D-062). Dark mode: identical to canvas, byte
+     for byte — no behavior change from before this token existed. */
+  --color-ink: var(--color-canvas);
+
   /* Chrome — the interactive material. Hueless, near-white. */
   --color-chrome: #e8e8ec;
   --color-chrome-dim: #c2c2c9;
@@ -84,41 +93,44 @@
   --lit-drop: 0 18px 44px -26px rgba(0, 0, 0, 0.95), 0 2px 6px -2px rgba(0, 0, 0, 0.55);
 }
 
-/* ── Light mode (D-060, D-061) ────────────────────────────────────────────────
+/* ── Light mode (D-060, D-061, D-062) ─────────────────────────────────────────
    Dark stays the default and untouched above — every token there is unchanged, and
-   it is what everyone sees until they say otherwise. "Auto" is not "follow the OS":
-   D-060 shipped that reading and the owner reversed it the same day — the table is
-   the brand, and a visitor's system setting should not be able to change it out from
-   under them. There is deliberately no @media (prefers-color-scheme) block. Light
-   exists in exactly one place: unconditionally under [data-theme="light"], set only
-   when a player has explicitly chosen it in their profile (D-060). "Auto" in that
-   picker now means the same thing "Dark" does — nothing renders it differently; it
-   is kept as a choice rather than removed because a player who has never opened
-   /profile should not read as having "picked" dark. Gold, chrome, the four gems,
-   win/loss and the textures are untouched — already tuned to read on both grounds.
+   it is what everyone sees until they say otherwise. "Auto" is not "follow the OS"
+   (D-061): light exists in exactly one place, unconditionally under
+   [data-theme="light"], set only when a player has explicitly chosen it on
+   /profile. Gold, chrome, the four gems, win/loss and the textures are untouched.
 
-   First pass on the light values themselves. Two effects live outside the token
-   system as hardcoded rgba, tuned for a dark ground, and need their own override:
-   the chrome-face border (a white highlight, invisible against a light face) and
-   the grain (near-black noise that reads as grey static in normal blend mode;
-   multiply lets it darken the ground instead, the way it already reads as fibre in
-   dark mode). Treat these values as a starting point, not final. */
+   A flat neutral grey, not a warm one (D-062 correction — the first pass leaned
+   parchment/khaki, which is exactly the hue the dark ramp's own comment rules out:
+   "Neutral ramp... hueless"). Every value here holds R≈G≈B, the same law the dark
+   tokens already follow, just inverted in lightness rather than reinterpreted as a
+   different material.
+
+   No gradient, no grain, no lamp (D-062 correction): body::before/::after — the
+   grain texture, its lamp-shaped mask, and the sheen — are dark-mode effects,
+   simulating a felt table under one light. Restaged for light instead of removed
+   per instruction, they read as a muddy vignette, not a table. Turned off outright
+   below; the flat canvas colour plus each panel's own --lit-drop shadow (unchanged,
+   already a dark shadow in both themes) is what separates a panel from the ground —
+   exactly the offset asked for, without a background effect doing it. */
 :root[data-theme="light"] {
-  --color-canvas: #efe9dc;
-  --color-surface-1: #faf8f2;
-  --color-surface-2: #f0ebdd;
-  --color-surface-3: #e3ddc9;
-  --color-border: #8a8577;
-  --color-text-hi: #1c1b17;
-  --color-text-mid: #4a473d;
-  --color-text-low: #6e6a5c;
+  --color-canvas: #ececee;
+  --color-surface-1: #fafafb;
+  --color-surface-2: #e7e7ea;
+  --color-surface-3: #dadadf;
+  --color-border: #86868c;
+  --color-text-hi: #17171a;
+  --color-text-mid: #45454a;
+  --color-text-low: #6c6c72;
+  --color-ink: var(--color-text-hi);
   --lit-edge: inset 0 1px 0 rgba(0, 0, 0, 0.06), inset 1px 0 0 rgba(0, 0, 0, 0.03);
 }
 :root[data-theme="light"] .chrome-face {
   border-color: rgba(0, 0, 0, 0.22);
 }
-:root[data-theme="light"] body::before {
-  mix-blend-mode: multiply;
+:root[data-theme="light"] body::before,
+:root[data-theme="light"] body::after {
+  display: none;
 }
 
 html {
@@ -265,7 +277,7 @@ td.nums,
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     inset 0 -1px 0 rgba(0, 0, 0, 0.28),
     0 10px 22px -12px rgba(0, 0, 0, 0.95);
-  color: var(--color-canvas);
+  color: var(--color-ink);
   transition:
     filter 0.16s ease-out,
     transform 0.16s ease-out;
@@ -377,7 +389,7 @@ td.nums,
 
 ::selection {
   background: var(--color-gold);
-  color: var(--color-canvas);
+  color: var(--color-ink);
 }
 :focus-visible {
   outline: 2px solid var(--color-chrome);

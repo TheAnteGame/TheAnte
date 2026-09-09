@@ -159,7 +159,7 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
           <button
             type="submit"
             disabled={busy || code.length < 6}
-            className="chamfer m-1 chrome-face px-4 font-[family-name:var(--font-display)] font-semibold text-[color:var(--color-canvas)]"
+            className="chamfer m-1 chrome-face px-4 font-[family-name:var(--font-display)] font-semibold text-[color:var(--color-ink)]"
           >
             {copy.verifyCta}
           </button>
@@ -210,7 +210,7 @@ export function PhoneSignIn({ copy }: { copy: Copy }) {
           type="submit"
           disabled={busy || phone.replace(/\D/g, "").length < 10}
           aria-label={copy.phoneCta}
-          className="chamfer m-1 chrome-face px-4 font-[family-name:var(--font-display)] font-semibold text-[color:var(--color-canvas)]"
+          className="chamfer m-1 chrome-face px-4 font-[family-name:var(--font-display)] font-semibold text-[color:var(--color-ink)]"
         >
           →
         </button>

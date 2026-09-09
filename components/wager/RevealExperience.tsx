@@ -142,7 +142,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
           {copy.interstitialTitle}
         </p>
         <p className="mt-3 text-[color:var(--color-text-mid)]">{copy.interstitialSub}</p>
-        <p className="mt-8 inline-block bg-[color:var(--color-chrome)] px-5 py-2 font-[family-name:var(--font-display)] font-semibold uppercase text-[color:var(--color-canvas)]">
+        <p className="mt-8 inline-block bg-[color:var(--color-chrome)] px-5 py-2 font-[family-name:var(--font-display)] font-semibold uppercase text-[color:var(--color-ink)]">
           {copy.enterCta}
         </p>
       </button>
@@ -187,7 +187,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
               onClick={() => setView(v)}
               className={`chamfer px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                 view === v
-                  ? "bg-[color:var(--color-chrome)] text-[color:var(--color-canvas)]"
+                  ? "bg-[color:var(--color-chrome)] text-[color:var(--color-ink)]"
                   : "text-[color:var(--color-text-mid)] hover:bg-[color:var(--color-surface-2)]"
               }`}
             >

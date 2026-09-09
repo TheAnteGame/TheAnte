@@ -104,7 +104,7 @@ export function ProfileForm({ teams, copy, prefill, showError }: { teams: Team[]
       )}
       <button
         type="submit"
-        className="chamfer mt-2 bg-[color:var(--color-chrome)] px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide text-[color:var(--color-canvas)]"
+        className="chamfer mt-2 bg-[color:var(--color-chrome)] px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide text-[color:var(--color-ink)]"
       >
         {copy.submitLabel}
       </button>

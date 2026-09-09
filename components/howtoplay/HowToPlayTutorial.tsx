@@ -181,7 +181,7 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
             >
               <span className="leading-tight">{team}</span>
               <span
-                className={`nums text-[12px] font-normal ${active ? "text-[color:var(--color-canvas)]/55" : "text-[color:var(--color-text-low)]"}`}
+                className={`nums text-[12px] font-normal ${active ? "text-[color:var(--color-ink)]/55" : "text-[color:var(--color-text-low)]"}`}
               >
                 {spreadFor(side)}
               </span>
@@ -195,7 +195,7 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
                       clearSide(g.id);
                     }}
                     aria-label={`${team} — take the bet back.`}
-                    className={`shrink-0 cursor-pointer text-[color:var(--color-canvas)]/40 transition-colors hover:text-[color:var(--color-canvas)]/75 ${focusCls}`}
+                    className={`shrink-0 cursor-pointer text-[color:var(--color-ink)]/40 transition-colors hover:text-[color:var(--color-ink)]/75 ${focusCls}`}
                   >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
                       <circle cx="10" cy="10" r="8.2" stroke="currentColor" strokeWidth="1.3" />

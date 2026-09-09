@@ -148,7 +148,7 @@ export default async function Season() {
                   </option>
                 ))}
             </select>
-            <button type="submit" className="chamfer bg-[color:var(--color-gold)] px-4 py-2 text-sm font-semibold uppercase text-[color:var(--color-canvas)]">
+            <button type="submit" className="chamfer bg-[color:var(--color-gold)] px-4 py-2 text-sm font-semibold uppercase text-[color:var(--color-ink)]">
               {castCta}
             </button>
           </form>

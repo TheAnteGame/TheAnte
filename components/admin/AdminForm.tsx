@@ -42,7 +42,7 @@ export function AdminForm({
         className={`chamfer px-3 py-1.5 text-xs font-semibold uppercase tracking-wide disabled:opacity-40 ${
           danger
             ? "border border-[color:var(--color-loss)] text-[color:var(--color-loss)]"
-            : "bg-[color:var(--color-chrome)] text-[color:var(--color-canvas)]"
+            : "bg-[color:var(--color-chrome)] text-[color:var(--color-ink)]"
         }`}
       >
         {pending ? "…" : submitLabel}

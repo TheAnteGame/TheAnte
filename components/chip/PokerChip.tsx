@@ -12,7 +12,7 @@ const TONE_VARS: Record<ChipTone, { face: string; rim: string; edge: string; tex
   purple: { face: "var(--color-tier-purple)", rim: "var(--color-tier-purple-deep)", edge: "var(--color-tier-purple-bright)", text: "#fff" },
   red: { face: "var(--color-tier-red)", rim: "var(--color-tier-red-deep)", edge: "var(--color-tier-red-bright)", text: "#fff" },
   teal: { face: "var(--color-tier-teal)", rim: "var(--color-tier-teal-deep)", edge: "var(--color-tier-teal-bright)", text: "#fff" },
-  gold: { face: "var(--color-tier-gold)", rim: "var(--color-tier-gold-deep)", edge: "var(--color-tier-gold-bright)", text: "var(--color-canvas)" },
+  gold: { face: "var(--color-tier-gold)", rim: "var(--color-tier-gold-deep)", edge: "var(--color-tier-gold-bright)", text: "var(--color-ink)" },
   chrome: { face: "var(--color-surface-3)", rim: "var(--color-border)", edge: "var(--color-chrome)", text: "var(--color-chrome)" },
 };
 

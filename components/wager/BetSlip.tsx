@@ -323,7 +323,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                     <span
                       title={copy.spreadNote}
                       className={`nums flex items-center gap-1.5 text-[12px] font-normal ${
-                        active ? "text-[color:var(--color-canvas)]/55" : "text-[color:var(--color-text-low)]"
+                        active ? "text-[color:var(--color-ink)]/55" : "text-[color:var(--color-text-low)]"
                       }`}
                     >
                       {spreadFor(side) && <span>{spreadFor(side)}</span>}
@@ -351,7 +351,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                             clearPick(g.id);
                           }}
                           aria-label={`${team} \u2014 take the bet back.`}
-                          className="shrink-0 cursor-pointer text-[color:var(--color-canvas)]/40 transition-colors hover:text-[color:var(--color-canvas)]/75"
+                          className="shrink-0 cursor-pointer text-[color:var(--color-ink)]/40 transition-colors hover:text-[color:var(--color-ink)]/75"
                         >
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
                             <circle cx="10" cy="10" r="8.2" stroke="currentColor" strokeWidth="1.3" />
@@ -369,7 +369,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                         {rungs.map((_, i) => (
                           <span
                             key={i}
-                            className={`h-1 w-3 ${i < rung ? "bg-[color:var(--color-canvas)]" : "bg-[color:var(--color-canvas)]/25"}`}
+                            className={`h-1 w-3 ${i < rung ? "bg-[color:var(--color-ink)]" : "bg-[color:var(--color-ink)]/25"}`}
                           />
                         ))}
                       </span>
@@ -414,8 +414,8 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
             onClick={() => setConfirming(true)}
             className={`chamfer px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide ${
               canSubmit
-                ? "chrome-face text-[color:var(--color-canvas)]"
-                : "bg-[color:var(--color-gold)] text-[color:var(--color-canvas)] opacity-90"
+                ? "chrome-face text-[color:var(--color-ink)]"
+                : "bg-[color:var(--color-gold)] text-[color:var(--color-ink)] opacity-90"
             }`}
           >
             {copy.submitCta}
@@ -450,7 +450,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                 aria-pressed={shoveMode}
                 className={`chamfer px-4 py-3 text-sm font-semibold uppercase tracking-wide ${
                   shoveMode
-                    ? "bg-[color:var(--color-chrome-dim)] text-[color:var(--color-canvas)]"
+                    ? "bg-[color:var(--color-chrome-dim)] text-[color:var(--color-ink)]"
                     : "border border-[color:var(--color-text-low)] text-[color:var(--color-text-mid)] hover:border-[color:var(--color-chrome)] hover:text-[color:var(--color-text-hi)]"
                 }`}
               >
@@ -492,7 +492,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                   setShovePick(null);
                   setError("");
                 }}
-                className="chamfer chrome-face px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wide text-[color:var(--color-canvas)]"
+                className="chamfer chrome-face px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wide text-[color:var(--color-ink)]"
               >
                 {copy.shoveArmCta}
               </button>
@@ -553,7 +553,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                 type="button"
                 disabled={busy || (shoveMode && shoveWord !== "SHOVE")}
                 onClick={() => void submit()}
-                className="chamfer chrome-face px-5 py-2 font-[family-name:var(--font-display)] font-semibold uppercase text-[color:var(--color-canvas)]"
+                className="chamfer chrome-face px-5 py-2 font-[family-name:var(--font-display)] font-semibold uppercase text-[color:var(--color-ink)]"
               >
                 {copy.confirmCta}
               </button>

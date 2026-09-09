@@ -1658,3 +1658,30 @@ renders identically to "Dark": a player who has never opened `/profile` should n
 read in the data as having affirmatively picked dark, and the column still needs a
 default value to insert with. It is a placeholder for a real "follow the system"
 mode if the owner ever wants one back — not that mode itself, right now.
+
+## D-062 — Light mode: flat grey, no lamp, and a broken button fixed (2026-09-08)
+
+Two owner reports off a live screenshot of `/profile`. First: the light ground was
+a muddy gradient, dark at top fading to lighter below, not the flat light grey
+asked for. Cause was `body::before`/`::after` — D-057/D-058's grain, its lamp-shaped
+mask, and its sheen, all effects that simulate a felt table lit from one corner in
+the DARK theme, still running under light mode via a `mix-blend-mode: multiply`
+patch. Restaged for a light ground they read as a dirty vignette, not a table.
+Turned off outright for light mode (`display: none` on both), not retuned — the
+flat `--color-canvas` plus each panel's own unchanged `--lit-drop` shadow is the
+whole effect now, exactly the "offset the backdrop" the request asked for.
+
+Second: the Continue button on `/profile` was unreadable — near-white text on a
+near-white button. Not a one-off: every chrome-face and gold button in the app sets
+its text to `var(--color-canvas)`, on the assumption baked into fifteen-plus call
+sites that canvas is always dark. True until D-060 made canvas light too. Fixed at
+the root rather than per button: a new `--color-ink` token, identical to canvas in
+dark mode (zero behavior change there), but pinned to a dark value in light mode
+independent of what canvas does. Every `text-[color:var(--color-canvas)]` in the
+app (and the two non-Tailwind cases — `PokerChip`'s gold face, `::selection`)
+now reads `--color-ink` instead.
+
+Third, folded into the same pass: the light neutral ramp itself was rebuilt as true
+grey (R≈G≈B, matching the dark ramp's own stated "hueless" rule) rather than the
+first pass's warm parchment tone, which was a deviation from the app's own material
+law, not a considered choice.
