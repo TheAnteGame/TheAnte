@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createUserClient } from "@/lib/db/supabase";
 import { getPlayerState, routeFor } from "@/lib/player";
 import { serviceDb } from "@/lib/jobs/util";
+import { titleCase } from "@/lib/name";
 import { emailDoc } from "@/lib/notify/templates";
 import { applicationReceived } from "@/lib/notify/docs";
 
@@ -44,8 +45,8 @@ export async function ensurePlayer(): Promise<string> {
 }
 
 const ProfileSchema = z.object({
-  firstName: z.string().trim().min(1).max(50),
-  lastName: z.string().trim().min(1).max(50),
+  firstName: z.string().trim().min(1).max(50).transform(titleCase),
+  lastName: z.string().trim().min(1).max(50).transform(titleCase),
   email: z.string().trim().email().max(200),
   favoriteTeam: z.string().trim().length(2).or(z.string().trim().length(3)),
   themePreference: z.enum(["auto", "light", "dark"]),

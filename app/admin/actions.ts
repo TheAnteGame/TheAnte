@@ -16,6 +16,7 @@ import { approved as approvedEmail } from "@/lib/notify/docs";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { RemovalError, computeRemoval } from "@/lib/engine/removal";
 import { DEADWEIGHT_WEEKS } from "@/lib/engine/constants";
+import { titleCase } from "@/lib/name";
 
 // Every mutating admin action re-checks the commissioner (ANTE-ADMIN §2), writes
 // audit_log, and mirrors public corrections to Table Talk (§13). The closed set of
@@ -400,9 +401,11 @@ export async function editPlayer(fd: FormData): Promise<ActionResult> {
   const email = str(fd, "email");
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("That is not an email address");
 
+  const firstName = str(fd, "firstName");
+  const lastName = str(fd, "lastName");
   const patch = {
-    first_name: str(fd, "firstName") || null,
-    last_name: str(fd, "lastName") || null,
+    first_name: firstName ? titleCase(firstName) : null,
+    last_name: lastName ? titleCase(lastName) : null,
     email: email || null,
     favorite_team: str(fd, "favoriteTeam") || null,
   };

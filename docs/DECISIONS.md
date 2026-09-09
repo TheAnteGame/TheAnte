@@ -1710,3 +1710,25 @@ theme-aware — which in light mode blends to a medium grey close in lightness t
 same bug class, not confirmed broken by eye, and `.well` is shared with the stakes
 band's trays (built for a fixed purple ground, unaffected by theme) — changing it
 site-wide risks a regression nobody reported. Left alone pending an actual look.
+
+## D-064 — Player names: Title Case on the way in, backfilled where they weren't (2026-09-08)
+
+Owner report: some players had typed their name in lowercase (or, in one case, ALL
+CAPS) at onboarding, and the roster read inconsistently. Neither write path —
+self-service onboarding (`app/actions/player.ts`'s `ProfileSchema`) nor the
+commissioner's profile-fix action (`app/admin/actions.ts`'s `editPlayer`) — did
+anything but `.trim()` the input.
+
+Added one shared `titleCase()` helper (`lib/name.ts`) and applied it in both
+places, so a name can no longer be saved in any other casing going forward.
+`first_name`/`last_name` are display-only — confirmed nothing in `lib/engine/`
+reads them — so this is a plain data-quality fix, not a chip-conservation change;
+the season torture test doesn't apply, and no migration was needed (the columns
+already had no case constraint).
+
+Three existing production rows were wrong: a first and last name both lowercase,
+one last name in all caps, one last name lowercase. Fixed via a new one-off
+script, `scripts/backfill-name-case.mts` (dry-run by default, `--confirm` to
+write, `--local` to target the local stack) — run once against production after
+this shipped. Kept as a permanent script rather than deleted after use, in case a
+name ever slips through some future write path.

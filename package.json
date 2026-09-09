@@ -14,6 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:restore": "tsx scripts/restore.mts",
     "schema:check": "tsx scripts/schema-check.mts",
+    "backfill:name-case": "tsx scripts/backfill-name-case.mts",
     "torture": "tsx --conditions=react-server scripts/season-torture.mts",
     "torture:reset": "supabase db reset && npm run torture"
   },
