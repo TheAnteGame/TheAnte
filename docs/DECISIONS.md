@@ -1637,3 +1637,24 @@ Clerk instance's signing keys — a pre-existing local-environment gap, confirme
 unrelated to this change by reproducing it with every file in this commit stashed
 out. Left alone: it doesn't reach production, and fixing it means touching either
 Clerk or Supabase auth configuration, neither of which this change needed.
+
+## D-061 — "Auto" does not mean the visitor's OS (2026-09-08, same day as D-060)
+
+D-060 shipped "auto" exactly as the owner's original brief specified it — follow
+`prefers-color-scheme`, so a visitor whose system is set to light sees light by
+default with no action taken. Reversed same day: the black table is the brand, not
+an incidental default, and a browser or OS setting nobody on the team controls
+should not be able to swap it out for every visitor who happens to run light mode.
+
+`@media (prefers-color-scheme: light)` is gone from `app/globals.css` entirely — no
+replacement, no guard, deleted outright. Light now exists in exactly one place,
+unchanged from D-060: `[data-theme="light"]`, set only when a signed-in player has
+explicitly chosen it on `/profile`. Nothing else in D-060 moved — the schema, the
+form, the root layout's server-side data-theme read, the migrations backfilled
+alongside it, all stand as shipped.
+
+The "Auto" option in the theme picker is kept, not removed, even though it now
+renders identically to "Dark": a player who has never opened `/profile` should not
+read in the data as having affirmatively picked dark, and the column still needs a
+default value to insert with. It is a placeholder for a real "follow the system"
+mode if the owner ever wants one back — not that mode itself, right now.
