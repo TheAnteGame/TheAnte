@@ -266,7 +266,7 @@ export const contentDefaults: Record<string, string> = {
     "Head counts, not odds: the people against you divided by the people with you, counting yourself. Alone against four pays 2.50\u00d7 \u2014 the cap. Riding with the crowd pays a fraction \u2014 the floor is 0.25\u00d7. Nobody on the other side pays even money.",
   "faq.q5": "When do I see everyone's picks?",
   "faq.a5":
-    "At the reveal: the moment the last ticket lands, or Thursday noon ET \u2014 whichever comes first. Until then you see nothing. Not a pick, not a chip, not a count.",
+    "At the reveal: the moment the last ticket lands, or Thursday noon ET \u2014 whichever comes first. Until then you see nothing about anybody's picks. Not a side, not a chip, not a count of who took what. Exactly one thing is public before the reveal, and it is not a pick: the list of who hasn't submitted yet.",
   "faq.q6": "Can I change my ticket after submitting?",
   "faq.a6": "No. Not you, not the Commissioner, not for any reason. Submitted is stone.",
   "faq.q7": "What happens if I skip a week?",
