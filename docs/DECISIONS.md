@@ -1732,3 +1732,50 @@ script, `scripts/backfill-name-case.mts` (dry-run by default, `--confirm` to
 write, `--local` to target the local stack) — run once against production after
 this shipped. Kept as a permanent script rather than deleted after use, in case a
 name ever slips through some future write path.
+
+## D-065 — League size tracks the roster while admission is open (2026-09-09)
+
+Found during a live audit of the 2026 beta, the night before Week 1's deadline.
+Production's Week 1 row read `active_count_snapshot = 1` while **thirteen** players
+had anted. `settle.ts` reads that number — and only that number — to decide how many
+places the Pot pays.
+
+The cause is a collision between two rules that were each correct on their own. §7
+freezes league size "the moment the slate opens", so that a deactivation mid-week
+cannot change the prize structure after tickets are locked. `slateOpen` implements
+that faithfully. But D-035 lets Week 1 open on the commissioner's command, with the
+roster still forming until the Week 1 deadline — so Week 1 opened on Aug 22 with one
+approved player and finished with thirteen. `admitToOpenWeek` deliberately did not
+touch the count; its comment said so ("the week's median, active count and places
+tier stay exactly as slate open snapshotted them").
+
+**It cost nothing, purely by luck.** The first places tier spans 8–15 players, so
+`potSplitForCount(1)` and `potSplitForCount(13)` both return `[100]` — one place,
+winner takes all. The 130-chip Week 1 Pot pays exactly the same either way. Had the
+beta roster reached 16 inside the admission window, the week would have quietly paid
+one place instead of two, and nothing in the build could have seen it: unit tests
+don't read that column, the torture season's admissions all happen after the Week 1
+lock, and `schema:check` sees columns, not values.
+
+New `syncLeagueSizeWhileAdmissionOpen` (`lib/jobs/admit.ts`) recomputes
+`active_count_snapshot` and `places_tier_snapshot` from the live roster — but only
+while `week1_lock_at` is null or in the future. Once the roster locks it returns
+immediately, so §7's freeze holds for every week that can still be played. It
+**recomputes rather than increments**, so it is idempotent under a retried approval
+and falls as well as rises; it is called from `admitToOpenWeek` (approve and
+reactivate) and from `deactivatePlayer` and `removePlayer`. The count filter is
+`status = 'approved'` — deliberately the same one `computeSlateOpen` applies, so the
+two can never disagree about what league size means.
+
+**On testing.** The torture season passes (`SEASON CLEAN`, 13,500) but does **not**
+cover the new branch: its three admissions land in weeks 4, 10 and 12, all after the
+lock, where the sync is a no-op. It proves nothing was broken, not that the fix
+works. Coverage is `scripts/verify-league-size.mts`, which drives the real job
+against a real local stack through the production situation: growth 1 → 13, the
+16-player tier crossing, a pre-lock deactivation falling back to one place, a strict
+no-op after the lock, and idempotency. Six assertions, all green. It is not in CI —
+it needs a local Supabase stack, and wiring a second stack-dependent job into the
+pipeline the night before a season opens was not the moment.
+
+Production's existing Week 1 row still had to be corrected by hand; the code only
+prevents the next one.

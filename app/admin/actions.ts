@@ -10,7 +10,7 @@ import { TICKER_COLORS, clampSpeed } from "@/lib/ticker/style";
 import { emailPlayer } from "@/lib/notify/templates";
 import { getContent } from "@/lib/content/getContent";
 import { takeSnapshot } from "@/lib/backup/snapshot";
-import { admitToOpenWeek } from "@/lib/jobs/admit";
+import { admitToOpenWeek, syncLeagueSizeWhileAdmissionOpen } from "@/lib/jobs/admit";
 import { emailDoc } from "@/lib/notify/templates";
 import { approved as approvedEmail } from "@/lib/notify/docs";
 import { fetchAllRows } from "@/lib/db/fetchAll";
@@ -227,6 +227,11 @@ export async function deactivatePlayer(fd: FormData): Promise<ActionResult> {
     .eq("id", playerId);
   if (error) return fail(error.message);
 
+  // League size has to fall as well as rise while admission is open (D-065). After
+  // the Week 1 lock this is a no-op, which is exactly §7: a deactivation never moves
+  // the prize structure once tickets can be locked.
+  await syncLeagueSizeWhileAdmissionOpen(ctx.db);
+
   await writeAudit(ctx, "player.deactivate", "player", playerId, reason, {
     after: { evidence },
     isPublic: true,
@@ -380,6 +385,8 @@ export async function removePlayer(fd: FormData): Promise<ActionResult> {
     .update({ status: "removed", removed_at: new Date().toISOString(), removal_reason: reason })
     .eq("id", playerId);
   if (error) return fail(error.message);
+
+  await syncLeagueSizeWhileAdmissionOpen(ctx.db);
 
   await writeAudit(ctx, "player.remove", "player", playerId, reason, {
     after: { stack, share, remainder, recipients: recipients.length, missedWeeks: missed },
