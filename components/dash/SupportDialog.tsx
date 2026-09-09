@@ -84,7 +84,7 @@ export function SupportDialog({ copy }: { copy: SupportCopy }) {
           <div className="panel chamfer w-full max-w-lg p-6">
             {sent ? (
               <>
-                <h2 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">
+                <h2 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">
                   {copy.sentTitle}
                 </h2>
                 <p className="mt-3 leading-relaxed text-[color:var(--color-text-mid)]">{copy.sentBody}</p>
@@ -98,7 +98,7 @@ export function SupportDialog({ copy }: { copy: SupportCopy }) {
               </>
             ) : (
               <form action={submit}>
-                <h2 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">
+                <h2 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">
                   {copy.title}
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{copy.intro}</p>

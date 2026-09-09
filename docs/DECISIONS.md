@@ -1685,3 +1685,28 @@ Third, folded into the same pass: the light neutral ramp itself was rebuilt as t
 grey (R≈G≈B, matching the dark ramp's own stated "hueless" rule) rather than the
 first pass's warm parchment tone, which was a deviation from the app's own material
 law, not a considered choice.
+
+## D-063 — Every heading in the app was invisible in light mode (2026-09-08)
+
+Owner screenshot of `/dashboard`: "GAME BOARD," "LEAGUE CHAT," "STANDINGS" — every
+panel-head label — rendered as a ghost, barely there. Same root cause as D-062's
+button fix, one layer up: every `h1`/`h2` in the app, 37 call sites across nearly
+every page and panel, sets its text to `var(--color-chrome)` on the assumption that
+chrome (near-white) always sits on a dark ground — the canvas, a panel, or a
+panel-head bar. All three went light under D-060. Chrome stayed chrome, so every
+heading in the product went near-white-on-near-white at once.
+
+Same fix as D-062, same shape: a new `--color-heading` token, identical to
+`--color-chrome` in dark mode (zero behavior change), pinned to `--color-text-hi`
+in light mode. Swapped into all 37 `text-[color:var(--color-chrome)]` call sites and
+the one hardcoded case outside Tailwind (`.rulebook h1/h2/h3` in globals.css) —
+`--color-chrome` itself is untouched everywhere it's legitimately a material
+(`.chrome-face`'s background, border, gradient stops, focus outlines).
+
+Noticed but not touched: the RANK/CHIPS pill in the dashboard header sits in a
+`.well` tray whose recessed background is a hardcoded `rgba(0,0,0,0.42)` — not
+theme-aware — which in light mode blends to a medium grey close in lightness to
+`--color-text-low`, the label colour inside it. Plausibly a third instance of the
+same bug class, not confirmed broken by eye, and `.well` is shared with the stakes
+band's trays (built for a fixed purple ground, unaffected by theme) — changing it
+site-wide risks a regression nobody reported. Left alone pending an actual look.

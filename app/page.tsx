@@ -76,7 +76,7 @@ export default async function Home() {
 
       <div className="rise flex max-w-xl flex-col items-center gap-4" style={{ animationDelay: "120ms" }}>
         <hr className="gold-rule w-40" />
-        <h1 className="text-balance font-[family-name:var(--font-display)] text-4xl font-bold uppercase italic leading-tight tracking-tight text-[color:var(--color-chrome)] sm:text-5xl">
+        <h1 className="text-balance font-[family-name:var(--font-display)] text-4xl font-bold uppercase italic leading-tight tracking-tight text-[color:var(--color-heading)] sm:text-5xl">
           {heading}
         </h1>
         <hr className="gold-rule w-40" />

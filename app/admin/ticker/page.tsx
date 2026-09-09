@@ -90,7 +90,7 @@ export default async function TickerAdmin() {
 
   return (
     <div>
-      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Ticker</h1>
+      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Ticker</h1>
       <p className="mb-4 max-w-3xl text-xs text-[color:var(--color-text-low)]">
         The scrolling rail across the top of every player&apos;s dashboard. It blends three things: lines you post here,
         league facts the app generates, and headlines pulled from the feeds. Removing a line hides it — nothing is

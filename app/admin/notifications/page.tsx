@@ -29,7 +29,7 @@ export default async function Notifications() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Notifications</h1>
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Notifications</h1>
       <p className="mb-4 max-w-2xl text-sm text-[color:var(--color-text-mid)]">
         All notifications send as <span className="text-[color:var(--color-text-hi)]">email</span> this season.
         <span className="ml-2 border border-[color:var(--color-border)] px-2 py-0.5 text-xs text-[color:var(--color-text-low)]">

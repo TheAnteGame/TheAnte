@@ -201,7 +201,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
 
   return (
     <section aria-label={copy.heading} className="panel">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
         {copy.heading}
       </h2>
       {/* The running tally (§5.2). Ante, limit and deadline live on the stakes band
@@ -505,7 +505,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
       {confirming && (
         <div role="dialog" aria-modal="true" aria-label={copy.confirmTitle} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="chamfer w-full max-w-md bg-[color:var(--color-surface-1)] p-6">
-            <h2 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">
+            <h2 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">
               {copy.confirmTitle}
             </h2>
             <ul className="my-4 max-h-48 overflow-y-auto text-sm">

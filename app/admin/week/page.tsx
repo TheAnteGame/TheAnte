@@ -27,7 +27,7 @@ export default async function WeekControl() {
     const { data: season } = await db.from("seasons").select("status").order("year", { ascending: false }).limit(1).maybeSingle();
     return (
       <div>
-        <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Week control</h1>
+        <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Week control</h1>
         <p className="text-sm text-[color:var(--color-text-mid)]">No week yet. slate.open creates Week 1 on its Tuesday once the season is active.</p>
         {season?.status === "active" ? (
           <Section title="Open the week early (D-035)">
@@ -56,7 +56,7 @@ export default async function WeekControl() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">
         Week {week.number} — {week.phase}
       </h1>
 

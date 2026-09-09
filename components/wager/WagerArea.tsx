@@ -17,7 +17,7 @@ import Link from "next/link";
 function Titled({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
     <section aria-label={heading} className="panel">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
         {heading}
       </h2>
       <div className="p-6">{children}</div>

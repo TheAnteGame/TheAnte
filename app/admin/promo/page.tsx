@@ -37,7 +37,7 @@ export default async function Promo() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Promo</h1>
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Promo</h1>
       <Section title="The hero box">
         <div className="flex flex-col gap-4">
           {FIELDS.map(([key, label]) => (

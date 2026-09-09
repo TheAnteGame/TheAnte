@@ -24,7 +24,7 @@ export default async function Feeds() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Feeds & ticker</h1>
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Feeds & ticker</h1>
 
       <Section title="Compose a ticker item">
         <AdminForm action={composeTickerItem} submitLabel="Publish" inline>
@@ -49,7 +49,7 @@ export default async function Feeds() {
                 (!t.starts_at || t.starts_at <= now) && (!t.ends_at || t.ends_at > now);
               return (
                 <li key={t.id} className="flex items-center gap-3 text-sm">
-                  <span className={`w-14 text-[12px] uppercase tracking-wider ${t.source === "manual" ? "text-[color:var(--color-chrome)]" : "text-[color:var(--color-text-low)]"}`}>
+                  <span className={`w-14 text-[12px] uppercase tracking-wider ${t.source === "manual" ? "text-[color:var(--color-heading)]" : "text-[color:var(--color-text-low)]"}`}>
                     {t.source}
                   </span>
                   <span className={live ? "text-[color:var(--color-text-hi)]" : "text-[color:var(--color-text-low)] line-through"}>

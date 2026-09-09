@@ -31,7 +31,7 @@ export default async function SeasonClose() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">
         Season close {seasonRow?.status === "complete" ? "— CLOSED" : season.allSettled ? "" : "— waiting on Week 18"}
       </h1>
 

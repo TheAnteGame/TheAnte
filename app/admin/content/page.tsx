@@ -38,7 +38,7 @@ export default async function Content({ searchParams }: { searchParams: Promise<
 
   return (
     <div>
-      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Content</h1>
+      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Content</h1>
       <p className="mb-4 text-xs text-[color:var(--color-text-low)]">
         Every word on the player&apos;s side of the site. {editedCount > 0 && <>{editedCount} edited from the default. </>}
         The rulebook is deliberately absent: it renders from the versioned repo file and changing it requires a deploy (§13).
@@ -75,7 +75,7 @@ export default async function Content({ searchParams }: { searchParams: Promise<
           <section key={group} id={`group-${group}`} className="mb-8 scroll-mt-6 border border-[color:var(--color-border)]">
             <header className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-3">
               <div className="flex flex-wrap items-baseline gap-x-3">
-                <h2 className="font-[family-name:var(--font-display)] text-sm font-bold uppercase text-[color:var(--color-chrome)]">
+                <h2 className="font-[family-name:var(--font-display)] text-sm font-bold uppercase text-[color:var(--color-heading)]">
                   {info.title}
                 </h2>
                 <code className="text-[12px] text-[color:var(--color-text-low)]">{group}.*</code>

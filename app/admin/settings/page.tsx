@@ -31,7 +31,7 @@ export default async function Settings() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Settings</h1>
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Settings</h1>
 
       <Section title="Season">
         <div className="flex flex-wrap items-end gap-8">

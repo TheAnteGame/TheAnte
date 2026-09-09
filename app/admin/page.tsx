@@ -70,7 +70,7 @@ export default async function Ops() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Ops</h1>
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Ops</h1>
 
       <Section title="Current week">
         {week ? (

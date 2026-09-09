@@ -92,7 +92,7 @@ export default async function Support() {
 
   return (
     <div>
-      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Support</h1>
+      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Support</h1>
       <p className="mb-4 max-w-3xl text-xs text-[color:var(--color-text-low)]">
         Messages players send from the dashboard. You are emailed when one arrives; your reply is emailed back to them,
         which is what the confirmation promised. Answered messages stay here — nothing is deleted.

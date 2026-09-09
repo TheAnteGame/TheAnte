@@ -138,7 +138,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
   if (act === "interstitial") {
     return (
       <button type="button" onClick={advance} className="reveal-stage chamfer block w-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-6 py-20 text-center">
-        <p className="font-[family-name:var(--font-display)] text-4xl font-bold uppercase italic tracking-wide text-[color:var(--color-chrome)]">
+        <p className="font-[family-name:var(--font-display)] text-4xl font-bold uppercase italic tracking-wide text-[color:var(--color-heading)]">
           {copy.interstitialTitle}
         </p>
         <p className="mt-3 text-[color:var(--color-text-mid)]">{copy.interstitialSub}</p>
@@ -168,7 +168,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
   return (
     <section className="panel">
       <div className="flex items-center gap-2 panel-head px-4 py-3">
-        <span className="font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">
+        <span className="font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-heading)]">
           Wk {data.weekNumber}
         </span>
         <div className="ml-auto flex gap-1" role="tablist">
@@ -304,7 +304,7 @@ export function RevealExperience({ data }: { data: RevealData }) {
                           {side.count > 0 && side.pays ? (
                             <>
                               {side.count} · {copy.paysLabel}{" "}
-                              <span className="font-semibold text-[color:var(--color-chrome)]">{side.pays}</span>
+                              <span className="font-semibold text-[color:var(--color-heading)]">{side.pays}</span>
                             </>
                           ) : (
                             copy.nobodyLabel

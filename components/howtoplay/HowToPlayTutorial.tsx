@@ -393,7 +393,7 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
               <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase leading-tight tracking-wide text-[color:var(--color-gold)]">
                 {current.title}
               </h2>
-              <p className="font-[family-name:var(--font-display)] text-lg font-semibold uppercase tracking-wide text-[color:var(--color-chrome)]">
+              <p className="font-[family-name:var(--font-display)] text-lg font-semibold uppercase tracking-wide text-[color:var(--color-heading)]">
                 {current.sub}
               </p>
               <p className="mt-3 text-base leading-relaxed text-[color:var(--color-text-hi)]">{current.body}</p>

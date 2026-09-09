@@ -37,7 +37,7 @@ export async function SupportBox() {
 
   return (
     <section aria-label={heading} className="panel p-4">
-      <h2 className="font-[family-name:var(--font-display)] text-sm font-bold uppercase text-[color:var(--color-chrome)]">
+      <h2 className="font-[family-name:var(--font-display)] text-sm font-bold uppercase text-[color:var(--color-heading)]">
         {heading}
       </h2>
       <p className="mt-1 text-sm text-[color:var(--color-text-mid)]">{body}</p>

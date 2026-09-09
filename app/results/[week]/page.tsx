@@ -75,7 +75,7 @@ export default async function WeekResults({ params }: { params: Promise<{ week: 
   if (!week) {
     return chrome(
       <section className="panel p-8 text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase text-[color:var(--color-chrome)]">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase text-[color:var(--color-heading)]">
           {heading}
         </h1>
         <p className="mt-3 text-[color:var(--color-text-mid)]">{emptyMsg}</p>

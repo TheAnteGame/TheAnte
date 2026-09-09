@@ -52,7 +52,7 @@ export default async function Guide() {
 
       <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
         <div className="flex flex-col gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase italic tracking-tight text-[color:var(--color-chrome)] sm:text-4xl">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase italic tracking-tight text-[color:var(--color-heading)] sm:text-4xl">
             {heading}
           </h1>
           <hr className="gold-rule w-40" />
@@ -62,7 +62,7 @@ export default async function Guide() {
         <div className="flex flex-col gap-4">
           {sections.map((s) => (
             <section key={s.key} className="panel">
-              <h2 className="panel-head px-5 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+              <h2 className="panel-head px-5 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
                 {s.title}
               </h2>
               <div className="max-w-[68ch] px-5 py-4 leading-relaxed text-[color:var(--color-text-mid)]">

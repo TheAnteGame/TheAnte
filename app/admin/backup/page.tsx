@@ -41,7 +41,7 @@ export default async function Backup() {
 
   return (
     <div>
-      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Backups</h1>
+      <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Backups</h1>
       <p className="mb-4 max-w-3xl text-xs text-[color:var(--color-text-low)]">
         The league record: roster, season, every ticket and bet, the ledger, chat, and the audit trail. News headlines
         and job telemetry are left out — they refill themselves.

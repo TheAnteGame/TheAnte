@@ -49,7 +49,7 @@ export async function PromoBox() {
             className="max-h-40 w-full bg-[color:var(--color-surface-2)] object-cover"
           />
         )}
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold uppercase text-[color:var(--color-chrome)]">
+        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold uppercase text-[color:var(--color-heading)]">
           {heading}
         </h2>
         {body.trim() && <p className="text-sm text-[color:var(--color-text-mid)]">{body}</p>}

@@ -122,7 +122,7 @@ export default async function MockPreview({
         </p>
 
         <section id="board" className="flex flex-col gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
             0 — The betting board
           </h1>
           {/* Only renders as a board while a week is genuinely open — leave the DB there
@@ -131,7 +131,7 @@ export default async function MockPreview({
         </section>
 
         <section id="reveal" className="flex flex-col gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
             1 — The reveal
           </h1>
           <RevealBoard
@@ -144,7 +144,7 @@ export default async function MockPreview({
         </section>
 
         <section id="settled" className="flex flex-col gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
             2 — After the week, settled
           </h1>
           <SettledResults
@@ -155,7 +155,7 @@ export default async function MockPreview({
         </section>
 
         <section id="potmath" className="flex flex-col gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
             3 — How the Pot was won
           </h1>
           <PotMath

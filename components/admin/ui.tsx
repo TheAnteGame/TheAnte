@@ -3,7 +3,7 @@
 export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-6 border border-[color:var(--color-border)]">
-      <h2 className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-2 font-[family-name:var(--font-display)] text-sm font-bold uppercase text-[color:var(--color-chrome)]">
+      <h2 className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] px-4 py-2 font-[family-name:var(--font-display)] text-sm font-bold uppercase text-[color:var(--color-heading)]">
         {title}
       </h2>
       <div className="p-4">{children}</div>

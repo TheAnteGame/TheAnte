@@ -71,7 +71,7 @@ export default async function Players() {
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Players</h1>
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Players</h1>
 
       <Section title={`Applications — ${pending.length} pending · ${approvedCount} approved of 8 minimum${admissionOpen ? "" : " · ROSTER LOCKED"}`}>
         {pending.length === 0 ? (

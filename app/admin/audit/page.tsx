@@ -27,7 +27,7 @@ export default async function Audit({ searchParams }: { searchParams: Promise<{ 
 
   return (
     <div>
-      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-chrome)]">Audit</h1>
+      <h1 className="mb-4 font-[family-name:var(--font-display)] text-xl font-bold uppercase text-[color:var(--color-heading)]">Audit</h1>
       <form className="mb-4">
         <input name="q" defaultValue={q ?? ""} placeholder="filter by action…" className={`${inputCls} w-72`} aria-label="Filter" />
       </form>

@@ -42,6 +42,14 @@
      for byte — no behavior change from before this token existed. */
   --color-ink: var(--color-canvas);
 
+  /* Heading — every page title and panel-head label sets its text to "chrome" on
+     the assumption that chrome (near-white) always sits on a dark ground: the page
+     canvas, a panel, or a panel-head bar. All three went light in light mode
+     (D-060), so every heading in the app went near-invisible — the same class of
+     bug --color-ink fixed for buttons, this time for text that was never on a
+     button. Dark mode: identical to chrome, byte for byte. */
+  --color-heading: var(--color-chrome);
+
   /* Chrome — the interactive material. Hueless, near-white. */
   --color-chrome: #e8e8ec;
   --color-chrome-dim: #c2c2c9;
@@ -123,6 +131,7 @@
   --color-text-mid: #45454a;
   --color-text-low: #6c6c72;
   --color-ink: var(--color-text-hi);
+  --color-heading: var(--color-text-hi);
   --lit-edge: inset 0 1px 0 rgba(0, 0, 0, 0.06), inset 1px 0 0 rgba(0, 0, 0, 0.03);
 }
 :root[data-theme="light"] .chrome-face {
@@ -614,7 +623,7 @@ textarea {
 .rulebook h2,
 .rulebook h3 {
   font-family: var(--font-display), system-ui, sans-serif;
-  color: var(--color-chrome);
+  color: var(--color-heading);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 1.6em 0 0.5em;

@@ -60,7 +60,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
       <Link href="/dashboard">
         <Image src="/logo.png" alt={logoAlt} width={166} height={106} priority />
       </Link>
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-wide text-[color:var(--color-chrome)]">
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-wide text-[color:var(--color-heading)]">
         {heading}
       </h1>
       <ProfileForm

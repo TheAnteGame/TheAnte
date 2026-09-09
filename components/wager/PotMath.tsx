@@ -152,7 +152,7 @@ export async function PotMath({
 
   return (
     <section aria-label={heading} className="panel">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
         {heading}
       </h2>
 

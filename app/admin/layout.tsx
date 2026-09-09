@@ -30,7 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-screen">
       <nav className="w-44 shrink-0 border-r border-[color:var(--color-border)] px-3 py-6">
-        <Link href="/dashboard" className="mb-6 block px-2 font-[family-name:var(--font-display)] font-bold italic text-[color:var(--color-chrome)]">
+        <Link href="/dashboard" className="mb-6 block px-2 font-[family-name:var(--font-display)] font-bold italic text-[color:var(--color-heading)]">
           ANTE
         </Link>
         <p className="mb-2 px-2 text-[12px] uppercase tracking-widest text-[color:var(--color-gold)]">Commissioner</p>

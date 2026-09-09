@@ -78,7 +78,7 @@ export default async function Season() {
 
       {finalOrder.length > 0 && (
         <section className="panel p-4">
-          <h2 className="mb-2 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">{standingsHeading}</h2>
+          <h2 className="mb-2 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-heading)]">{standingsHeading}</h2>
           <ol className="space-y-1 text-sm">
             {finalOrder.map((id, i) => {
               const p = (players ?? []).find((x) => x.id === id);
@@ -98,7 +98,7 @@ export default async function Season() {
       )}
 
       <section className="panel p-4">
-        <h2 className="mb-2 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-chrome)]">{awardsHeading}</h2>
+        <h2 className="mb-2 font-[family-name:var(--font-display)] font-bold uppercase text-[color:var(--color-heading)]">{awardsHeading}</h2>
         {awards ? (
           <ul className="space-y-1 text-sm">
             {Object.entries(AWARD_NAMES).map(([key, name]) => {

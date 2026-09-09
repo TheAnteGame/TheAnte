@@ -75,7 +75,7 @@ export async function TableTalk({
   return (
     <section aria-label={heading} className="panel flex min-h-0 flex-col">
       <div className="panel-head flex items-center justify-between px-4 py-3">
-        <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-chrome)]">
+        <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
           {heading}
         </h2>
         <ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} />
