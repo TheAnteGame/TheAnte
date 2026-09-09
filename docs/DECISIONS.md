@@ -1779,3 +1779,52 @@ pipeline the night before a season opens was not the moment.
 
 Production's existing Week 1 row still had to be corrected by hand; the code only
 prevents the next one.
+
+## D-066 — Name tags in Table Talk: Commish in gold, League Leader in green (2026-09-09)
+
+Owner request: the chat read as a flat log, and there was no way to tell an
+announcement from an opinion. Small coloured tags beside the name, extensible ("and
+so on and so forth") — **not** coloured message text, which was the first reading and
+was corrected.
+
+**Gold for the commissioner, and that is not a preference.** Art §167 already
+reserves gold for "the house: hairlines, system messages, commissioner corrections,
+the Pot, the felt badge." The initial ask was orange; gold is what the palette
+already means by *the house*, and the owner landed on gold independently. No new hue
+was added to the palette. The leader takes `--color-win`, the existing "up" half of
+the muted data pair.
+
+`ChatTag` (`components/dash/ChatTag.tsx`) deliberately reuses the **exact** treatment
+the felt badge already uses in the leaderboard — 1px border, 9px uppercase, wide
+tracking, no fill — because the app should have one badge idiom, not two. Chamfered,
+never a pill: art §5 and the §494 reject-list are explicit. The 8px chamfer is most
+of a 9px label's height and read as a torn corner, so a `.chamfer-xs` at 3px was
+added — same treatment, proportioned to the part.
+
+**Light mode is handled up front, not discovered later.** The tones carry their own
+token pairs rather than using raw gold/win. On the dark panel (#131316) gold measures
+7.74:1 and win-green 5.44:1, so dark borrows them unchanged. On the light panel
+(#fafafb) those same values are **2.30:1 and 3.28:1** — both failing AA at the type
+size least able to afford it. Light overrides to #7d6129 (5.60:1) and #35784f
+(5.18:1), still unmistakably gold and green. D-063 was this exact bug at app scale.
+
+**Only a player CLEAR of the field is tagged.** `leaderFrom` gained the leader's
+`playerId` so a surface can mark them, not just name them; on a level board it
+returns `tied` and nobody is tagged. This matters immediately: the real Week 1 has
+all thirteen players on 490, so **the green tag will not appear until Week 1
+settles.** That is correct, not missing — tagging thirteen co-leaders says nothing,
+and crowning whichever row sorted first is the bug `leaderFrom` exists to prevent.
+
+**Migration 0023** makes the `commissioner` table readable by approved players. It
+had RLS on and no select policy at all, so a player client could not read the seat;
+the only alternative was the service role on a player surface, which ANTE-TECH §4.3
+forbids. Read-only, approved-only; no write policy, so the seat still moves solely
+through a commissioner action.
+
+**`schema:check` cannot see this migration.** It adds a policy, not a column — the
+documented gap in CLAUDE.md. Verified instead by querying as a real authenticated
+non-commissioner player (Deb T.) through full RLS with a signed local JWT: the seat
+read succeeds, resolves to Robert Toler, the leader resolves to Dustin Green, and the
+per-message tag sets come out `["Commish"]`, `["League Leader"]`, `[]` — 8/8. Both
+themes screenshotted from the real compiled CSS. Torture season `SEASON CLEAN` at
+13,500.

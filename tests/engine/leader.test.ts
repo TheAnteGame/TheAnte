@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { leaderFrom, type StandingRow } from "@/lib/ticker/leader";
 
 const row = (first: string, stack: number | null, status = "approved"): StandingRow => ({
+  player_id: `id-${first}`,
   first_name: first,
   last_name: `${first}son`,
   stack,
@@ -20,6 +21,7 @@ describe("leaderFrom", () => {
       kind: "leader",
       name: "Steven S.",
       stack: 640,
+      playerId: "id-Steven",
     });
   });
 
@@ -33,12 +35,12 @@ describe("leaderFrom", () => {
 
   it("ignores deactivated players, who keep their chips but have left the room (§13)", () => {
     const state = leaderFrom([row("Ghost", 2000, "deactivated"), row("Steven", 640), row("Dee", 500)]);
-    expect(state).toEqual({ kind: "leader", name: "Steven S.", stack: 640 });
+    expect(state).toEqual({ kind: "leader", name: "Steven S.", stack: 640, playerId: "id-Steven" });
   });
 
   it("does not resurrect a deactivated leader as a tie either", () => {
     const state = leaderFrom([row("Ghost", 640, "deactivated"), row("Steven", 640), row("Dee", 500)]);
-    expect(state).toEqual({ kind: "leader", name: "Steven S.", stack: 640 });
+    expect(state).toEqual({ kind: "leader", name: "Steven S.", stack: 640, playerId: "id-Steven" });
   });
 
   it("says nothing at all when there is no live roster", () => {
@@ -55,6 +57,7 @@ describe("leaderFrom", () => {
       kind: "leader",
       name: "Steven S.",
       stack: 490,
+      playerId: "id-Steven",
     });
   });
 });

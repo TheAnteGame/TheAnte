@@ -76,6 +76,18 @@
   --color-win: #4d9a6a;
   --color-loss: #bd5b5b;
 
+  /* Table Talk name tags (D-066). Their own tokens rather than raw gold/win, because
+     these are 9px uppercase labels — the type size least able to afford a contrast
+     shortfall — and they must survive BOTH themes. On the dark panel (#131316) gold
+     reads 7.7:1 and win-green 5.4:1, so dark simply borrows them. Light mode cannot:
+     the same gold on a light panel (#fafafb) is 2.3:1 and the green 3.3:1, both
+     failing AA at any size. Overridden in the light block, not left to inherit —
+     D-063 was this exact bug, an entire app's headings gone invisible in light. */
+  --color-tag-house-fg: var(--color-gold);
+  --color-tag-house-bd: var(--color-gold-dim);
+  --color-tag-leader-fg: var(--color-win);
+  --color-tag-leader-bd: #35704d;
+
   --font-display: var(--font-chakra-petch);
   --font-body: var(--font-archivo);
 }
@@ -133,6 +145,14 @@
   --color-ink: var(--color-text-hi);
   --color-heading: var(--color-text-hi);
   --lit-edge: inset 0 1px 0 rgba(0, 0, 0, 0.06), inset 1px 0 0 rgba(0, 0, 0, 0.03);
+
+  /* The tags darken here instead of inheriting. Measured on the light panel
+     (--color-surface-1, #fafafb): gold 5.60:1, green 5.18:1 — both clear AA for the
+     9px type they carry, and both still read unmistakably as gold and as green. */
+  --color-tag-house-fg: #7d6129;
+  --color-tag-house-bd: #a98a4a;
+  --color-tag-leader-fg: #35784f;
+  --color-tag-leader-bd: #5f9a78;
 }
 :root[data-theme="light"] .chrome-face {
   border-color: rgba(0, 0, 0, 0.22);
@@ -223,6 +243,11 @@ td.nums,
 }
 .chamfer-lg {
   clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+}
+/* Tag-scale cut: the 8px chamfer is most of a 9px label's height, which reads as a
+   torn corner rather than a milled one. Same treatment, proportioned to the part. */
+.chamfer-xs {
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
 }
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────────

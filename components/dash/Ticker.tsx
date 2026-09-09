@@ -89,7 +89,7 @@ export async function Ticker() {
     if (sysOn("leader")) {
       // Every row, not rank-1: on a level board rank() makes EVERYONE rank 1, and
       // limit(1) then picked an arbitrary player to crown. See lib/ticker/leader.ts.
-      const { data: rows } = await db.from("standings").select("first_name, last_name, stack, status");
+      const { data: rows } = await db.from("standings").select("player_id, first_name, last_name, stack, status");
       const state = leaderFrom(rows ?? []);
       if (state.kind === "leader") {
         system.push({

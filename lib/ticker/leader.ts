@@ -9,6 +9,7 @@
 // loud rather than papered over with whoever the planner happened to return first.
 
 export interface StandingRow {
+  player_id: string | null;
   first_name: string | null;
   last_name: string | null;
   stack: number | null;
@@ -17,7 +18,7 @@ export interface StandingRow {
 
 export type LeaderState =
   | { kind: "none" }
-  | { kind: "leader"; name: string; stack: number }
+  | { kind: "leader"; name: string; stack: number; playerId: string | null }
   | { kind: "tied"; count: number; stack: number };
 
 function shortName(r: StandingRow): string {
@@ -34,6 +35,9 @@ export function leaderFrom(rows: StandingRow[]): LeaderState {
   const atTop = live.filter((r) => r.stack === top);
 
   // One player clear of the field — the only case where a name belongs on the rail.
-  if (atTop.length === 1) return { kind: "leader", name: shortName(atTop[0]), stack: top };
+  // playerId rides along so a surface can MARK the leader, not just name them —
+  // Table Talk tags their messages (D-066). The rail only ever needed the name.
+  if (atTop.length === 1)
+    return { kind: "leader", name: shortName(atTop[0]), stack: top, playerId: atTop[0].player_id };
   return { kind: "tied", count: atTop.length, stack: top };
 }

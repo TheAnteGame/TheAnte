@@ -390,6 +390,8 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.help_emoji":
     "Emojis work everywhere: tap the \ud83d\ude42 by the send button, or use your keyboard \u2014 Ctrl+\u2318+Space on a Mac, Win+. on Windows, the emoji key on your phone.",
   "dash.tabletalk.emoji_aria": "Add an emoji",
+  "dash.tabletalk.tag_commish": "Commish",
+  "dash.tabletalk.tag_leader": "League Leader",
   "dash.news.heading": "Your team",
   "dash.news.source_label": "Source",
   "dash.news.empty": "Quiet day. Nothing worth reading.",

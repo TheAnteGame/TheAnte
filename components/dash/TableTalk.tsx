@@ -7,6 +7,8 @@ import { ChatComposer } from "./ChatComposer";
 import { ChatHelp } from "./ChatHelp";
 import { PlayerTip } from "../ui/PlayerTip";
 import { buildHandles, segmentBody } from "@/lib/chat/mentions";
+import { leaderFrom } from "@/lib/ticker/leader";
+import { ChatTag, type TagTone } from "./ChatTag";
 
 // Table Talk (ANTE-PLAYER §7): a real chat panel. System messages are distinct and
 // carry weight — they are the only place the commissioner's authority is visible.
@@ -22,7 +24,7 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, tombstone, helpAria, helpTitle, helpMentions, helpEmoji, emojiAria] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, tombstone, helpAria, helpTitle, helpMentions, helpEmoji, emojiAria, tagCommish, tagLeader] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -46,9 +48,34 @@ export async function TableTalk({
     getContent("dash.tabletalk.help_mentions"),
     getContent("dash.tabletalk.help_emoji"),
     getContent("dash.tabletalk.emoji_aria"),
+    getContent("dash.tabletalk.tag_commish"),
+    getContent("dash.tabletalk.tag_leader"),
   ]);
 
-  const { data: roster } = await db.from("players").select("id, first_name, last_name").eq("status", "approved");
+  // Who wears a tag (D-066). Both reads go through the PLAYER client like everything
+  // else here — the commissioner seat became readable to approved players in
+  // migration 0023 rather than being fetched with the service role, which §4.3
+  // forbids on a player surface.
+  const [{ data: roster }, { data: seat }, { data: standings }] = await Promise.all([
+    db.from("players").select("id, first_name, last_name").eq("status", "approved"),
+    db.from("commissioner").select("player_id").maybeSingle(),
+    db.from("standings").select("player_id, first_name, last_name, stack, status"),
+  ]);
+
+  // Only a player CLEAR of the field gets the green tag. On a level board — which is
+  // the whole of Week 1, every stack at 500 minus the ante — leaderFrom returns
+  // "tied" and nobody is tagged. Tagging thirteen co-leaders would say nothing, and
+  // crowning whichever row sorted first is the exact bug leaderFrom exists to stop.
+  const leader = leaderFrom(standings ?? []);
+  const leaderId = leader.kind === "leader" ? leader.playerId : null;
+
+  const tagsFor = (playerId: string | null): { tone: TagTone; label: string }[] => {
+    if (!playerId) return [];
+    const out: { tone: TagTone; label: string }[] = [];
+    if (seat?.player_id === playerId) out.push({ tone: "house", label: tagCommish });
+    if (leaderId === playerId) out.push({ tone: "leader", label: tagLeader });
+    return out;
+  };
   const handles = buildHandles(
     (roster ?? []).map((p) => ({ id: p.id, firstName: p.first_name, lastName: p.last_name })),
   );
@@ -99,6 +126,11 @@ export async function TableTalk({
                     </PlayerTip>
                   );
                 })()}
+                {tagsFor(m.player_id).map((t) => (
+                  <ChatTag key={t.tone} tone={t.tone}>
+                    {t.label}
+                  </ChatTag>
+                ))}
                 <span className="mr-2 text-[12px] text-[color:var(--color-text-low)]">
                   {DateTime.fromISO(m.created_at).setZone(ET).toFormat("ccc h:mma")}
                 </span>
