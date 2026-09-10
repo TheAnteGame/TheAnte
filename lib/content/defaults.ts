@@ -243,11 +243,11 @@ export const contentDefaults: Record<string, string> = {
   "band.ante_tip":
     "Your weekly buy-in, taken automatically when the slate opens Tuesday. Every ante in the league goes straight into the Pot. It climbs with the tiers: 10 to start, 15 from Week 5, 20 from Week 10, 30 from Week 15.",
   "band.pot_tip":
-    "Every ante in the league lands here. On Monday night it goes to whoever GAINED the most chips that week — not the biggest stack — and a fold can never win it. Bigger leagues pay more than one place. The Pot panel further down shows the full working.",
+    "Every ante in the league lands here, and essentially nothing else: bets settle between players, so the Pot only moves by the small remainder left once the winners are paid \u2014 up some weeks, down others. On Monday night it goes to whoever GAINED the most chips that week \u2014 not the biggest stack \u2014 and a fold can never win it. Bigger leagues pay more than one place. The Pot panel further down shows the full working.",
   "band.your_wager_tip":
     "What you put on this week, across every game on your ticket. A shove shows the whole stack it committed, and a fold shows nothing, because that is what a fold wagered. It replaces the deadline here: the wall has already passed, and a deadline behind you is the least useful thing on this band.",
   "band.in_play_tip":
-    "Every chip the league has staked on this week's games. Most of it goes straight back to the people who bet it \u2014 a winning ticket returns its stake and the payout on top. Only what the table fails to win stays behind, and that is what sweeps into the Pot. It replaces your limit here because the limit stopped mattering the moment the board opened.",
+    "Every chip the league has staked on this week's games. It is not the Pot and almost none of it ends up there. Losing chips pay the winners: a correct pick gets its stake back plus a payout, and that payout comes from the players who were wrong. Only the DIFFERENCE between the two ever touches the Pot, which is usually small and is often negative \u2014 across an eighteen-week simulation the table owed the winners more than the losers put up in ten weeks out of eighteen, and the Pot covered the gap. Nothing is kept by a house, because there is no house. It replaces your limit here because the limit stopped mattering the moment the board opened.",
   "band.limit_tip":
     "The most you can commit this week, across every game. One third of the smaller of your own stack or the league's middle stack, rounded down to a ten. {capped} It is a ceiling, not a target — betting less is fine.",
   "band.limit_capped_stack": "Right now yours is set by your own stack of {stack}.",
