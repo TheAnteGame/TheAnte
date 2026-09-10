@@ -232,6 +232,7 @@ export const contentDefaults: Record<string, string> = {
   "band.limit_label": "Your limit",
   "band.in_play_label": "In play",
   "band.wagered_label": "Wagered",
+  "band.your_wager_label": "Your wager",
   "band.deadline_label": "Deadline",
   "band.preseason_message": "Preseason. The roster is forming — Week 1 locks {lock}.",
 
@@ -243,6 +244,8 @@ export const contentDefaults: Record<string, string> = {
     "Your weekly buy-in, taken automatically when the slate opens Tuesday. Every ante in the league goes straight into the Pot. It climbs with the tiers: 10 to start, 15 from Week 5, 20 from Week 10, 30 from Week 15.",
   "band.pot_tip":
     "Every ante in the league lands here. On Monday night it goes to whoever GAINED the most chips that week — not the biggest stack — and a fold can never win it. Bigger leagues pay more than one place. The Pot panel further down shows the full working.",
+  "band.your_wager_tip":
+    "What you put on this week, across every game on your ticket. A shove shows the whole stack it committed, and a fold shows nothing, because that is what a fold wagered. It replaces the deadline here: the wall has already passed, and a deadline behind you is the least useful thing on this band.",
   "band.in_play_tip":
     "Every chip the league has staked on this week's games. Most of it goes straight back to the people who bet it \u2014 a winning ticket returns its stake and the payout on top. Only what the table fails to win stays behind, and that is what sweeps into the Pot. It replaces your limit here because the limit stopped mattering the moment the board opened.",
   "band.limit_tip":

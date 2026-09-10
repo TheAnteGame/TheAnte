@@ -2009,3 +2009,33 @@ which is the confusion that started this.
 Verified against production: Pot 150, In play 1280, 150 + 1280 = 1430 exactly (nothing
 dropped), the 1280 cross-checked independently by summing tickets, and 15 approved
 players × 10 = the 150. 178 tests, `SEASON CLEAN`.
+
+## D-071 — The deadline tray becomes your own wager once the wall passes (2026-09-10)
+
+Owner, straight after D-070: the deadline box should do something else while the week
+is live, and carry the player's own total.
+
+Same argument as the limit tray, same gate. A deadline that has already passed is the
+least useful thing on the band, and it sits there for four days. What the player
+actually put in is one of the most useful. So on `phase !== "open"` the tray swaps:
+Thursday 12:00pm ET becomes the player's own stake, and swaps back the moment a new
+week opens.
+
+**Labelled "Your wager", not "Total wagered" as asked.** It sits directly beside "In
+play", which is the league's 1280; two adjacent trays reading "IN PLAY 1280" and
+"TOTAL WAGERED 80" invite exactly the whose-number-is-this confusion that D-070 was
+about. "Your" settles it in one word. It is a content key
+(`band.your_wager_label`) so the owner can overrule this from the console without a
+deploy, and that is said out loud rather than quietly done.
+
+A shove shows `committed_stake`, matching every other surface (§8). A fold shows 0,
+which is what a fold wagered. The ticket read is skipped entirely before the reveal —
+RLS would not return it anyway, and asking is the wrong question during a blackout.
+
+Verified against production: fifteen players' trays sum to exactly 1280, the same
+figure the league "In play" tray shows, so the parts add to the whole. Folded seats
+read 0, Robert reads 80.
+
+No torture run: this touches a component and content defaults only — no ledger, no
+engine, no settlement, no migration. The Pot helper it sits next to was covered by
+D-070's run.

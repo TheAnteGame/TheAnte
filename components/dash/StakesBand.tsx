@@ -123,7 +123,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
   // so "in play" may only exist on the far side of the blackout.
   const boardOpen = week.phase !== "open";
 
-  const [potBalance, wagered, { data: snap }] = await Promise.all([
+  const [potBalance, wagered, { data: snap }, { data: myTicket }] = await Promise.all([
     truePotBalance(db),
     boardOpen ? wageredInWeek(db, week.id) : Promise.resolve(0),
     // stack_pre_ante joins the read purely so the limit tooltip can say WHICH cap is
@@ -134,7 +134,22 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       .eq("week_id", week.id)
       .eq("player_id", playerId)
       .maybeSingle(),
+    // The player's OWN stake, for the tray the deadline vacates once the wall passes.
+    // Read only when the board is open: before the reveal a ticket is the one thing
+    // RLS will not return anyway, and asking for it would be the wrong question.
+    boardOpen
+      ? db
+          .from("tickets")
+          .select("total_chips, is_shove, committed_stake")
+          .eq("week_id", week.id)
+          .eq("player_id", playerId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+
+  // §8 — a shove commits the whole pre-ante stack, and committed_stake is what the
+  // rest of the app shows for one. A fold reads 0, which is exactly what it wagered.
+  const myWager = myTicket ? (myTicket.is_shove ? (myTicket.committed_stake ?? 0) : myTicket.total_chips) : 0;
 
   const tier = tierForWeek(week.number);
   const v = TIER_VARS[tier];
@@ -153,7 +168,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
   const tierLabel = await getContent(v.labelKey);
 
   const [
-    weekLabel, anteLabel, potLabel, limitLabel, deadlineLabel, inPlayLabel, wageredLabel, inPlayTip,
+    weekLabel, anteLabel, potLabel, limitLabel, deadlineLabel, inPlayLabel, wageredLabel, yourWagerLabel, yourWagerTip, inPlayTip,
     anteTip, potTip, limitTipRaw, cappedCopy, deadlineTip, ringTip,
   ] = await Promise.all([
     getContent("band.week_label"),
@@ -163,6 +178,8 @@ export async function StakesBand({ playerId }: { playerId: string }) {
     getContent("band.deadline_label"),
     getContent("band.in_play_label"),
     getContent("band.wagered_label"),
+    getContent("band.your_wager_label"),
+    getContent("band.your_wager_tip"),
     getContent("band.in_play_tip"),
     getContent("band.ante_tip"),
     getContent("band.pot_tip"),
@@ -276,9 +293,18 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       {/* Hangs from its right edge: this tray sits at the margin, and a left-hung
           tooltip would run off the screen on a phone. */}
       <span className="ml-auto">
-        <Tip text={deadlineTip} label={deadlineLabel} align="right">
-          {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}
-        </Tip>
+        {boardOpen ? (
+          // The wall is behind us — a deadline that has already passed is the least
+          // useful thing on the band, and what the player actually put in is one of
+          // the most (D-071). Same swap, same reason, as the limit tray.
+          <Tip text={yourWagerTip} label={yourWagerLabel} align="right">
+            {stat(yourWagerLabel, String(myWager))}
+          </Tip>
+        ) : (
+          <Tip text={deadlineTip} label={deadlineLabel} align="right">
+            {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}
+          </Tip>
+        )}
       </span>
     </div>
   );
