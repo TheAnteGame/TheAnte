@@ -9,6 +9,7 @@ import { serviceDb } from "@/lib/jobs/util";
 import { titleCase } from "@/lib/name";
 import { emailDoc } from "@/lib/notify/templates";
 import { applicationReceived } from "@/lib/notify/docs";
+import { getContent } from "@/lib/content/getContent";
 
 // Mutations run as the requesting user, through RLS (ANTE-TECH §4.2). The
 // players_apply policy admits only a pending self-row; the self-update guard
@@ -95,7 +96,7 @@ export async function saveProfile(formData: FormData): Promise<void> {
         serviceDb(),
         { id: me.id, email: me.email },
         "player.application_received",
-        "ANTE: You're on the List",
+        await getContent("mail.application_received.subject"),
         applicationReceived({ firstName: me.first_name ?? "Hello" }),
         `player.application_received:${me.id}`,
       );

@@ -32,7 +32,7 @@ async function notifyMentions(messageId: string, authorId: string, authorName: s
     .slice(0, MAX_MENTIONS_PER_MESSAGE);
   if (mentioned.length === 0) return;
 
-  const subject = await getContent("notify.mention_subject", { author: authorName });
+  const subject = await getContent("mail.mention.subject", { author: authorName });
   for (const id of mentioned) {
     const player = roster.find((p) => p.id === id);
     if (!player?.email) continue;

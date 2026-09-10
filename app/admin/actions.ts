@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { getCommissioner, writeAudit } from "@/lib/admin";
-import { send } from "@/lib/notify";
 import { revealDeadline } from "@/lib/jobs/reveal";
 import { settleCurrentWeek } from "@/lib/jobs/settle";
 import { serviceDb } from "@/lib/jobs/util";
@@ -99,7 +98,7 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
       ctx.db,
       { id: playerId, email: p.email },
       "player.approved",
-      "ANTE: You're In",
+      await getContent("mail.approved.subject"),
       approvedEmail({ firstName: p.first_name ?? "Hello", phone: p.phone ?? null }),
       `player.approved:${playerId}`,
     );
@@ -459,19 +458,23 @@ export async function nudgePlayer(fd: FormData): Promise<ActionResult> {
     .eq("id", playerId)
     .maybeSingle();
   if (!p?.email) return fail("No email on file");
-  const result = await send("email", "player.nudge", p.email, {
-    subject: "ANTE: The Room Is Waiting on You",
-    body: `${p.first_name ?? "Hey"} — every submitted player can see your name on the waiting list. Thursday noon is the wall. theantegame.com`,
-  });
-  await ctx.db.from("notification_log").insert({
-    player_id: playerId,
-    channel: "email",
-    template_key: "player.nudge",
-    status: result.status,
-    provider_message_id: result.providerMessageId ?? null,
-    error: result.error ?? null,
-  });
-  return result.status === "sent" ? { ok: true } : fail(result.error ?? "Send failed");
+
+  // The nudge body used to be a string literal here while the console offered a
+  // "notify.nudge" template to edit — so the commissioner's edit was accepted, saved,
+  // and never sent to anyone (D-068). It now renders from that template like every
+  // other content-managed email, and goes out as HTML and text.
+  await emailPlayer(
+    ctx.db,
+    { id: playerId, email: p.email },
+    "notify.nudge",
+    await getContent("mail.nudge.subject"),
+    { first_name: p.first_name ?? "Hey" },
+    // Deliberately NO dedupe key: a nudge is a deliberate act and the commissioner
+    // may need to send a second one. Every send is logged either way.
+    undefined,
+    { eyebrow: "Still waiting", headline: "The room is waiting on you", cta: { label: "Put your ticket in", href: "https://theantegame.com/dashboard" } },
+  );
+  return { ok: true };
 }
 
 // ── Week control (§4.2 — the only game-data writes permitted) ──────────────────
@@ -743,7 +746,7 @@ export async function replySupportMessage(fd: FormData): Promise<ActionResult> {
   } | null;
   if (!player?.email) return fail("That player has no email on file, so a reply cannot reach them.");
 
-  const subject = await getContent("notify.support_reply_subject");
+  const subject = await getContent("mail.support_reply.subject");
   await emailPlayer(
     ctx.db,
     player,

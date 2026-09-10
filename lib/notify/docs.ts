@@ -1,5 +1,5 @@
 import "server-only";
-import type { EmailDoc } from "./render";
+import type { Block, EmailDoc } from "./render";
 
 // The five league emails, each described once as blocks and rendered to HTML and
 // plain text by lib/notify/render.ts (D-056). Everything a player is told about the
@@ -205,6 +205,36 @@ export function weekOpen(v: {
     preheader: `Week ${v.week} is open. Ante ${v.ante}, your limit is ${v.limit}, deadline ${v.deadline}.`,
     eyebrow: v.prevWeek !== null ? `Week ${v.prevWeek} settled` : "The season begins",
     headline: `Week ${v.week} is open`,
+    blocks,
+  };
+}
+
+/** 6. Any content-managed template, wrapped in the same envelope as the designed five.
+ *
+ *  The six template-driven emails (reminder, final call, nudge, mention, support in
+ *  and out, backup nag) used to send as bare text with no HTML part at all, so half
+ *  the league's mail arrived unbranded while the other half was a designed document
+ *  (D-068). This turns an edited template string into the same EmailDoc every other
+ *  email uses: blank lines become paragraphs, and both renderings come off one source
+ *  exactly as D-056 requires. The commissioner's words are the body; the envelope,
+ *  the sign-off and the footer come free. */
+export function templateDoc(v: {
+  eyebrow: string;
+  headline: string;
+  body: string;
+  cta?: { label: string; href: string; sub?: string };
+}): EmailDoc {
+  const paras = v.body
+    .split(/\n\s*\n/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const blocks: Block[] = paras.map((text, i) => ({ kind: i === 0 ? "lead" : "para", text }) as Block);
+  if (v.cta) blocks.push({ kind: "cta", ...v.cta });
+  blocks.push(WHY);
+  return {
+    preheader: paras[0]?.slice(0, 140) ?? v.headline,
+    eyebrow: v.eyebrow,
+    headline: v.headline,
     blocks,
   };
 }

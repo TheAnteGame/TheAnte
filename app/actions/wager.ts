@@ -10,6 +10,7 @@ import { emailDoc } from "@/lib/notify/templates";
 import { ticket as ticketEmail } from "@/lib/notify/docs";
 import { DateTime } from "luxon";
 import { ET } from "@/lib/time";
+import { getContent } from "@/lib/content/getContent";
 
 // Submission runs as the player through the submit_ticket RPC — every slip rule is
 // re-validated inside Postgres under RLS (0007). If this ticket was the last one in,
@@ -118,7 +119,7 @@ async function sendTicketReceipt(clerkUserId: string, weekId: string): Promise<v
     svc,
     { id: me.id, email: me.email },
     "player.ticket",
-    `ANTE: Your Week ${week.number} Ticket`,
+    await getContent("mail.ticket.subject", { week: week.number }),
     ticketEmail({
       firstName: me.first_name ?? "Hello",
       week: week.number,

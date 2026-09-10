@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { contentDefaults } from "@/lib/content/defaults";
 import { send } from "./index";
 import { render, type EmailDoc } from "./render";
+import { templateDoc } from "./docs";
 
 // Template rendering + logged sends. Templates are content-managed (notify.* keys);
 // variables are a WHITELIST passed by the calling job — that is how the blackout
@@ -22,6 +23,21 @@ export function fill(text: string, vars: Record<string, string | number>): strin
   return out;
 }
 
+/** A content-managed SUBJECT, read with the caller's own client (D-068).
+ *
+ *  Deliberately NOT lib/content/getContent: that reaches for a Clerk-aware Supabase
+ *  client, which drags @clerk/nextjs/server and next/navigation into the module
+ *  graph. Fine inside a request, fatal in a cron job or the torture harness, which
+ *  run outside Next entirely — the season torture test refused to even load. Jobs
+ *  already hold a service client, so the subject is read through that. */
+export async function mailSubject(
+  db: SupabaseClient,
+  key: string,
+  vars: Record<string, string | number> = {},
+): Promise<string> {
+  return fill(await template(db, key), vars);
+}
+
 export async function emailPlayer(
   db: SupabaseClient,
   player: { id: string; email: string | null },
@@ -29,7 +45,7 @@ export async function emailPlayer(
   subject: string,
   vars: Record<string, string | number>,
   dedupeKey?: string,
-  opts?: { allowFreeText?: boolean },
+  opts?: { allowFreeText?: boolean; eyebrow?: string; headline?: string; cta?: { label: string; href: string; sub?: string } },
 ): Promise<void> {
   if (!player.email) return;
 
@@ -66,12 +82,19 @@ export async function emailPlayer(
     return;
   }
 
-  const result = await send("email", templateKey, player.email, { subject, body });
+  // HTML *and* text, from the one source, exactly as the designed five do (D-068).
+  // These used to send bare text: a player's inbox showed a branded document for a
+  // ticket confirmation and an unstyled paragraph for the reminder ten minutes later.
+  // The commissioner's edited words are the body; the envelope comes free.
+  const { html, text } = render(
+    templateDoc({ eyebrow: opts?.eyebrow ?? "ANTE", headline: opts?.headline ?? subject.replace(/^ANTE:\s*/, ""), body, cta: opts?.cta }),
+  );
+  const result = await send("email", templateKey, player.email, { subject, body: text, html });
   await db.from("notification_log").insert({
     player_id: player.id,
     channel: "email",
     template_key: logKey,
-    body,
+    body: text,
     status: result.status,
     provider_message_id: result.providerMessageId ?? null,
     error: result.error ?? null,

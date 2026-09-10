@@ -1882,3 +1882,52 @@ read per job. (2) The backup nag logs `backup-reminder-<date>`, not
 `notify.backup_reminder`, so 18 rows rendered as raw keys; prefixes are now taken from
 the distinct set actually present in production. Re-verified: 8/8 jobs resolved, 0
 unmatched keys, 0 failures, 10 double pairs flagged. Torture season `SEASON CLEAN`.
+
+## D-068 — Every email accounted for, editable, and sent as HTML + text (2026-09-10)
+
+Owner review of the new mail log: "ensure we're sending all the emails we're supposed
+to… it'd be nice if I could just edit emails or subject lines… I want the HTML emails
+to go out along with a text version… the little one-off ones need to be deleted."
+
+**Half the league's mail was going out unstyled.** The five designed emails render a
+branded HTML document and a plain-text twin from one source (D-056). The six
+content-managed ones — reminder, final call, nudge, mention, support in and out, the
+backup nag — called `send()` with `body` only and **no HTML part at all**, so a player
+got a designed document for a ticket confirmation and a bare paragraph for the
+reminder ten minutes later. New `templateDoc()` wraps an edited template string in the
+same envelope: blank lines become paragraphs, the sign-off and footer come free, and
+both renderings still come off one source. All thirteen emails are now HTML + text.
+
+**Every subject is now editable from the console.** They were ten string literals
+across seven files. Each is a content key (`mail.<kind>.subject`), listed in
+`/admin/notifications` with an input beside it, filling `{week}`, `{author}` and
+`{player}` at send. Nothing needs to change in Resend — Resend is transport only, it
+holds no templates for this app. Bodies are editable for the six content-managed
+emails; the designed five are structured documents (tables of real games, chip counts,
+stats) and are honestly labelled as not editable from that screen rather than
+pretended otherwise.
+
+**The manual nudge had been edited and had never sent.** The console offered a
+`notify.nudge` template, the owner edited it to "The league is waiting on you", and
+the send path used a string literal in `app/admin/actions.ts` — so the edit was
+accepted, saved, and never reached a single inbox. It now renders from its template
+like every other content-managed email. Deliberately keeps NO dedupe key: a nudge is a
+deliberate act and may need repeating.
+
+**The five genuinely dead one-liners are deleted** — `notify.slate_open`,
+`notify.reveal`, `notify.settled`, `notify.pot`, `notify.correction` reached no email
+and are gone from `defaults.ts` and the console. `notify.nudge` was NOT deleted; it
+was wired up instead, because it names a real email the owner actually sends.
+Production still carries an override row for it (harmless, now live) — the other dead
+keys were never overridden.
+
+**A trap worth recording: `getContent` cannot be called from a job.** Routing subjects
+through it dragged `lib/db/supabase` → `@clerk/nextjs/server` → `next/navigation` into
+the module graph. Fine inside a request; fatal in a cron job or the torture harness,
+which run outside Next — the season torture test refused to *load*. Jobs already hold
+a service client, so `mailSubject(db, key, vars)` reads the same content row through
+that. Anything reachable from `lib/jobs/` must stay clear of the Clerk-aware client.
+
+Verified: all 13 subjects fill with no leftover `{`, all carry the `ANTE: ` prefix,
+none contain an em dash, and each of the six template bodies renders >6KB of HTML plus
+a non-empty text part. Reminder screenshotted end to end. `SEASON CLEAN` at 13,500.

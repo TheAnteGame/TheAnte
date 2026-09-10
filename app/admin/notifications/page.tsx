@@ -5,7 +5,7 @@ import { AdminForm } from "@/components/admin/AdminForm";
 import { saveContent } from "../actions";
 import { Section, inputCls } from "@/components/admin/ui";
 import { ET } from "@/lib/time";
-import { MAIL_KINDS, SCHEDULED_JOBS, DEAD_TEMPLATE_KEYS } from "@/lib/notify/catalogue";
+import { MAIL_KINDS, SCHEDULED_JOBS } from "@/lib/notify/catalogue";
 
 // Notifications (ANTE-ADMIN §4.7), rebuilt as a mail LOG rather than a template list
 // (D-067). The console previously showed eight editable strings and nothing else, so
@@ -81,6 +81,12 @@ export default async function Notifications() {
     seen.set(k, (seen.get(k) ?? 0) + 1);
   }
   const doubled = new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k));
+
+  const sentCounts = new Map<string, number>();
+  for (const r of rows) {
+    const k = kindFor(r.template_key);
+    if (k) sentCounts.set(k.keyPrefix, (sentCounts.get(k.keyPrefix) ?? 0) + 1);
+  }
 
   return (
     <div>
@@ -193,7 +199,7 @@ export default async function Notifications() {
                   <div className="mt-2 pl-1 text-xs text-[color:var(--color-text-low)]">
                     <div>
                       To {r.player_id ? (emailOf.get(r.player_id) ?? "no address on file") : "—"} · {r.channel} ·{" "}
-                      {kind?.subject ?? "—"}
+                      {kind ? (overrideMap.get(kind.subjectKey) ?? contentDefaults[kind.subjectKey] ?? "—") : "—"}
                     </div>
                     <div className="nums break-all">
                       key {r.template_key}
@@ -215,77 +221,54 @@ export default async function Notifications() {
         )}
       </Section>
 
-      <Section title="Every email this app can send">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[46rem] text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wider text-[color:var(--color-text-low)]">
-                <th className="py-2 pr-3">Email</th>
-                <th className="py-2 pr-3">Subject</th>
-                <th className="py-2 pr-3">What triggers it</th>
-                <th className="py-2">Body</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MAIL_KINDS.map((k) => (
-                <tr key={k.keyPrefix} className="border-t border-[color:var(--color-border)] align-top">
-                  <td className="py-2 pr-3 text-[color:var(--color-text-hi)]">{k.label}</td>
-                  <td className="py-2 pr-3 text-[color:var(--color-text-mid)]">{k.subject}</td>
-                  <td className="py-2 pr-3 text-[color:var(--color-text-mid)]">{k.trigger}</td>
-                  <td className="py-2 text-[color:var(--color-text-low)]">
-                    {k.bodySource === "template" ? "Editable template below" : k.bodySource === "designed" ? "Designed layout (in code)" : "Fixed text (in code)"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <Section title={`Every email this app can send — ${MAIL_KINDS.length}`}>
+        <p className="mb-4 max-w-3xl text-sm text-[color:var(--color-text-mid)]">
+          This is the complete list: if it is not here, the app cannot send it. Every subject is editable here and
+          takes effect on the next send — no deploy, and nothing to change in Resend.{" "}
+          <span className="text-[color:var(--color-text-hi)]">Every email sends as HTML with a plain-text twin</span>,
+          both rendered from one source so they can never disagree.
+        </p>
+        <div className="flex flex-col gap-6">
+          {MAIL_KINDS.map((k) => {
+            const subjectVal = overrideMap.get(k.subjectKey) ?? contentDefaults[k.subjectKey] ?? "";
+            const bodyVal = k.bodyKey ? (overrideMap.get(k.bodyKey) ?? contentDefaults[k.bodyKey] ?? "") : null;
+            const count = sentCounts.get(k.keyPrefix) ?? 0;
+            return (
+              <div key={k.keyPrefix} className="border-b border-[color:var(--color-border)] pb-5 last:border-b-0">
+                <p className="mb-2 text-xs text-[color:var(--color-text-low)]">
+                  <span className="text-sm text-[color:var(--color-text-hi)]">{k.label}</span>
+                  <span className="ml-2 border border-[color:var(--color-gold-dim)] px-1 text-[10px] uppercase tracking-wider text-[color:var(--color-gold)]">
+                    HTML + text
+                  </span>
+                  <span className="ml-2">{k.trigger}</span>
+                  <span className="ml-2 nums">· {count} sent</span>
+                </p>
+
+                <p className="mb-1 text-[11px] uppercase tracking-wider text-[color:var(--color-text-low)]">Subject</p>
+                <AdminForm action={saveContent} submitLabel="Save subject" inline>
+                  <input type="hidden" name="key" value={k.subjectKey} />
+                  <input name="value" defaultValue={subjectVal} className={`${inputCls} w-full max-w-2xl`} aria-label={`${k.label} subject`} />
+                </AdminForm>
+
+                <p className="mb-1 mt-3 text-[11px] uppercase tracking-wider text-[color:var(--color-text-low)]">Body</p>
+                {bodyVal !== null ? (
+                  <AdminForm action={saveContent} submitLabel="Save body" inline>
+                    <input type="hidden" name="key" value={k.bodyKey!} />
+                    <textarea name="value" rows={4} defaultValue={bodyVal} className={`${inputCls} w-full max-w-2xl`} aria-label={`${k.label} body`} />
+                  </AdminForm>
+                ) : (
+                  <p className="max-w-2xl text-sm text-[color:var(--color-text-mid)]">
+                    A designed layout — tables of real games, chip counts and stats, built in code
+                    (<span className="nums text-xs">lib/notify/docs.ts</span>). Its wording is not a single string, so it
+                    is not editable from here. Ask and it can be changed.
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </Section>
 
-      <Section title="Templates">
-        <p className="mb-4 max-w-3xl text-sm text-[color:var(--color-text-mid)]">
-          Only the keys marked <span className="text-[color:var(--color-gold)]">LIVE</span> are rendered into an email.
-          The rest are one-line summaries kept for the ticker and for reference — the emails they name are designed
-          layouts built in code, so editing them here changes nothing a player receives.
-        </p>
-        <div className="flex flex-col gap-4">
-          {MAIL_KINDS.filter((k) => k.contentKey)
-            .map((k) => k.contentKey!)
-            .concat([...DEAD_TEMPLATE_KEYS])
-            .map((key) => {
-              const live = !DEAD_TEMPLATE_KEYS.has(key);
-              const kind = MAIL_KINDS.find((k) => k.contentKey === key);
-              return (
-                <div key={key} className="border-b border-[color:var(--color-border)] pb-3 last:border-b-0">
-                  <p className="mb-1 text-xs text-[color:var(--color-text-low)]">
-                    <span className="text-[color:var(--color-text-hi)]">{kind?.label ?? key}</span>
-                    <span
-                      className={`ml-2 border px-1 text-[10px] uppercase tracking-wider ${
-                        live
-                          ? "border-[color:var(--color-gold-dim)] text-[color:var(--color-gold)]"
-                          : "border-[color:var(--color-border)] text-[color:var(--color-text-low)]"
-                      }`}
-                    >
-                      {live ? "Live" : "Not sent"}
-                    </span>
-                    <span className="nums ml-2">{key}</span>
-                    {kind ? <> · {kind.trigger}</> : null}
-                  </p>
-                  <AdminForm action={saveContent} submitLabel="Save" inline>
-                    <input type="hidden" name="key" value={key} />
-                    <textarea
-                      name="value"
-                      rows={2}
-                      defaultValue={overrideMap.get(key) ?? contentDefaults[key] ?? ""}
-                      className={`${inputCls} w-full max-w-2xl`}
-                      aria-label={kind?.label ?? key}
-                    />
-                  </AdminForm>
-                </div>
-              );
-            })}
-        </div>
-      </Section>
     </div>
   );
 }

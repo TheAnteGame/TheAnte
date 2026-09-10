@@ -40,7 +40,7 @@ export async function submitSupportMessage(formData: FormData): Promise<SupportR
     if (seat?.player_id) {
       const { data: commish } = await svc.from("players").select("id, email").eq("id", seat.player_id).maybeSingle();
       if (commish?.email) {
-        const subject = await getContent("notify.support_new_subject");
+        const subject = await getContent("mail.support_new.subject");
         await emailPlayer(
           svc,
           commish,

@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { canReveal, revealEntries } from "@/lib/engine";
 import type { EngineTicket } from "@/lib/engine";
-import { emailDoc } from "@/lib/notify/templates";
+import { emailDoc, mailSubject } from "@/lib/notify/templates";
 import { reveal as revealDoc, ticket as ticketDoc } from "@/lib/notify/docs";
 import { type JobOutcome } from "./util";
 
@@ -306,7 +306,7 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
         db,
         p,
         "player.folded",
-        `ANTE: You Were Folded for Week ${weekNumber}`,
+        await mailSubject(db, "mail.folded.subject", { week: weekNumber }),
         ticketDoc({ firstName: first, week: weekNumber, folded: true, isShove: false, bets: [], total: 0, deadline: deadlineLabel }),
         `player.folded:w${weekNumber}:${p.id}`,
       );
@@ -316,7 +316,7 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
       db,
       p,
       "notify.reveal",
-      `ANTE: The Week ${weekNumber} Board Is Open`,
+      await mailSubject(db, "mail.reveal.subject", { week: weekNumber }),
       revealDoc({ firstName: first, week: weekNumber, games: rows, folded: foldedLine }),
       `notify.reveal:w${weekNumber}:${p.id}`,
     );

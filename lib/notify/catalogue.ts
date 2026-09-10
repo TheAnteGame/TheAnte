@@ -17,7 +17,7 @@ export type BodySource =
   /** Body IS the content block, filled with whitelisted vars via emailPlayer.
    *  Editing it changes what players receive on the next send. */
   | "template"
-  /** Subject and body are literals at the call site. */
+  /** Subject is editable; the body is fixed text at the call site. */
   | "literal";
 
 export interface MailKind {
@@ -27,9 +27,10 @@ export interface MailKind {
   /** What causes it to send, in plain words. */
   trigger: string;
   bodySource: BodySource;
-  /** The editable content_blocks key, when the body or subject is content-managed. */
-  contentKey?: string;
-  subject: string;
+  /** Editable content key holding the SUBJECT. Every email has one. */
+  subjectKey: string;
+  /** Editable content key holding the BODY — only when bodySource is "template". */
+  bodyKey?: string;
 }
 
 // keyPrefix must match what the SEND actually writes to notification_log, which is
@@ -37,24 +38,23 @@ export interface MailKind {
 // "notify.backup_reminder". Verified against the distinct prefixes in production
 // rather than assumed — an unmatched prefix renders as a raw key with no label.
 export const MAIL_KINDS: MailKind[] = [
-  { keyPrefix: "player.application_received", label: "Application received", trigger: "A player finishes onboarding", bodySource: "designed", subject: "ANTE: You're on the List" },
-  { keyPrefix: "player.approved", label: "Approved — welcome", trigger: "Commissioner approves an application", bodySource: "designed", subject: "ANTE: You're In" },
-  { keyPrefix: "notify.slate_open", label: "Week opens", trigger: "slate.open job, Tuesday morning", bodySource: "designed", subject: "ANTE: Week {n} Is Open" },
-  { keyPrefix: "player.ticket", label: "Ticket locked", trigger: "A player submits a ticket", bodySource: "designed", subject: "ANTE: Your Week {n} Ticket" },
-  { keyPrefix: "notify.reminder", label: "Reminder — not yet in", trigger: "notify.reminders job, Wed 6pm ET, unsubmitted only", bodySource: "template", contentKey: "notify.reminder", subject: "ANTE: The Room Can See Your Name for Week {n}" },
-  { keyPrefix: "notify.final_call", label: "Final call — not yet in", trigger: "notify.reminders job, Thu 9am ET, unsubmitted only", bodySource: "template", contentKey: "notify.final_call", subject: "ANTE: Final Call for Week {n}" },
-  { keyPrefix: "player.nudge", label: "Manual nudge", trigger: "Commissioner presses Nudge on the roster", bodySource: "literal", subject: "ANTE: The Room Is Waiting on You" },
-  { keyPrefix: "player.folded", label: "Auto-folded", trigger: "Deadline passes with no ticket", bodySource: "designed", subject: "ANTE: You Were Folded for Week {n}" },
-  { keyPrefix: "notify.reveal", label: "The board is open", trigger: "The reveal fires — last ticket in, or Thursday noon", bodySource: "designed", subject: "ANTE: The Week {n} Board Is Open" },
-  { keyPrefix: "notify.mention", label: "Mentioned in Table Talk", trigger: "Another player @mentions them", bodySource: "template", contentKey: "notify.mention", subject: "ANTE: {author} Mentioned You at the Table" },
-  { keyPrefix: "notify.support_new", label: "Support — new message", trigger: "A player writes to the commissioner", bodySource: "template", contentKey: "notify.support_new", subject: "ANTE: New Message From {player}" },
-  { keyPrefix: "notify.support_reply", label: "Support — reply", trigger: "Commissioner answers a support message", bodySource: "template", contentKey: "notify.support_reply", subject: "ANTE: The Commissioner Answered" },
-  { keyPrefix: "backup-reminder", label: "Backup due (commissioner only)", trigger: "backup.reminder job, daily, until the file is confirmed", bodySource: "template", contentKey: "notify.backup_reminder", subject: "ANTE: Your League Backup Is Due" },
+  { keyPrefix: "player.application_received", label: "Application received", trigger: "A player finishes onboarding", bodySource: "designed", subjectKey: "mail.application_received.subject" },
+  { keyPrefix: "player.approved", label: "Approved — welcome", trigger: "Commissioner approves an application", bodySource: "designed", subjectKey: "mail.approved.subject" },
+  { keyPrefix: "notify.slate_open", label: "Week opens", trigger: "slate.open job, Tuesday morning", bodySource: "designed", subjectKey: "mail.slate_open.subject" },
+  { keyPrefix: "player.ticket", label: "Ticket locked", trigger: "A player submits a ticket", bodySource: "designed", subjectKey: "mail.ticket.subject" },
+  { keyPrefix: "notify.reminder", label: "Reminder — not yet in", trigger: "notify.reminders job, Wed 6pm ET, unsubmitted only", bodySource: "template", subjectKey: "mail.reminder.subject", bodyKey: "notify.reminder" },
+  { keyPrefix: "notify.final_call", label: "Final call — not yet in", trigger: "notify.reminders job, Thu 9am ET, unsubmitted only", bodySource: "template", subjectKey: "mail.final_call.subject", bodyKey: "notify.final_call" },
+  { keyPrefix: "player.nudge", label: "Manual nudge", trigger: "Commissioner presses Nudge on the roster", bodySource: "template", subjectKey: "mail.nudge.subject", bodyKey: "notify.nudge" },
+  { keyPrefix: "player.folded", label: "Auto-folded", trigger: "Deadline passes with no ticket", bodySource: "designed", subjectKey: "mail.folded.subject" },
+  { keyPrefix: "notify.reveal", label: "The board is open", trigger: "The reveal fires — last ticket in, or Thursday noon", bodySource: "designed", subjectKey: "mail.reveal.subject" },
+  { keyPrefix: "notify.mention", label: "Mentioned in Table Talk", trigger: "Another player @mentions them", bodySource: "template", subjectKey: "mail.mention.subject", bodyKey: "notify.mention" },
+  { keyPrefix: "notify.support_new", label: "Support — new message", trigger: "A player writes to the commissioner", bodySource: "template", subjectKey: "mail.support_new.subject", bodyKey: "notify.support_new" },
+  { keyPrefix: "notify.support_reply", label: "Support — reply", trigger: "Commissioner answers a support message", bodySource: "template", subjectKey: "mail.support_reply.subject", bodyKey: "notify.support_reply" },
+  { keyPrefix: "backup-reminder", label: "Backup due (commissioner only)", trigger: "backup.reminder job, daily, until the file is confirmed", bodySource: "template", subjectKey: "mail.backup_reminder.subject", bodyKey: "notify.backup_reminder" },
 ];
 
 /** Content keys the console lists as editable templates but which reach NO email —
  *  the body is a designed document. Kept visible, labelled, rather than deleted. */
-export const DEAD_TEMPLATE_KEYS = new Set(["notify.slate_open", "notify.reveal", "notify.settled", "notify.pot", "notify.correction", "notify.nudge"]);
 
 export interface ScheduledJob {
   /** job_runs.job_key — how the run history is matched. */

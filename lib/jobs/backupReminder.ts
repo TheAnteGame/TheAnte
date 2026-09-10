@@ -1,8 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DateTime } from "luxon";
-import { emailPlayer } from "@/lib/notify/templates";
-import { contentDefaults } from "@/lib/content/defaults";
+import { emailPlayer, mailSubject } from "@/lib/notify/templates";
 import { ET } from "@/lib/time";
 import type { JobOutcome } from "./util";
 
@@ -43,7 +42,7 @@ export async function backupReminder(db: SupabaseClient): Promise<JobOutcome> {
     db,
     commish,
     "notify.backup_reminder",
-    contentDefaults["notify.backup_reminder_subject"],
+    await mailSubject(db, "mail.backup_reminder.subject"),
     { days: daysSince === null ? "never" : String(daysSince) },
     `backup-reminder-${today}`,
   );

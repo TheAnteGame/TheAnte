@@ -4,7 +4,7 @@ import { SLATE_MARGIN_MINUTES, computeSlateOpen, anteForWeek } from "@/lib/engin
 import type { EngineLedgerEntry, EnginePlayer } from "@/lib/engine";
 import { fetchNflverseWeek, type NflverseFetch } from "@/lib/sports/nflverse";
 import { nowET, weekAnchors } from "@/lib/time";
-import { emailDoc } from "@/lib/notify/templates";
+import { emailDoc, mailSubject } from "@/lib/notify/templates";
 import { weekOpen as weekOpenDoc } from "@/lib/notify/docs";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { DateTime } from "luxon";
@@ -327,7 +327,7 @@ async function sendWeekOpenMail(
       db,
       p,
       "notify.slate_open",
-      `ANTE: Week ${weekNumber} Is Open`,
+      await mailSubject(db, "mail.slate_open.subject", { week: weekNumber }),
       weekOpenDoc({
         firstName: p.first_name ?? "Hello",
         week: weekNumber,

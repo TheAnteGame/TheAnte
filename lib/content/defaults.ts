@@ -200,14 +200,26 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.min_games_note": "Pick at least {min} games.",
   "dash.wager.min_games_note_one": "Pick at least one game.",
   // Notification templates (ADMIN §4.7) — email season one (D-001)
-  "notify.slate_open": "Week {week} is open. The ante was {ante}; your limit is {limit}. Thursday noon is the wall.",
+  // ── Email subjects (D-068) ────────────────────────────────────────────────
+  // Every subject the app can send, in one place and editable from the console.
+  // {week}, {author} and {player} fill at send from the whitelisted vars.
+  "mail.application_received.subject": "ANTE: You're on the List",
+  "mail.approved.subject": "ANTE: You're In",
+  "mail.slate_open.subject": "ANTE: Week {week} Is Open",
+  "mail.ticket.subject": "ANTE: Your Week {week} Ticket",
+  "mail.folded.subject": "ANTE: You Were Folded for Week {week}",
+  "mail.reveal.subject": "ANTE: The Week {week} Board Is Open",
+  "mail.reminder.subject": "ANTE: The Room Can See Your Name for Week {week}",
+  "mail.final_call.subject": "ANTE: Final Call for Week {week}",
+  "mail.nudge.subject": "ANTE: The Room Is Waiting on You",
+  "mail.mention.subject": "ANTE: {author} Mentioned You at the Table",
+  "mail.support_new.subject": "ANTE: New Message From {player}",
+  "mail.support_reply.subject": "ANTE: The Commissioner Answered",
+  "mail.backup_reminder.subject": "ANTE: Your League Backup Is Due",
   "notify.reminder": "Week {week}: {hours_left} hours to the wall, and your name is on the waiting list.",
   "notify.final_call": "Final call for Week {week}. Submit by noon ET or you're folded — and you still owe the ante.",
-  "notify.nudge": "The room is waiting on you. Everyone can see it.",
-  "notify.reveal": "The room is open — every Week {week} ticket is live.",
-  "notify.settled": "Week {week} settled: {delta} on the week. Stack {stack}, rank {rank}.",
-  "notify.pot": "{winner} takes the Week {week} Pot: +{amount}.",
-  "notify.correction": "Commissioner correction on Week {week}: {reason}. Every correction is public.",
+  "notify.nudge":
+    "{first_name} — every player who has already put a ticket in can see your name sitting on the waiting list.\n\nThursday noon is the wall. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot.",
 
   // Stakes band (art §3 — the one big colored plane)
   "band.week_label": "Week",
@@ -412,13 +424,9 @@ export const contentDefaults: Record<string, string> = {
   "dash.support.sent_title": "Message sent",
   "dash.support.sent_body": "The Commissioner has been told there is a message waiting. When they answer, the reply comes to the email address on your profile \u2014 you do not need to check back here.",
   "dash.support.close_cta": "Done",
-  "notify.mention_subject": "ANTE: {author} Mentioned You at the Table",
   "notify.mention": "{author} mentioned you in Table Talk:\n\n{message}\n\nAnswer them at https://theantegame.com/dashboard",
-  "notify.backup_reminder_subject": "ANTE: Your League Backup Is Due",
   "notify.backup_reminder": "It has been {days} days since you last saved a copy of the league.\n\nOpen the Commissioner console, go to Backups, press \"Download current data\", then press \"I've got the file\" so this stops nagging you.\n\nThis is the only copy that survives losing the database, so it is worth the thirty seconds.",
-  "notify.support_new_subject": "ANTE: New Message From {player}",
   "notify.support_new": "{player} sent a message from the dashboard:\n\n{message}\n\nAnswer it in the console under Support.",
-  "notify.support_reply_subject": "ANTE: The Commissioner Answered",
   "notify.support_reply": "You wrote:\n\n{original}\n\nThe Commissioner replied:\n\n{reply}",
   "dash.support.heading": "Need a human?",
   "dash.support.body": "Message the desk. Complaints must be notarized and set on fire, but questions are fine.",
