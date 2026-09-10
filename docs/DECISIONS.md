@@ -2039,3 +2039,33 @@ read 0, Robert reads 80.
 No torture run: this touches a component and content defaults only — no ledger, no
 engine, no settlement, no migration. The Pot helper it sits next to was covered by
 D-070's run.
+
+## D-072 — The ticker's diamonds were glued to the wrong item (2026-09-10)
+
+Owner: "center the diamond bullets in the ticker, they are oddly positioned."
+
+The instinct was that it was a vertical problem. Measuring the glyph's ink said
+otherwise. At 14px, U+25C6's ink runs 11.82 above the baseline to 1.47 below — 13.3px
+of ink inside a 14px font, so it reads as oversized next to its own text — and its ink
+centre sits 5.18 above the baseline against a cap-height middle of 4.93. A quarter of a
+pixel out. Vertically it was already fine.
+
+The real fault was horizontal, and it is visible in the owner's screenshot: each item
+was `gap-3 px-4`, so a diamond had **12px before it and 32px after** — its own right
+padding plus the next item's left padding. Every separator sat glued to the text it
+followed instead of between the two. `gap-6 pr-6` gives it 24px on both sides: the
+diamond is the last child of its item, so the gap alone only spaces its left, and
+`gap-6` on its own just moves the problem (24 before, 0 after — which is exactly what
+the first attempt did, and what the screenshot caught).
+
+The glyph became a rotated 6px square. Not for the 0.24px: a drawn mark has no font
+metrics to argue with, renders identically everywhere, and can be sized properly —
+8.5px across against a 9.86px cap height, instead of 13.3px of ink shouting over 14px
+text.
+
+Verified by measurement rather than eye, since two earlier passes looked plausible and
+were wrong: the diamond's centre is **0.00px** from the text box centre, and the gaps
+either side are equal to the hundredth of a pixel. One caution recorded — the static
+preview initially showed no change because `pr-6` had never existed in the compiled
+CSS; a Tailwind class only appears once something uses it, so rebuild before trusting
+a preview built from the app's own stylesheet.

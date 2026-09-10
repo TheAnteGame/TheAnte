@@ -47,7 +47,15 @@ export function TickerMarquee({
       </span>
     );
     return (
-      <span key={key} className="inline-flex items-center gap-3 px-4">
+      // Symmetric spacing (D-072). This was `gap-3 px-4`, which put 12px between an item
+      // and its diamond and 32px between that diamond and the next item — its own right
+      // padding plus the next item's left padding. The separator read as glued to the
+      // text it followed rather than sitting between the two.
+      //
+      // The diamond is the LAST child of its item, so the gap alone only spaces it on
+      // the left; pr-6 supplies the matching space on the right, before the next item
+      // begins. gap-6 without pr-6 just moves the problem: 24px before, 0 after.
+      <span key={key} className="inline-flex items-center gap-6 pr-6">
         {item.url ? (
           <a href={item.url} target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline">
             {body}
@@ -55,9 +63,15 @@ export function TickerMarquee({
         ) : (
           body
         )}
-        <span aria-hidden className="text-[color:var(--color-border)]">
-          ◆
-        </span>
+        {/* A drawn diamond, not the ◆ glyph (D-072). U+25C6's ink sits low inside its
+            em box, so flex `items-center` centred the line box while the mark itself
+            still rode low against the text. A rotated square has no font metrics to
+            fight: the box IS the mark, so centring it centres what you see, and it
+            renders identically on every platform. */}
+        <span
+          aria-hidden
+          className="inline-block h-[6px] w-[6px] shrink-0 rotate-45 bg-[color:var(--color-border)]"
+        />
       </span>
     );
   };
