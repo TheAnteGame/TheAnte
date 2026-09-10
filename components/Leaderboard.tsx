@@ -4,6 +4,7 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
 import { LeaderboardTable, type LbCopy, type LbRow } from "./LeaderboardTable";
+import { openStakesByPlayer, withOpenStakes } from "@/lib/stats/standings";
 
 // Server assembly: the standings view (RLS: approved-only, blackout-safe by
 // construction — its bet stats draw only from revealed weeks) plus this week's
@@ -26,8 +27,8 @@ import { LeaderboardTable, type LbCopy, type LbRow } from "./LeaderboardTable";
 const loadBoard = cache(async () => {
   const db = createUserClient();
 
-  const [{ data: standings }, { data: week }, { data: favTeams }] = await Promise.all([
-    db.from("standings").select("*").order("rank"),
+  const [{ data: rawStandings }, { data: week }, { data: favTeams }, openStakes] = await Promise.all([
+    db.from("standings").select("*"),
     db
       .from("weeks")
       .select("id")
@@ -39,7 +40,13 @@ const loadBoard = cache(async () => {
     // rollup, not a profile projection) — fetched alongside it here for the
     // player-name tooltip rather than widening the view for one display field.
     db.from("players").select("id, favorite_team"),
+    // Chips in escrow between the reveal and settlement belong on their owner's line,
+    // not subtracted from it (D-073). Without this the board ranks by who risked the
+    // least and folders lead it. The view's own ORDER BY is dropped for the same
+    // reason: it ranks the pre-adjustment number.
+    openStakesByPlayer(db),
   ]);
+  const standings = withOpenStakes(rawStandings ?? [], openStakes);
   const favTeamOf = new Map((favTeams ?? []).map((p) => [p.id, p.favorite_team]));
 
   let deltas = new Map<string, number>();

@@ -9,6 +9,7 @@ import { PlayerTip } from "../ui/PlayerTip";
 import { buildHandles, segmentBody } from "@/lib/chat/mentions";
 import { leaderFrom } from "@/lib/ticker/leader";
 import { ChatTag, type TagTone } from "./ChatTag";
+import { openStakesByPlayer, withOpenStakes } from "@/lib/stats/standings";
 
 // Table Talk (ANTE-PLAYER §7): a real chat panel. System messages are distinct and
 // carry weight — they are the only place the commissioner's authority is visible.
@@ -56,17 +57,20 @@ export async function TableTalk({
   // else here — the commissioner seat became readable to approved players in
   // migration 0023 rather than being fetched with the service role, which §4.3
   // forbids on a player surface.
-  const [{ data: roster }, { data: seat }, { data: standings }] = await Promise.all([
+  const [{ data: roster }, { data: seat }, { data: rawStandings }, openStakes] = await Promise.all([
     db.from("players").select("id, first_name, last_name").eq("status", "approved"),
     db.from("commissioner").select("player_id").maybeSingle(),
     db.from("standings").select("player_id, first_name, last_name, stack, status"),
+    // Without this the green tag can land on a player who simply folded (D-073).
+    openStakesByPlayer(db),
   ]);
+  const standings = withOpenStakes(rawStandings ?? [], openStakes);
 
   // Only a player CLEAR of the field gets the green tag. On a level board — which is
   // the whole of Week 1, every stack at 500 minus the ante — leaderFrom returns
   // "tied" and nobody is tagged. Tagging thirteen co-leaders would say nothing, and
   // crowning whichever row sorted first is the exact bug leaderFrom exists to stop.
-  const leader = leaderFrom(standings ?? []);
+  const leader = leaderFrom(standings);
   const leaderId = leader.kind === "leader" ? leader.playerId : null;
 
   const tagsFor = (playerId: string | null): { tone: TagTone; label: string }[] => {

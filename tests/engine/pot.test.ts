@@ -74,3 +74,51 @@ describe("potBalance — the account, less stakes still in escrow", () => {
     expect(potBalance(rows, new Set([W1]))).toBe(9);
   });
 });
+
+// ── Standings during the revealed window (D-073) ────────────────────────────────
+// Mirrors lib/stats/standings.ts's withOpenStakes. The failure it exists for was
+// live: on 2026-09-10 the two players who FOLDED led the board on 490 while the
+// player who committed the most sat last on 330, because stakes leave the stack at
+// the reveal and do not return until settlement.
+
+interface SRow { player_id: string | null; stack: number | null }
+
+const withOpenStakes = (rows: SRow[], stakes: Map<string, number>) => {
+  const adj = rows.map((r) => ({ ...r, stack: (r.stack ?? 0) + (r.player_id ? (stakes.get(r.player_id) ?? 0) : 0) }));
+  adj.sort((a, b) => b.stack - a.stack);
+  let rank = 0, prev: number | null = null;
+  return adj.map((r, i) => { if (prev === null || r.stack !== prev) rank = i + 1; prev = r.stack; return { ...r, rank }; });
+};
+
+describe("withOpenStakes — a stake in flight is still yours", () => {
+  it("stops folders leading the board — the exact 2026 Week 1 failure", () => {
+    const rows: SRow[] = [
+      { player_id: "kegan", stack: 490 },   // folded, staked nothing
+      { player_id: "justin", stack: 330 },  // staked 160, the most in the league
+      { player_id: "robert", stack: 410 },  // staked 80
+    ];
+    const stakes = new Map([["justin", 160], ["robert", 80]]);
+    const out = withOpenStakes(rows, stakes);
+    // Nothing is settled, so nothing has been decided: everyone is level on 490.
+    expect(out.every((r) => r.stack === 490)).toBe(true);
+    expect(out.every((r) => r.rank === 1)).toBe(true);
+  });
+
+  it("leaves a settled board alone — no open stakes, no adjustment", () => {
+    const rows: SRow[] = [{ player_id: "a", stack: 640 }, { player_id: "b", stack: 480 }];
+    const out = withOpenStakes(rows, new Map());
+    expect(out.map((r) => [r.player_id, r.stack, r.rank])).toEqual([["a", 640, 1], ["b", 480, 2]]);
+  });
+
+  it("keeps ties sharing a rank, so leaderFrom can still report a tie", () => {
+    const rows: SRow[] = [{ player_id: "a", stack: 500 }, { player_id: "b", stack: 500 }, { player_id: "c", stack: 400 }];
+    const out = withOpenStakes(rows, new Map());
+    expect(out.map((r) => r.rank)).toEqual([1, 1, 3]);
+  });
+
+  it("a real gap survives the adjustment — it does not flatten a genuine lead", () => {
+    const rows: SRow[] = [{ player_id: "a", stack: 700 }, { player_id: "b", stack: 300 }];
+    const out = withOpenStakes(rows, new Map([["a", 100], ["b", 160]]));
+    expect(out.map((r) => [r.player_id, r.stack])).toEqual([["a", 800], ["b", 460]]);
+  });
+});

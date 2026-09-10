@@ -2069,3 +2069,33 @@ either side are equal to the hundredth of a pixel. One caution recorded — the 
 preview initially showed no change because `pr-6` had never existed in the compiled
 CSS; a Tailwind class only appears once something uses it, so rebuild before trusting
 a preview built from the app's own stylesheet.
+
+## D-073 — Folders were leading the leaderboard (2026-09-10)
+
+Found while checking why the chat tags were not rendering. The live board read:
+
+    Kegan Lung   490   <- FOLDED, staked nothing
+    Casey Black  490   <- FOLDED, staked nothing
+    ...
+    Justin Grice 330   <- staked 160, the most in the league
+
+A stake leaves its stack at the reveal and does not return until settlement, and
+`standings` ranks on `SUM(ledger)`. So for the four days between the two, the board
+ranked by who risked the LEAST, and the two players who did not play sat on top of it
+all weekend. Nothing had been won or lost; the board was showing the withdrawal.
+
+The exact mirror of D-070. The same escrowed chips that must not be counted in the Pot
+must not be missing from the players either. `withOpenStakes` adds them back and
+re-ranks, so the board reads level at 490 — which is the truthful state, because no
+game has been settled — and Monday's settlement becomes the moment it actually moves.
+Display only: the ledger is untouched and a stack is still `SUM(ledger)`.
+
+Applied at all three consumers, not just the visible one: the leaderboard, the
+ticker's leader line, and Table Talk's green League Leader tag. That last one mattered
+most — with one folder instead of two it would have hung "LEAGUE LEADER" on a player
+who sat the week out. Ties deliberately keep sharing a rank so `leaderFrom` still
+reports a tie rather than crowning whoever sorted first (D-0xx's own bug).
+
+Verified against production: before, folders on top; after, all fifteen level on 490
+and every rank 1, so the tag correctly shows nobody. Four tests pin it, including that
+a genuine lead is NOT flattened by the adjustment.

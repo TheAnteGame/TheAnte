@@ -6,6 +6,7 @@ import { TickerMarquee, type TickerItem } from "./TickerMarquee";
 import { DEFAULT_ACCENT, DEFAULT_SPEED, DEFAULT_TEXT, clampSpeed, colorCss } from "@/lib/ticker/style";
 import { leaderFrom } from "@/lib/ticker/leader";
 import { potBalance as truePotBalance } from "@/lib/stats/pot";
+import { openStakesByPlayer, withOpenStakes } from "@/lib/stats/standings";
 
 // The blended rail (ADMIN §0, §4.5): one ordered list a player never has to parse —
 // manual posts, system league facts, and feed headlines. Stored rows (manual/feed)
@@ -86,8 +87,13 @@ export async function Ticker() {
     if (sysOn("leader")) {
       // Every row, not rank-1: on a level board rank() makes EVERYONE rank 1, and
       // limit(1) then picked an arbitrary player to crown. See lib/ticker/leader.ts.
-      const { data: rows } = await db.from("standings").select("player_id, first_name, last_name, stack, status");
-      const state = leaderFrom(rows ?? []);
+      // Escrowed stakes added back before deciding who leads (D-073) — otherwise the
+      // rail crowns whoever risked the least between the reveal and settlement.
+      const [{ data: rows }, openStakes] = await Promise.all([
+        db.from("standings").select("player_id, first_name, last_name, stack, status"),
+        openStakesByPlayer(db),
+      ]);
+      const state = leaderFrom(withOpenStakes(rows ?? [], openStakes));
       if (state.kind === "leader") {
         system.push({
           text: await getContent("ticker.leader", { name: state.name, stack: state.stack }),
