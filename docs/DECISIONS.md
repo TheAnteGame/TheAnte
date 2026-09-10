@@ -1968,3 +1968,44 @@ who went where. …what every ticket stands to win are all on the board", descri
 table that had just been deleted and promising the thing now sitting above it.
 Rewritten. The existing no-em-dash email test caught two more in the new copy.
 172 tests, `SEASON CLEAN` at 13,500.
+
+## D-070 — The Pot was showing the escrow too (2026-09-10)
+
+Owner: "the Pot says 1430 and that just isn't true." Correct. The Pot was 150.
+
+**The Pot's ledger account does two jobs.** It holds the Pot — antes, sweep, rollover
+— and it is ALSO the counterparty holding every player's stake between the reveal and
+settlement. Chips cannot vanish, so when stakes leave stacks at the reveal they have
+to land somewhere, and this is where. Week 1's account: 150 of antes plus 1280 of
+stakes in escrow. Three surfaces summed the whole account and called it "The Pot".
+
+**Nothing was wrong with the ledger or the award.** Conservation was exact (players
+6070 + pot 1430 = 7500 = every buy-in), and `settleWeek` takes the raw balance and
+debits every return and payout before awarding, so it has always awarded antes plus
+sweep. The Week 1 winner was never going to be handed 1430. This was only ever the
+number players were shown.
+
+**It also only lied for four days a week.** No stake exists before the reveal, so the
+figure was right all week and wrong from the reveal until settlement — which is
+exactly when the owner looked.
+
+`potBalance()` in `lib/stats/pot.ts` subtracts `bet_stake` on weeks whose `settled_at`
+is null. Deliberately keyed on `settled_at`, not on phase: once a week settles, the
+losers' retained stakes ARE the Pot — that is the sweep (§5) — and subtracting
+`bet_stake` unconditionally would erase it and understate the Pot for the rest of the
+season. Six tests pin that, including the settled-sweep case and a season-level row
+with no week at all.
+
+**The 1280 did not disappear; it got a tray.** The band's "Your limit" is dead weight
+once the board opens — you cannot act on it for four days — while the total the room
+committed is the number people want. They swap. The gate is not cosmetic: §6 forbids
+showing "a chip or a count" before the reveal, and an aggregate stake is precisely a
+count of what the room committed, so this figure may only exist on the far side of the
+blackout. Labelled "In play" while games are being played and "Wagered" once the week
+settles, because present tense would be a small lie for the day and a half before
+Tuesday. "In play" over "up for grabs" on purpose — up-for-grabs reads like the prize,
+which is the confusion that started this.
+
+Verified against production: Pot 150, In play 1280, 150 + 1280 = 1430 exactly (nothing
+dropped), the 1280 cross-checked independently by summing tickets, and 15 approved
+players × 10 = the 150. 178 tests, `SEASON CLEAN`.

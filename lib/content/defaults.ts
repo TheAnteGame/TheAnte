@@ -230,6 +230,8 @@ export const contentDefaults: Record<string, string> = {
   "band.ante_label": "Ante",
   "band.pot_label": "The Pot",
   "band.limit_label": "Your limit",
+  "band.in_play_label": "In play",
+  "band.wagered_label": "Wagered",
   "band.deadline_label": "Deadline",
   "band.preseason_message": "Preseason. The roster is forming — Week 1 locks {lock}.",
 
@@ -241,6 +243,8 @@ export const contentDefaults: Record<string, string> = {
     "Your weekly buy-in, taken automatically when the slate opens Tuesday. Every ante in the league goes straight into the Pot. It climbs with the tiers: 10 to start, 15 from Week 5, 20 from Week 10, 30 from Week 15.",
   "band.pot_tip":
     "Every ante in the league lands here. On Monday night it goes to whoever GAINED the most chips that week — not the biggest stack — and a fold can never win it. Bigger leagues pay more than one place. The Pot panel further down shows the full working.",
+  "band.in_play_tip":
+    "Every chip the league has staked on this week's games. Most of it goes straight back to the people who bet it \u2014 a winning ticket returns its stake and the payout on top. Only what the table fails to win stays behind, and that is what sweeps into the Pot. It replaces your limit here because the limit stopped mattering the moment the board opened.",
   "band.limit_tip":
     "The most you can commit this week, across every game. One third of the smaller of your own stack or the league's middle stack, rounded down to a ten. {capped} It is a ceiling, not a target — betting less is fine.",
   "band.limit_capped_stack": "Right now yours is set by your own stack of {stack}.",

@@ -1,12 +1,12 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { fetchAllRows } from "@/lib/db/fetchAll";
 import { createUserClient } from "@/lib/db/supabase";
 import { tierForWeek } from "@/lib/engine";
 import { ET } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { nudgePlayer } from "./actions";
 import { Section, Stat } from "@/components/admin/ui";
+import { potBalance as truePotBalance } from "@/lib/stats/pot";
 
 // The ops dashboard — "is anything on fire" (ANTE-ADMIN §4.1). The submission
 // tracker reads the SAME narrow view players see (§6): names only, never picks,
@@ -29,16 +29,16 @@ export default async function Ops() {
       .order("number", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    fetchAllRows<{ amount: number; player_id: string | null }>((f, t) =>
-      db.from("ledger_entries").select("amount, player_id").is("player_id", null).order("id").range(f, t),
-    ).then((rows) => ({ data: rows })),
+    // Same helper the players see (D-070): the console must not quote a different
+    // Pot from the band, and the raw account includes stakes still in escrow.
+    truePotBalance(db).then((v) => ({ data: v })),
     db.from("job_runs").select("job_key, status, started_at, detail").order("started_at", { ascending: false }).limit(200),
     // Names only — through the player-facing view, as the requesting user (§4.1).
     createUserClient().from("waiting_on").select("first_name, last_name, submitted"),
     db.from("players").select("id, first_name, last_name, email").eq("status", "approved").is("email", null),
   ]);
 
-  const pot = (potRows ?? []).reduce((s, e) => s + e.amount, 0);
+  const pot = potRows ?? 0;
 
   const lastRun = new Map<string, { status: string; at: string }>();
   for (const r of runs ?? []) {

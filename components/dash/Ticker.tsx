@@ -1,11 +1,11 @@
 import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
-import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { ET } from "@/lib/time";
 import { TickerMarquee, type TickerItem } from "./TickerMarquee";
 import { DEFAULT_ACCENT, DEFAULT_SPEED, DEFAULT_TEXT, clampSpeed, colorCss } from "@/lib/ticker/style";
 import { leaderFrom } from "@/lib/ticker/leader";
+import { potBalance as truePotBalance } from "@/lib/stats/pot";
 
 // The blended rail (ADMIN §0, §4.5): one ordered list a player never has to parse —
 // manual posts, system league facts, and feed headlines. Stored rows (manual/feed)
@@ -46,11 +46,8 @@ export async function Ticker() {
   // System items — league facts, generated on the poll cadence (ADMIN §4.5.3).
   const system: Array<{ text: string; priority: number }> = [];
   if (week) {
-    const potBalance = (
-      await fetchAllRows<{ amount: number; player_id: string | null }>((f, t) =>
-        db.from("ledger_entries").select("amount, player_id").is("player_id", null).order("id").range(f, t),
-      )
-    ).reduce((s, e) => s + e.amount, 0);
+    // The Pot, less stakes still in escrow (D-070) — never the raw account.
+    const potBalance = await truePotBalance(db);
 
     if (week.phase === "open" && sysOn("deadline")) {
       const deadline = DateTime.fromISO(week.deadline_at).setZone(ET);

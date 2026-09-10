@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
-import { fetchAllRows } from "@/lib/db/fetchAll";
+import { potBalance as truePotBalance, wageredInWeek } from "@/lib/stats/pot";
 import { getContent } from "@/lib/content/getContent";
 import { ANTE_TIERS, tierForWeek } from "@/lib/engine";
 import { ET } from "@/lib/time";
@@ -116,10 +116,16 @@ export async function StakesBand({ playerId }: { playerId: string }) {
     );
   }
 
-  const [{ data: pot }, { data: snap }] = await Promise.all([
-    fetchAllRows<{ amount: number; player_id: string | null }>((f, t) =>
-      db.from("ledger_entries").select("amount, player_id").is("player_id", null).order("id").range(f, t),
-    ).then((rows) => ({ data: rows })),
+  // After the reveal the limit is dead weight — you cannot act on it for four days —
+  // while the total the room committed becomes the interesting number. They swap
+  // (D-070). The gate is NOT cosmetic: §6 forbids showing a chip or a count before
+  // the reveal, and an aggregate stake is exactly a count of what the room committed,
+  // so "in play" may only exist on the far side of the blackout.
+  const boardOpen = week.phase !== "open";
+
+  const [potBalance, wagered, { data: snap }] = await Promise.all([
+    truePotBalance(db),
+    boardOpen ? wageredInWeek(db, week.id) : Promise.resolve(0),
     // stack_pre_ante joins the read purely so the limit tooltip can say WHICH cap is
     // binding — the bet slip already works this out; the band never said it out loud.
     db
@@ -129,7 +135,6 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       .eq("player_id", playerId)
       .maybeSingle(),
   ]);
-  const potBalance = (pot ?? []).reduce((s, e) => s + e.amount, 0);
 
   const tier = tierForWeek(week.number);
   const v = TIER_VARS[tier];
@@ -148,7 +153,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
   const tierLabel = await getContent(v.labelKey);
 
   const [
-    weekLabel, anteLabel, potLabel, limitLabel, deadlineLabel,
+    weekLabel, anteLabel, potLabel, limitLabel, deadlineLabel, inPlayLabel, wageredLabel, inPlayTip,
     anteTip, potTip, limitTipRaw, cappedCopy, deadlineTip, ringTip,
   ] = await Promise.all([
     getContent("band.week_label"),
@@ -156,6 +161,9 @@ export async function StakesBand({ playerId }: { playerId: string }) {
     getContent("band.pot_label"),
     getContent("band.limit_label"),
     getContent("band.deadline_label"),
+    getContent("band.in_play_label"),
+    getContent("band.wagered_label"),
+    getContent("band.in_play_tip"),
     getContent("band.ante_tip"),
     getContent("band.pot_tip"),
     getContent("band.limit_tip"),
@@ -250,10 +258,19 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         </span>
       </Tip>
 
-      {snap && (
-        <Tip text={limitTip} label={limitLabel}>
-          {stat(limitLabel, String(snap.house_limit))}
+      {boardOpen ? (
+        // Present tense only while the games are actually being played; once the week
+        // settles the same figure is history, and "in play" would be a small lie for
+        // the day and a half before Tuesday's slate opens.
+        <Tip text={inPlayTip} label={week.phase === "settled" ? wageredLabel : inPlayLabel}>
+          {stat(week.phase === "settled" ? wageredLabel : inPlayLabel, String(wagered))}
         </Tip>
+      ) : (
+        snap && (
+          <Tip text={limitTip} label={limitLabel}>
+            {stat(limitLabel, String(snap.house_limit))}
+          </Tip>
+        )
       )}
 
       {/* Hangs from its right edge: this tray sits at the margin, and a left-hung
