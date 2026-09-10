@@ -2099,3 +2099,35 @@ reports a tie rather than crowning whoever sorted first (D-0xx's own bug).
 Verified against production: before, folders on top; after, all fifteen level on 490
 and every rank 1, so the tag correctly shows nobody. Four tests pin it, including that
 a genuine lead is NOT flattened by the adjustment.
+
+## D-074 — Table Talk reads as a room, not a wall of text (2026-09-10)
+
+Owner: "it is like a wall of text." Three changes, all in the panel, none touching
+what a message IS.
+
+**Runs are grouped.** Two APP UPDATE messages a minute apart each repeated "Robert T.
+COMMISH 6:33PM". A message now drops its name and tags when it continues the same
+author, on the same day, within fifteen minutes — long enough to keep a genuine
+follow-up attached, short enough that a reply hours later stands on its own. The time
+stays: the point is to keep the timeline readable without the name.
+
+**Day dividers.** A rule and a label — Today, Yesterday, then the weekday, then the
+weekday and date past a week. Tuesday 8:01PM previously sat between two Wednesday
+messages with nothing marking the jump.
+
+**Announcements have their own frame.** A message that opens with a short ALL-CAPS
+label and a colon ("APP UPDATE: ...") renders that label as a gold eyebrow above a
+ruled, quieter block. Deliberately a typing convention rather than a new control:
+anyone can use it, it needs no UI, and it degrades to plain text when nobody does.
+Bounded to 3–24 uppercase characters so ordinary shouting is not swept up.
+
+**The col-reverse trap, twice.** The list renders `flex-col-reverse` over a
+newest-first array, so "the previous message" as a reader sees it is `list[i + 1]`,
+the older one. And the separator is a background on the BOTTOM edge of the DOM-later
+item, which sits HIGHER on screen — so suppressing the rule between a message and its
+continuation means stripping it from the message being continued, not from the
+continuation. The first attempt put the class on the wrong element and the line stayed
+visible; caught by rendering the real chat and looking at it, not by reasoning.
+
+Verified against production's own messages in both the grouped and ungrouped cases.
+The two Aug 26 messages stay ungrouped, correctly — they are ninety minutes apart.

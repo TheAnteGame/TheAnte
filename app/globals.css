@@ -727,6 +727,13 @@ textarea {
    grid — too hard for a conversation. Long dashes with generous gaps separate the
    messages without ruling them off from each other. Drawn as a background so the
    dash length is ours, not the browser's border-style default. */
+/* A run from one person reads as one block, not as fragments that happen to share a
+   name (D-074). The separator lives on the BOTTOM edge of the DOM-later item, which
+   col-reverse puts higher on screen — so the message to strip is the one being
+   continued, not the continuation. */
+.chat-list > li.chat-continued {
+  background-image: none !important;
+}
 .chat-list > li + li {
   /* Its own grey, two shades under --color-border (D-040). The border token stays at
      the 3:1 WCAG 1.4.11 floor because it draws real UI boundaries; a separator between

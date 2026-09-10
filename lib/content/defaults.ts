@@ -412,6 +412,8 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.emoji_aria": "Add an emoji",
   "dash.tabletalk.tag_commish": "Commish",
   "dash.tabletalk.tag_leader": "League Leader",
+  "dash.tabletalk.today": "Today",
+  "dash.tabletalk.yesterday": "Yesterday",
   "dash.news.heading": "Your team",
   "dash.news.source_label": "Source",
   "dash.news.empty": "Quiet day. Nothing worth reading.",
