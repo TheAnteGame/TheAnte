@@ -27,11 +27,11 @@ export async function reminders(db: SupabaseClient): Promise<JobOutcome> {
   if (now.weekday === 3 && now.hour >= 18) {
     const hoursLeft = Math.max(1, Math.round(DateTime.fromISO(week.deadline_at).diff(now, "hours").hours));
     templateKey = "notify.reminder";
-    subject = `ANTE — Week ${week.number}: the room can see your name`;
+    subject = `ANTE: The Room Can See Your Name for Week ${week.number}`;
     vars = { week: week.number, hours_left: hoursLeft };
   } else if (now.weekday === 4 && now.hour >= 9 && now.hour < 12) {
     templateKey = "notify.final_call";
-    subject = `ANTE — final call for Week ${week.number}`;
+    subject = `ANTE: Final Call for Week ${week.number}`;
     vars = { week: week.number };
   } else {
     return { status: "skipped", detail: { reason: "outside reminder windows (ET)" } };

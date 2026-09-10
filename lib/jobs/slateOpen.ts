@@ -327,7 +327,7 @@ async function sendWeekOpenMail(
       db,
       p,
       "notify.slate_open",
-      `ANTE: Week ${weekNumber} is open`,
+      `ANTE: Week ${weekNumber} Is Open`,
       weekOpenDoc({
         firstName: p.first_name ?? "Hello",
         week: weekNumber,

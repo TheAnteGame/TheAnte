@@ -1828,3 +1828,57 @@ read succeeds, resolves to Robert Toler, the leader resolves to Dustin Green, an
 per-message tag sets come out `["Commish"]`, `["League Leader"]`, `[]` — 8/8. Both
 themes screenshotted from the real compiled CSS. Torture season `SEASON CLEAN` at
 13,500.
+
+## D-067 — The mail log, the From name, one subject grammar, and a double send (2026-09-10)
+
+Four things, all found from one owner report: "the From says noreply, the subjects
+are capitalised inconsistently, and I don't think the board-is-open email went out."
+
+**The From name.** `RESEND_FROM_EMAIL` holds a bare address, and a bare address makes
+the mailbox its own display name — so every email the league had ever received was
+from "noreply". Now wrapped as `ANTE <noreply@theantegame.com>` in `lib/notify/email.ts`
+rather than in the env var, so it cannot regress if that value is reset, and passed
+through untouched if a display name is ever configured there.
+
+**One subject grammar.** Ten subjects existed across seven files in three different
+styles: `ANTE: your Week 1 ticket`, `ANTE — final call for Week 1`, `ANTE: you're in`.
+All are now `ANTE: Title Case`, colon only, never an em dash. Four of them live in
+content blocks (`notify.*_subject`); production carried no override for any of those
+four, so the defaults are what ship.
+
+**The board-is-open email did send — twice.** `reveal.deadline` (Thursday noon) and
+`reveal.check` (every two minutes) both reached the reveal one second apart. The phase
+guard worked — exactly one flipped the row — but the loser fell straight through to
+the mail call and re-sent the whole board. Nine of fifteen players got it twice, the
+owner included. `emailDoc`'s per-player dedupe could not prevent it: it reads the log
+then sends, and one second is not enough for the winner's rows to land before the
+loser reads them; the six players slow enough to be caught were caught, the nine
+already in flight were not. Fixed at the source — the phase update now returns the
+row it changed, and a job that changed nothing returns `skipped` without mailing.
+Owning the reveal includes owning the mail.
+
+**The console could not answer any of this**, which is why it was rebuilt. It listed
+eight editable strings and nothing else: no way to see what was sent, to whom, or
+what it said. `/admin/notifications` now carries **Scheduled** (all eight pg_cron jobs
+from migrations 0006/0010/0011/0017, whether each mails players, and its real last run
+from `job_runs`), **Sent** (the last 150 rows with the delivered body kept verbatim,
+recipient, provider id, and any error), and a full catalogue of every email the app
+can send. Repeat sends to the same player are counted and flagged **DOUBLE** — the
+exact failure above, surfaced instead of left for an inbox to notice.
+
+**Most of the "templates" were never sent.** The five designed emails render from
+structured documents in `lib/notify/docs.ts` via `emailDoc`, which bypasses
+`content_blocks` entirely. Editing `notify.reveal`, `notify.slate_open`,
+`notify.settled`, `notify.pot`, `notify.correction` or `notify.nudge` in the console
+changed nothing any player received — and production shows `notify.nudge` HAD been
+edited, to no effect. Rather than delete the list, each key is now marked **LIVE** or
+**NOT SENT**, off `lib/notify/catalogue.ts`.
+
+**Two bugs in this page were caught by verifying it against production rather than
+trusting it.** (1) Last-run was sliced from one 400-row read of `job_runs`;
+`reveal.check` holds 651 rows all-time, so `slate.open` — which fires twice a week and
+is perfectly healthy — fell off the end and rendered as "never seen". Now one indexed
+read per job. (2) The backup nag logs `backup-reminder-<date>`, not
+`notify.backup_reminder`, so 18 rows rendered as raw keys; prefixes are now taken from
+the distinct set actually present in production. Re-verified: 8/8 jobs resolved, 0
+unmatched keys, 0 failures, 10 double pairs flagged. Torture season `SEASON CLEAN`.

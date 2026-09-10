@@ -118,7 +118,7 @@ async function sendTicketReceipt(clerkUserId: string, weekId: string): Promise<v
     svc,
     { id: me.id, email: me.email },
     "player.ticket",
-    `ANTE: your Week ${week.number} ticket`,
+    `ANTE: Your Week ${week.number} Ticket`,
     ticketEmail({
       firstName: me.first_name ?? "Hello",
       week: week.number,

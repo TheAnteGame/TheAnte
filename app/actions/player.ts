@@ -95,7 +95,7 @@ export async function saveProfile(formData: FormData): Promise<void> {
         serviceDb(),
         { id: me.id, email: me.email },
         "player.application_received",
-        "ANTE: you're on the list",
+        "ANTE: You're on the List",
         applicationReceived({ firstName: me.first_name ?? "Hello" }),
         `player.application_received:${me.id}`,
       );

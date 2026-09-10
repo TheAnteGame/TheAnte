@@ -196,12 +196,33 @@ async function fireReveal(db: SupabaseClient, week: OpenWeek, autoFolded = 0): P
     }
   }
 
-  const { error: wErr } = await db
+  const { data: flipped, error: wErr } = await db
     .from("weeks")
     .update({ phase: "revealed", revealed_at: new Date().toISOString() })
     .eq("id", week.id)
-    .eq("phase", "open"); // guard against a concurrent fire
+    .eq("phase", "open") // guard against a concurrent fire
+    .select("id");
   if (wErr) throw new Error(`reveal phase flip failed: ${wErr.message}`);
+
+  // ONLY the job that actually flipped the week may mail (D-067).
+  //
+  // Two jobs reach this line: reveal.deadline (Thursday noon) and reveal.check (every
+  // two minutes, Tue–Thu). On 2026-09-10 they fired one second apart, and the phase
+  // guard above did its job — exactly one flipped the row — but the loser fell
+  // straight through to the mail call anyway and sent the whole board a second copy.
+  // Nine of fifteen players got the reveal twice.
+  //
+  // emailDoc's per-player dedupe could not save it: it reads the log, then sends, and
+  // one second is not enough for the first job's rows to land before the second job
+  // reads them. Six players were slow enough to be caught; nine were not. The fix is
+  // to not race at all — an update that matched no row means another job owns this
+  // reveal, and owning it includes owning the mail.
+  if ((flipped ?? []).length === 0) {
+    return {
+      status: "skipped",
+      detail: { week: week.number, reason: "another job revealed this week first — it owns the mail" },
+    };
+  }
 
   // Mail can never undo a reveal. The phase flip above is already committed, and a
   // Resend outage or a malformed row must not turn a good reveal into a failed job.
@@ -285,7 +306,7 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
         db,
         p,
         "player.folded",
-        `ANTE: you were folded for Week ${weekNumber}`,
+        `ANTE: You Were Folded for Week ${weekNumber}`,
         ticketDoc({ firstName: first, week: weekNumber, folded: true, isShove: false, bets: [], total: 0, deadline: deadlineLabel }),
         `player.folded:w${weekNumber}:${p.id}`,
       );
@@ -295,7 +316,7 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
       db,
       p,
       "notify.reveal",
-      `ANTE: the Week ${weekNumber} board is open`,
+      `ANTE: The Week ${weekNumber} Board Is Open`,
       revealDoc({ firstName: first, week: weekNumber, games: rows, folded: foldedLine }),
       `notify.reveal:w${weekNumber}:${p.id}`,
     );

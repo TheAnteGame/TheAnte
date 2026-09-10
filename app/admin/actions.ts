@@ -99,7 +99,7 @@ export async function approvePlayer(fd: FormData): Promise<ActionResult> {
       ctx.db,
       { id: playerId, email: p.email },
       "player.approved",
-      "ANTE: you're in",
+      "ANTE: You're In",
       approvedEmail({ firstName: p.first_name ?? "Hello", phone: p.phone ?? null }),
       `player.approved:${playerId}`,
     );
@@ -460,7 +460,7 @@ export async function nudgePlayer(fd: FormData): Promise<ActionResult> {
     .maybeSingle();
   if (!p?.email) return fail("No email on file");
   const result = await send("email", "player.nudge", p.email, {
-    subject: "ANTE — the room is waiting on you",
+    subject: "ANTE: The Room Is Waiting on You",
     body: `${p.first_name ?? "Hey"} — every submitted player can see your name on the waiting list. Thursday noon is the wall. theantegame.com`,
   });
   await ctx.db.from("notification_log").insert({
