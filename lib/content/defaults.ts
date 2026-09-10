@@ -341,6 +341,7 @@ export const contentDefaults: Record<string, string> = {
   "reveal.season_backs": "Backs most",
   "reveal.by_game_label": "By game",
   "reveal.by_player_label": "By player",
+  "reveal.max_take_label": "If every pick wins",
   "reveal.folded_label": "Folded",
   "reveal.shove_label": "Shove",
   "reveal.pays_label": "pays",

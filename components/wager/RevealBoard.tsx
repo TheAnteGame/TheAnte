@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
-import { multiplierFor, formatMultiplier } from "@/lib/engine";
+import { multiplierFor, formatMultiplier, maxTake } from "@/lib/engine";
 import { getTeamNames } from "@/lib/teams";
 import { ET } from "@/lib/time";
 import { RevealExperience, type RevealData } from "./RevealExperience";
@@ -98,6 +98,23 @@ export async function RevealBoard({
   const gameLabel = new Map(gameData.map((g) => [g.id, `${g.away} @ ${g.home}`]));
   const playerData: RevealData["players"] = (tickets ?? [])
     .map((t) => ({
+      // The ceiling (D-069): what this ticket collects if every pick wins. Priced from
+      // the SAME head counts the row above renders, and through the same engine the
+      // settlement uses, so the board cannot quote a number settleWeek would not pay.
+      maxTake: maxTake(
+        (bets ?? [])
+          .filter((b) => b.ticket_id === t.id)
+          .map((b) => {
+            const g = gameData.find((x) => x.id === b.game_id)!;
+            const h = g.sides[b.side as "away" | "home"];
+            const against = b.side === "away" ? g.sides.home : g.sides.away;
+            return {
+              chips: b.chips,
+              // §8 — a shove is even money, never the crowd price.
+              multiplier: t.is_shove ? { num: 1, den: 1 } : multiplierFor(h.count, against.count),
+            };
+          }),
+      ).total,
       playerId: t.player_id,
       name: nameOf(t.player_id),
       fullName: fullNameOf(t.player_id),
@@ -159,6 +176,7 @@ export async function RevealBoard({
         ["h2hNote", "reveal.h2h_note"],
         ["foldedLabel", "reveal.folded_label"],
         ["shoveLabel", "reveal.shove_label"],
+        ["maxTakeLabel", "reveal.max_take_label"],
         ["paysLabel", "reveal.pays_label"],
         ["nobodyLabel", "reveal.nobody_label"],
         ["youLabel", "reveal.you_label"],

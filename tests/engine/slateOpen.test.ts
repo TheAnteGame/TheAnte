@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeSlateOpen } from "@/lib/engine";
+import { computeSlateOpen, maxTake, profitFor } from "@/lib/engine";
 import type { EnginePlayer } from "@/lib/engine";
 
 const player = (id: string, stackPreAnte: number, status: "approved" | "deactivated" = "approved"): EnginePlayer => ({
@@ -77,5 +77,45 @@ describe("slate open (§14 steps 1–2)", () => {
     const r = computeSlateOpen(players, 15);
     expect(r.medianSnapshot).toBe(500);
     expect(r.houseLimits.get("a")).toBe(150); // floor10(470/3 = 156.6) = 150
+  });
+});
+
+describe("maxTake — the ceiling shown at the reveal (D-069)", () => {
+  const m = (num: number, den: number) => ({ num, den });
+
+  it("returns the stake AND the profit, because a win pays both", () => {
+    // settleWeek posts bet_return (the stake) and bet_payout (the profit) separately.
+    // A ticket of 10 at 2.50x is 25 profit on top of the 10 back, not 25 in total.
+    expect(maxTake([{ chips: 10, multiplier: m(5, 2) }])).toEqual({ stake: 10, profit: 25, total: 35 });
+  });
+
+  it("floors EVERY bet, not the sum — the difference is real chips", () => {
+    // Three 10-chip bets at 1/3 each: floor(3.33)x3 = 3, not floor(10) = 10.
+    const bets = [1, 2, 3].map(() => ({ chips: 10, multiplier: m(1, 3) }));
+    expect(maxTake(bets)).toEqual({ stake: 30, profit: 9, total: 39 });
+  });
+
+  it("matches the floor of the payout clamp", () => {
+    expect(maxTake([{ chips: 40, multiplier: m(1, 4) }])).toEqual({ stake: 40, profit: 10, total: 50 });
+  });
+
+  it("pays a shove even money — no multiplier, ever (§8)", () => {
+    expect(maxTake([{ chips: 490, multiplier: m(1, 1) }])).toEqual({ stake: 490, profit: 490, total: 980 });
+  });
+
+  it("is zero for a fold, which has no bets at all", () => {
+    expect(maxTake([])).toEqual({ stake: 0, profit: 0, total: 0 });
+  });
+
+  it("agrees with profitFor bet by bet across a real mixed ticket", () => {
+    const bets = [
+      { chips: 10, multiplier: m(5, 3) },
+      { chips: 20, multiplier: m(1, 2) },
+      { chips: 10, multiplier: m(2, 1) },
+      { chips: 10, multiplier: m(1, 4) },
+    ];
+    const byHand = bets.reduce((s, b) => s + profitFor(b.chips, b.multiplier), 0);
+    expect(maxTake(bets).profit).toBe(byHand);
+    expect(maxTake(bets).total).toBe(50 + byHand);
   });
 });

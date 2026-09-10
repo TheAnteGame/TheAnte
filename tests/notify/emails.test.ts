@@ -17,7 +17,11 @@ const DOCS = {
   folded: D.ticket({ firstName: "Steve", week: 1, folded: true, isShove: false, deadline: "Thursday 12:00pm ET", total: 0, bets: [] }),
   reveal: D.reveal({
     firstName: "Steve", week: 1, folded: "Kegan L. was folded automatically.",
-    games: [{ matchup: "SF @ LA", away: "SF", home: "LA", awayBackers: "Justin G.", homeBackers: "Steve M." }],
+    standings: [
+      { name: "Justin G.", isFold: false, isShove: false, games: 5, spent: 160, max: 331 },
+      { name: "Steve M.", isFold: false, isShove: true, games: 1, spent: 490, max: 980 },
+      { name: "Kegan L.", isFold: true, isShove: false, games: 0, spent: 0, max: 0 },
+    ],
   }),
   weekOpen: D.weekOpen({
     firstName: "Steve", week: 2, ante: 10, limit: 160, deadline: "Thursday 12:00pm ET", prevWeek: 1,

@@ -1931,3 +1931,40 @@ that. Anything reachable from `lib/jobs/` must stay clear of the Clerk-aware cli
 Verified: all 13 subjects fill with no leftover `{`, all carry the `ANTE: ` prefix,
 none contain an em dash, and each of the six template bodies renders >6KB of HTML plus
 a non-empty text part. Reminder screenshotted end to end. `SEASON CLEAN` at 13,500.
+
+## D-069 — The reveal shows what every ticket can win (2026-09-10)
+
+Owner's call on the Week 1 reveal email: drop "Who took what" and replace it with what
+each player stands to collect. The per-game table was sixteen games at two rows each,
+a wall of names, unreadable on a phone — and it duplicated the board, which shows the
+same thing better. What no one can work out in their head is the ceiling.
+
+**The number.** `maxTake()` in `lib/engine/core.ts`: stake back plus profit, floored
+per bet. It mirrors `settleWeek` exactly, and has to keep doing so — a win posts
+`bet_return` (the stake) AND `bet_payout` (the profit) as two separate entries, so a
+10-chip bet at 2.50x returns 35, not 25. Flooring is per bet, never on the sum:
+three 10-chip bets at 1/3 pay 3 each, not 10. Six unit tests pin both traps, plus the
+§8 rule that a shove is even money and never the crowd price.
+
+It is not a projection. Head counts freeze when the last ticket lands, so every
+multiplier is already final at the reveal — this is arithmetic on numbers that cannot
+move. Only a tie or a cancelled game lowers it, and neither is a loss. The email says
+so in its own note rather than leaving "can win" to be misread as a forecast.
+
+**Both surfaces, one helper**, so the email and the board cannot quote different
+numbers: the reveal mail's new table, and a gold "If every pick wins" line under each
+player's picks on the by-player tab of the results board.
+
+`sendRevealMail` now reads chip weights, reversing its old "head counts only, chip
+weights stay on the board" stance — the owner's decision, and no blackout risk, since
+`revealed_at` is asserted at the top of that function and every ticket is public after
+the reveal. Its games query went with the table it fed.
+
+**Verified against real production data.** Andersen S.'s fifteen multipliers on the
+live Week 1 board sum to exactly +138 profit on 150 spent, and the helper returns 288.
+Rendered the real email from production rows and read it on a 375px viewport: thirteen
+rows, four columns, fits. Caught one thing that way — the CTA still read "This is only
+who went where. …what every ticket stands to win are all on the board", describing the
+table that had just been deleted and promising the thing now sitting above it.
+Rewritten. The existing no-em-dash email test caught two more in the new copy.
+172 tests, `SEASON CLEAN` at 13,500.

@@ -49,6 +49,31 @@ export function profitFor(stake: number, multiplier: { num: number; den: number 
   return Math.floor((stake * multiplier.num) / multiplier.den);
 }
 
+/** The ceiling on a ticket: what it returns if EVERY pick wins (D-069).
+ *
+ *  Not a projection or an estimate. Head counts are frozen the moment the last ticket
+ *  lands, so every multiplier is already final at the reveal — this is arithmetic on
+ *  numbers that cannot move again. Only a void or a tie can lower it, and neither is
+ *  a loss.
+ *
+ *  Mirrors settleWeek exactly and must keep doing so: the stake comes BACK on a win
+ *  (bet_return) and the profit is paid on top (bet_payout), each floored per bet, not
+ *  once at the end. Floor-then-sum and sum-then-floor differ by up to one chip per
+ *  bet, and this number is shown beside real stacks. */
+export function maxTake(bets: ReadonlyArray<{ chips: number; multiplier: { num: number; den: number } }>): {
+  stake: number;
+  profit: number;
+  total: number;
+} {
+  let stake = 0;
+  let profit = 0;
+  for (const b of bets) {
+    stake += b.chips;
+    profit += profitFor(b.chips, b.multiplier);
+  }
+  return { stake, profit, total: stake + profit };
+}
+
 /** Display form: two decimals with a true ×, e.g. "2.50×", "0.67×" (art §4). */
 export function formatMultiplier(m: { num: number; den: number }): string {
   return `${(m.num / m.den).toFixed(2)}×`;

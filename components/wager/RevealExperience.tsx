@@ -40,6 +40,8 @@ export interface RevealData {
     isFold: boolean;
     isShove: boolean;
     totalChips: number;
+    /** Stake back plus profit if every pick wins (D-069). Ceiling, not a forecast. */
+    maxTake: number;
     isMe: boolean;
     bets: Array<{ label: string; team: string; chips: number; pays: string | null }>;
   }>;
@@ -96,6 +98,7 @@ export interface RevealData {
     h2hNote: string;
     foldedLabel: string;
     shoveLabel: string;
+    maxTakeLabel: string;
     paysLabel: string;
     nobodyLabel: string;
     youLabel: string;
@@ -352,19 +355,32 @@ export function RevealExperience({ data }: { data: RevealData }) {
                 {!p.isFold && <span className="nums ml-auto text-sm text-[color:var(--color-text-mid)]">{p.totalChips}</span>}
               </div>
               {p.bets.length > 0 && (
-                <ul className="mt-1 space-y-0.5">
-                  {p.bets.map((b, j) => (
-                    <li key={j} className="flex justify-between text-sm">
-                      <span className="text-[color:var(--color-text-mid)]">
-                        {b.team} <span className="text-[color:var(--color-text-low)]">({b.label})</span>
-                      </span>
-                      <span className="nums text-[color:var(--color-text-hi)]">
-                        {b.chips}
-                        {b.pays && <span className="ml-2 text-[color:var(--color-text-low)]">{b.pays}</span>}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="mt-1 space-y-0.5">
+                    {p.bets.map((b, j) => (
+                      <li key={j} className="flex justify-between text-sm">
+                        <span className="text-[color:var(--color-text-mid)]">
+                          {b.team} <span className="text-[color:var(--color-text-low)]">({b.label})</span>
+                        </span>
+                        <span className="nums text-[color:var(--color-text-hi)]">
+                          {b.chips}
+                          {b.pays && <span className="ml-2 text-[color:var(--color-text-low)]">{b.pays}</span>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* The ceiling, under the picks it is the sum of (D-069). Gold, because
+                      it is the number the room argues about, and set apart by a hairline
+                      so it never reads as one more bet in the list above. */}
+                  <div className="mt-2 flex items-baseline justify-between border-t border-[color:var(--color-border)] pt-2">
+                    <span className="text-[12px] uppercase tracking-wider text-[color:var(--color-text-low)]">
+                      {copy.maxTakeLabel}
+                    </span>
+                    <span className="nums font-[family-name:var(--font-display)] font-bold text-[color:var(--color-gold)]">
+                      {p.maxTake}
+                    </span>
+                  </div>
+                </>
               )}
             </li>
           ))}

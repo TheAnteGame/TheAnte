@@ -134,30 +134,43 @@ export function ticket(v: {
 export function reveal(v: {
   firstName: string;
   week: number;
-  games: Array<{ matchup: string; away: string; home: string; awayBackers: string; homeBackers: string }>;
+  standings: Array<{ name: string; isFold: boolean; isShove: boolean; games: number; spent: number; max: number }>;
   folded: string;
 }): EmailDoc {
   return {
-    preheader: `Week ${v.week} is open. Every ticket in the league is live.`,
+    preheader: `Week ${v.week} is open. Here is what every ticket stands to collect.`,
     eyebrow: `Week ${v.week}: the reveal`,
     headline: "The board is open",
     blocks: [
-      { kind: "lead", text: `${v.firstName}, everyone is locked in, so every Week ${v.week} ticket just opened at once. Here is who went where.` },
+      {
+        kind: "lead",
+        text: `${v.firstName}, everyone is locked in, so every Week ${v.week} ticket just opened at once. The multipliers are set, so here is the most each player can walk away with.`,
+      },
       {
         kind: "table",
-        caption: "Who took what",
-        head: ["Game", "Side", "Backed by"],
-        rows: v.games.flatMap((g) => [
-          [`<strong style="color:#f2f2f4;">${g.matchup}</strong>`, g.away, g.awayBackers || "Nobody"],
-          ["", g.home, g.homeBackers || "Nobody"],
+        // Replaced the per-game "who took what" wall (D-069): sixteen games at two rows
+        // each is unreadable on a phone and the board already shows it better. The
+        // ceiling is the thing nobody can work out in their head.
+        caption: "What every ticket can win",
+        head: ["Player", "Games", "Spent", "Can win"],
+        rows: v.standings.map((p) => [
+          `<strong style="color:#f2f2f4;">${p.name}</strong>${p.isShove ? ' <span style="color:#c9a24b;">SHOVE</span>' : ""}`,
+          p.isFold ? "Folded" : String(p.games),
+          p.isFold ? "-" : String(p.spent),
+          p.isFold ? "-" : `<strong style="color:#f2f2f4;">${p.max}</strong>`,
         ]),
+      },
+      {
+        kind: "note",
+        title: "What \u201ccan win\u201d means",
+        text: "Every pick correct, nothing else. It is the stake back plus the payout at the multiplier each side is already locked into. A ceiling, not a prediction: only a tie or a cancelled game moves it, and neither of those is a loss.",
       },
       ...(v.folded ? [{ kind: "note" as const, title: "Folded this week", text: v.folded }] : []),
       {
         kind: "cta",
         label: "See the full board",
         href: `${SITE}/dashboard`,
-        sub: "This is only who went where. The chip weights, the multipliers each side is getting, and what every ticket stands to win are all on the board, and that is the part worth arguing about.",
+        sub: "Who actually took which side, the chip weight behind every pick, and the multiplier each side is getting are all on the board. That is the part worth arguing about.",
       },
     ],
   };

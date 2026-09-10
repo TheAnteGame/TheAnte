@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { canReveal, revealEntries } from "@/lib/engine";
+import { canReveal, revealEntries, maxTake, multiplierFor } from "@/lib/engine";
 import type { EngineTicket } from "@/lib/engine";
 import { emailDoc, mailSubject } from "@/lib/notify/templates";
 import { reveal as revealDoc, ticket as ticketDoc } from "@/lib/notify/docs";
@@ -254,38 +254,62 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
     return;
   }
 
-  const [{ data: players }, { data: tickets }, { data: games }] = await Promise.all([
+  // The games read went with the per-game table (D-069): this email no longer names a
+  // matchup, so the slate is not needed to build it.
+  const [{ data: players }, { data: tickets }] = await Promise.all([
     db.from("players").select("id, email, first_name, last_name").eq("status", "approved"),
-    db.from("tickets").select("id, player_id, is_fold").eq("week_id", weekId),
-    db.from("games").select("id, away_team, home_team, kickoff_at").eq("week_id", weekId).eq("on_slate", true).order("kickoff_at"),
+    db.from("tickets").select("id, player_id, is_fold, is_shove, total_chips, committed_stake").eq("week_id", weekId),
   ]);
 
   const nameOf = new Map(
     (players ?? []).map((p) => [p.id, `${p.first_name ?? "?"} ${(p.last_name ?? "").slice(0, 1)}.`.trim()]),
   );
   const ticketIds = (tickets ?? []).map((t) => t.id);
-  const playerOfTicket = new Map((tickets ?? []).map((t) => [t.id, t.player_id]));
 
   const { data: bets } = ticketIds.length
-    ? await db.from("bets").select("ticket_id, game_id, side").in("ticket_id", ticketIds)
-    : { data: [] as Array<{ ticket_id: string; game_id: string; side: string }> };
+    ? await db.from("bets").select("ticket_id, game_id, side, chips").in("ticket_id", ticketIds)
+    : { data: [] as Array<{ ticket_id: string; game_id: string; side: string; chips: number }> };
 
-  // Head counts only. Chip weights stay on the board, on purpose.
-  const backers = new Map<string, string[]>();
+  // Chip weights now DO leave the board (D-069, owner's call). The per-game "who took
+  // what" table this email used to carry was unreadable on a phone — sixteen games,
+  // two rows each, a wall of names — and it duplicated the board, which shows the same
+  // thing better. What it could not show is the one number nobody can work out in
+  // their head: what each ticket stands to collect. That replaces it.
+  //
+  // Nothing here is a blackout risk: revealed_at is asserted at the top of this
+  // function, and after the reveal every ticket is public anyway.
+  const heads = new Map<string, { away: number; home: number }>();
   for (const b of bets ?? []) {
-    const nm = nameOf.get(playerOfTicket.get(b.ticket_id) ?? "");
-    if (!nm) continue;
-    const key = `${b.game_id}:${b.side}`;
-    backers.set(key, [...(backers.get(key) ?? []), nm]);
+    const h = heads.get(b.game_id) ?? { away: 0, home: 0 };
+    h[b.side as "away" | "home"] += 1;
+    heads.set(b.game_id, h);
   }
 
-  const rows = (games ?? []).map((g) => ({
-    matchup: `${g.away_team} @ ${g.home_team}`,
-    away: g.away_team,
-    home: g.home_team,
-    awayBackers: (backers.get(`${g.id}:away`) ?? []).sort().join(", "),
-    homeBackers: (backers.get(`${g.id}:home`) ?? []).sort().join(", "),
-  }));
+  const betsOfTicket = new Map<string, Array<{ game_id: string; side: string; chips: number }>>();
+  for (const b of bets ?? []) betsOfTicket.set(b.ticket_id, [...(betsOfTicket.get(b.ticket_id) ?? []), b]);
+
+  const standings = (tickets ?? [])
+    .map((t) => {
+      const mine = betsOfTicket.get(t.id) ?? [];
+      const priced = mine.map((b) => {
+        const h = heads.get(b.game_id) ?? { away: 0, home: 0 };
+        const withCount = h[b.side as "away" | "home"];
+        const against = b.side === "away" ? h.home : h.away;
+        // §8 — a shove pays even money, no multiplier, ever. Same rule settleWeek uses.
+        return { chips: b.chips, multiplier: t.is_shove ? { num: 1, den: 1 } : multiplierFor(withCount, against) };
+      });
+      const take = maxTake(priced);
+      return {
+        name: nameOf.get(t.player_id) ?? "?",
+        isFold: t.is_fold,
+        isShove: t.is_shove,
+        games: mine.length,
+        spent: t.is_shove ? (t.committed_stake ?? take.stake) : take.stake,
+        max: take.total,
+      };
+    })
+    // Biggest ceiling first — that is the argument the email is trying to start.
+    .sort((a, b) => b.max - a.max || a.name.localeCompare(b.name));
 
   const foldedIds = (tickets ?? []).filter((t) => t.is_fold).map((t) => t.player_id);
   const foldedNames = foldedIds.map((id) => nameOf.get(id)).filter(Boolean) as string[];
@@ -317,7 +341,7 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
       p,
       "notify.reveal",
       await mailSubject(db, "mail.reveal.subject", { week: weekNumber }),
-      revealDoc({ firstName: first, week: weekNumber, games: rows, folded: foldedLine }),
+      revealDoc({ firstName: first, week: weekNumber, standings, folded: foldedLine }),
       `notify.reveal:w${weekNumber}:${p.id}`,
     );
   }
