@@ -18,13 +18,26 @@ export async function NewsBox({ playerId }: { playerId: string }) {
 
   // The source travels with the item so a player can see who wrote it and go read it.
   type Row = { id: string; title: string; url: string | null; feed_sources: { name: string } | { name: string }[] | null };
-  const named = (rows: Row[] | null) =>
-    (rows ?? []).map((r) => ({
-      id: r.id,
-      title: r.title,
-      url: r.url,
-      source: (Array.isArray(r.feed_sources) ? r.feed_sources[0]?.name : r.feed_sources?.name) ?? null,
-    }));
+  const named = (rows: Row[] | null) => {
+    // One story per headline (D-076). A team feed and a league feed routinely carry
+    // the same wire copy, which put the same headline in the rotation twice under two
+    // different source names — read as the box showing "more than one source" for
+    // what looked like one story. First source in wins; the rest are the same news.
+    const seen = new Set<string>();
+    const out: Array<{ id: string; title: string; url: string | null; source: string | null }> = [];
+    for (const r of rows ?? []) {
+      const key = r.title.trim().toLowerCase().replace(/\s+/g, " ");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        id: r.id,
+        title: r.title,
+        url: r.url,
+        source: (Array.isArray(r.feed_sources) ? r.feed_sources[0]?.name : r.feed_sources?.name) ?? null,
+      });
+    }
+    return out;
+  };
 
   let items: Array<{ id: string; title: string; url: string | null; source: string | null }> = [];
   if (me?.favorite_team) {

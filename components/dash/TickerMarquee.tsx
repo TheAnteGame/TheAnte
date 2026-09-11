@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // The broadcast crawl (art §7). Pauses on hover; prefers-reduced-motion falls back
 // to a static rotating item (ANTE-PLAYER §4).
@@ -25,6 +25,9 @@ export function TickerMarquee({
 }) {
   const [reduced, setReduced] = useState(false);
   const [staticIndex, setStaticIndex] = useState(0);
+  const [copies, setCopies] = useState(2);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const copyRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -38,6 +41,21 @@ export function TickerMarquee({
     if (!reduced) return;
     const t = setInterval(() => setStaticIndex((i) => (i + 1) % items.length), 8000);
     return () => clearInterval(t);
+  }, [reduced, items.length]);
+
+  // How many copies it takes to cover the rail, plus the one that gets shifted away.
+  // Re-measured on resize: a narrowed window needs fewer, a widened one needs more.
+  useEffect(() => {
+    if (reduced) return;
+    const measure = () => {
+      const copyW = copyRef.current?.scrollWidth ?? 0;
+      const railW = trackRef.current?.parentElement?.clientWidth ?? 0;
+      if (copyW <= 0 || railW <= 0) return;
+      setCopies(Math.max(2, Math.ceil(railW / copyW) + 1));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
   }, [reduced, items.length]);
 
   const render = (item: TickerItem, key: string) => {
@@ -90,9 +108,26 @@ export function TickerMarquee({
       className="overflow-hidden whitespace-nowrap panel-head py-2 text-sm"
       style={{ ["--ticker-seconds" as string]: `${speedSeconds}s` }}
     >
-      <div className="ticker-track inline-block">
-        {items.map((i) => render(i, i.id))}
-        {items.map((i) => render(i, `${i.id}-dup`))}
+      {/* Enough copies to fill the rail, measured (D-076).
+          The track shifts by exactly ONE copy and then repeats, so the loop is
+          seamless only while the copies BEHIND the shift still cover the window.
+          Two copies of three short items did not: one copy was ~900px against a
+          1152px rail, so every lap ran off the end of the content and left the rail
+          half empty. At 60s a lap that is a long, silent stare, and it reads as the
+          ticker being slow to populate rather than as a gap.
+          Measured rather than guessed because it depends on the text, the font and
+          the viewport, none of which the server knows. Falls back to two copies if
+          measurement is unavailable — the previous behaviour, never worse. */}
+      <div
+        ref={trackRef}
+        className="ticker-track flex w-max"
+        style={{ ["--ticker-shift" as string]: `${(100 / copies).toFixed(4)}%` }}
+      >
+        {Array.from({ length: copies }, (_, c) => (
+          <div key={c} ref={c === 0 ? copyRef : undefined} aria-hidden={c > 0} className="flex shrink-0 items-center">
+            {items.map((i) => render(i, `${i.id}-c${c}`))}
+          </div>
+        ))}
       </div>
     </div>
   );

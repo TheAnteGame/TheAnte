@@ -15,12 +15,22 @@ import { RevealBoard } from "@/components/wager/RevealBoard";
 
 export const dynamic = "force-dynamic";
 
-export default async function WeekResults({ params }: { params: Promise<{ week: string }> }) {
+export default async function WeekResults({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ week: string }>;
+  // ?board=1 means the player already pressed "See the board" on the dashboard, so
+  // the reveal sequence is skipped rather than shown as a second identical door
+  // (D-076). Arriving here without it still plays the sequence.
+  searchParams: Promise<{ board?: string }>;
+}) {
   const state = await getPlayerState();
   if (!state?.player) redirect("/");
   if (routeFor(state) !== "/dashboard") redirect(routeFor(state));
 
   const { week: weekParam } = await params;
+  const { board: skipSequence } = await searchParams;
   const db = createUserClient();
 
   const [logoAlt, backCta, heading, emptyMsg, stats] = await Promise.all([
@@ -115,6 +125,7 @@ export default async function WeekResults({ params }: { params: Promise<{ week: 
       <RevealBoard
         week={{ id: week.id, number: week.number, revealed_at: null }}
         playerId={state.player.id}
+        straightToBoard={skipSequence === "1"}
         season={season.length > 0 ? season : undefined}
         h2h={h2h.length > 0 ? h2h : undefined}
       />

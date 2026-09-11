@@ -16,11 +16,15 @@ export async function RevealBoard({
   season,
   h2h,
   dbOverride,
+  straightToBoard = false,
 }: {
   week: { id: string; number: number; revealed_at: string | null };
   playerId: string;
   /** LOCAL PREVIEW ONLY — dev harness injects a service client. Never set in app code. */
   dbOverride?: ReturnType<typeof createUserClient>;
+  /** Skip the interstitial and shove beat: the player already asked for the board
+   *  by pressing the dashboard CTA (D-076). */
+  straightToBoard?: boolean;
   /** Season-to-date tendencies. Supplied on /results, omitted for a bare reveal. */
   season?: RevealData["season"];
   h2h?: RevealData["h2h"];
@@ -197,5 +201,5 @@ export async function RevealBoard({
     copy: Object.fromEntries(copyEntries) as unknown as RevealData["copy"],
   };
 
-  return <RevealExperience data={data} />;
+  return <RevealExperience data={data} straightToBoard={straightToBoard} />;
 }

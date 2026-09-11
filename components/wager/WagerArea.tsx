@@ -69,8 +69,13 @@ export async function WagerArea({
             {title}
           </h3>
           <p className="max-w-md leading-relaxed text-[color:var(--color-text-mid)]">{body}</p>
+          {/* Straight to the board (D-076). This button already says "See the board";
+              landing on an interstitial whose own button says "See the board" is a
+              door that opens onto another door. The reveal sequence still plays for
+              anyone arriving at /results directly — it just no longer gates a click
+              that has already asked for the board. */}
           <Link
-            href={`/results/${week.number}`}
+            href={`/results/${week.number}?board=1`}
             className="chamfer chrome-face mt-1 px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide"
           >
             {cta}

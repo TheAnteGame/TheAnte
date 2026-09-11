@@ -516,7 +516,10 @@ textarea {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-50%);
+    /* One copy's width. The track renders as many copies as it takes to cover the
+       rail (D-076), so the shift is 100/copies percent rather than a fixed half —
+       -50% only happens to be right when there are exactly two. */
+    transform: translateX(calc(-1 * var(--ticker-shift, 50%)));
   }
 }
 .ticker-track {

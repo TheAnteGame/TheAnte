@@ -107,7 +107,7 @@ export interface RevealData {
 
 type Act = "interstitial" | "shove" | "board";
 
-export function RevealExperience({ data }: { data: RevealData }) {
+export function RevealExperience({ data, straightToBoard = false }: { data: RevealData; straightToBoard?: boolean }) {
   const { copy } = data;
   const seenKey = `ante-reveal-seen-w${data.weekNumber}`;
   const [act, setAct] = useState<Act | null>(null);
@@ -116,8 +116,11 @@ export function RevealExperience({ data }: { data: RevealData }) {
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const seen = sessionStorage.getItem(seenKey) === "1";
-    setAct(seen || reduced ? "board" : "interstitial");
-  }, [seenKey]);
+    // straightToBoard: the dashboard's "See the board" button already asked for the
+    // board, so showing an interstitial whose own button says "See the board" is a
+    // door onto another door (D-076). The sequence still plays for a direct arrival.
+    setAct(straightToBoard || seen || reduced ? "board" : "interstitial");
+  }, [seenKey, straightToBoard]);
 
   const advance = () => {
     if (act === "interstitial" && data.shoves.length > 0) setAct("shove");

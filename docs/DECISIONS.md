@@ -2175,3 +2175,45 @@ three more to −4, the three LA backers to −20/−30, and the two folders dro
 first to mid-table. Winners banked 42 of profit against 50 of lost stakes, so 8 chips
 have swept — and 7342 projected + 150 Pot + 8 swept = 7500, every chip accounted for.
 Nine unit tests, `SEASON CLEAN` at 13,500.
+
+## D-076 — A door onto another door, a rail that ran out, and the news box rebuilt (2026-09-11)
+
+Three owner reports from one pass over the live dashboard.
+
+**"See the board" opened onto "See the board".** The dashboard CTA linked to
+`/results/[week]`, which opened the reveal sequence — whose own button also reads "See
+the board". Since that CTA is the only route in, the interstitial was never a first
+impression; it was always a second door in front of a player who had already asked.
+The link now carries `?board=1` and the sequence is skipped for it. A direct arrival at
+`/results` still gets the full sequence, so the moment is kept where it can still be
+one.
+
+**The ticker "took a while to populate".** It was not slow, it was short. The track
+shifts by exactly one copy and repeats, which is seamless only while the copies behind
+the shift still cover the window. Measured on the live rail: one copy of the three
+current items is **916px against a 1150px rail**, so the two-copy track (1832px) was
+**234px short** of the 2066px needed at full shift. A quarter of every lap ran off the
+end of the content, and at the configured 60s that is roughly fifteen seconds of empty
+rail — which reads as "nothing has loaded yet" rather than "there is a gap". The track
+now renders as many copies as it takes to cover the rail plus one, measured on the
+client and re-measured on resize, and the keyframe shifts by `100/copies` percent
+instead of a hard-coded 50%. Verified after: 2747px of track against 2066px needed,
+681px of surplus. Falls back to two copies if measurement is unavailable — the old
+behaviour, never worse.
+
+**The news box, third attempt, different approach.** D-052 and D-053 both tried to
+make overlap UNLIKELY: a longer gap, a keyed node, a self-cancelling chain of nested
+timeouts. The owner reported it still layering, which is the signal to stop patching
+the mechanism and remove it. It is now a two-phase state machine driven by a SINGLE
+timeout — show for `rotateMs`, blank for a second, then advance — and the index only
+ever moves while the slot is blank. At no point does the component describe two
+stories. Measured in a harness sampling every 50ms across seven seconds: **maximum
+story nodes in the DOM at any instant = 1**, all three stories cycling in order.
+
+Also deduped by headline in `NewsBox`: a team feed and a league feed routinely carry
+the same wire copy, which put one story in the rotation twice under two different
+source names — a plausible reading of "sometimes there's more than one source".
+
+Honest note: I could not reproduce the original layering from the code, and the
+rewrite is justified by making the failure impossible rather than by a diagnosis. If
+it recurs, a screenshot of it happening is worth more than another read of the file.

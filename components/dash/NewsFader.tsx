@@ -1,33 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Item = { id: string; title: string; url: string | null; source: string | null };
 
-// One headline at a time, with a deliberate blank beat between them.
+// One headline at a time, with a blank beat between them (D-076, replacing D-052/D-053).
 //
-// D-053 — the box was showing two stories layered over each other, each with its own
-// source line. Two changes make that impossible rather than unlikely:
+// Two earlier attempts tried to make overlap UNLIKELY — a longer gap, a keyed node, a
+// self-cancelling chain of nested timeouts. It kept happening. This makes overlap
+// IMPOSSIBLE instead, by removing the thing that allowed it: at no point does the
+// component describe two stories. There is one index, one element, and during the gap
+// there is no story element at all.
 //
-//  1. There is now a real GAP. A story fades out, the slot sits EMPTY for a full
-//     second, and only then does the next one fade in. Previously the swap happened
-//     the instant the fade-out timer fired, so any hiccup — a slow frame, a
-//     router.refresh() landing at the wrong moment — could paint the incoming story
-//     while the outgoing one was still on screen. With an empty second in between
-//     there is no moment when two stories can share the box.
+// The cycle is a two-phase state machine driven by a SINGLE timeout that is recreated
+// from scratch on every phase change and cleared by the same effect's cleanup:
 //
-//  2. The list is frozen at mount. The dashboard polls with router.refresh() every
-//     five seconds and re-renders this component with a freshly fetched array. Usually
-//     identical, but when a new story lands the ORDER shifts and the rendered item
-//     changes underneath the animation with no fade at all. News does not need to
-//     arrive within five seconds; it can wait for the next real page load.
+//     show (holdMs) -> blank (gapMs) -> show the NEXT one -> ...
 //
-// The cycle is one self-cancelling chain rather than an interval plus a loose
-// setTimeout, so pausing, unmounting or re-rendering can never leave a stray timer
-// queued — that was how the box previously advanced twice or stranded a half-fade.
+// The index only ever advances while the slot is blank, so a swap cannot be seen. And
+// because exactly one timeout exists at any moment, nothing can advance twice, strand
+// a half-fade, or fire into an unmounted box — the failure modes the chain had.
 
-const FADE_MS = 400;
-const GAP_MS = 1000; // the blank beat between stories
+const FADE_MS = 300;
+const GAP_MS = 1000;
 
 export function NewsFader({
   items,
@@ -38,13 +33,15 @@ export function NewsFader({
   rotateMs: number;
   sourceLabel: string;
 }) {
-  // Captured once. Later props are ignored on purpose — see note 2 above.
+  // Frozen at mount. The dashboard polls with router.refresh() every five seconds and
+  // hands this a freshly fetched array; usually identical, but when a story lands the
+  // ORDER shifts and the visible item would change underneath the fade. News can wait
+  // for the next real page load.
   const [list] = useState<Item[]>(items);
   const [index, setIndex] = useState(0);
+  const [showing, setShowing] = useState(true);
   const [paused, setPaused] = useState(false);
-  const [visible, setVisible] = useState(true);
   const [reduced, setReduced] = useState(false);
-  const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   useEffect(() => {
     setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -53,38 +50,28 @@ export function NewsFader({
   useEffect(() => {
     if (paused || list.length <= 1) return;
 
-    const queue = timers.current;
-    const later = (fn: () => void, ms: number) => queue.push(setTimeout(fn, ms));
+    // Reduced motion: no fade, no blank beat — just swap on a plain interval.
+    if (reduced) {
+      const t = setTimeout(() => setIndex((i) => (i + 1) % list.length), rotateMs);
+      return () => clearTimeout(t);
+    }
 
-    const cycle = () => {
-      if (reduced) {
-        setIndex((i) => (i + 1) % list.length);
-        later(cycle, rotateMs);
-        return;
-      }
-      setVisible(false); // fade out
-      later(() => {
-        // Swap while the slot is empty, then hold the blank beat before fading in.
-        setIndex((i) => (i + 1) % list.length);
-        later(() => {
-          setVisible(true);
-          later(cycle, rotateMs + FADE_MS);
-        }, GAP_MS);
-      }, FADE_MS);
-    };
+    const t = setTimeout(
+      () => {
+        if (showing) {
+          setShowing(false);
+        } else {
+          // Advance ONLY while blank. This is the line that makes overlap impossible.
+          setIndex((i) => (i + 1) % list.length);
+          setShowing(true);
+        }
+      },
+      showing ? rotateMs : GAP_MS,
+    );
+    return () => clearTimeout(t);
+  }, [showing, index, paused, reduced, rotateMs, list.length]);
 
-    later(cycle, rotateMs);
-
-    return () => {
-      // Every timer this run created dies with it. Nothing can fire into a paused,
-      // re-rendered or unmounted box.
-      queue.forEach(clearTimeout);
-      timers.current = [];
-      setVisible(true);
-    };
-  }, [paused, list.length, rotateMs, reduced]);
-
-  const item = list[index] ?? list[0];
+  const item = list[index];
   if (!item) return null;
 
   const headline = "leading-snug text-[color:var(--color-text-hi)]";
@@ -93,16 +80,13 @@ export function NewsFader({
     <div
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      // Holds its size across a swap — three headline lines plus the source line — so
-      // the column below never jumps, and the blank beat never collapses the box.
+      // Holds its height across the blank beat — three headline lines plus the source
+      // line — so the column below never jumps.
       className="min-h-[7.5rem] px-4 py-4 text-sm"
     >
       <div
-        // Keyed on the item: React replaces the node outright instead of mutating text
-        // inside a node that is mid-transition.
-        key={item.id}
         style={{
-          opacity: visible ? 1 : 0,
+          opacity: showing ? 1 : 0,
           transition: reduced ? "none" : `opacity ${FADE_MS}ms ease-in-out`,
         }}
       >
