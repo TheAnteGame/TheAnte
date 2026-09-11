@@ -4,7 +4,7 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
 import { LeaderboardTable, type LbCopy, type LbRow } from "./LeaderboardTable";
-import { openStakesByPlayer, withOpenStakes } from "@/lib/stats/standings";
+import { loadProjection, withProjection } from "@/lib/stats/standings";
 
 // Server assembly: the standings view (RLS: approved-only, blackout-safe by
 // construction — its bet stats draw only from revealed weeks) plus this week's
@@ -27,7 +27,7 @@ import { openStakesByPlayer, withOpenStakes } from "@/lib/stats/standings";
 const loadBoard = cache(async () => {
   const db = createUserClient();
 
-  const [{ data: rawStandings }, { data: week }, { data: favTeams }, openStakes] = await Promise.all([
+  const [{ data: rawStandings }, { data: week }, { data: favTeams }, proj] = await Promise.all([
     db.from("standings").select("*"),
     db
       .from("weeks")
@@ -40,13 +40,13 @@ const loadBoard = cache(async () => {
     // rollup, not a profile projection) — fetched alongside it here for the
     // player-name tooltip rather than widening the view for one display field.
     db.from("players").select("id, favorite_team"),
-    // Chips in escrow between the reveal and settlement belong on their owner's line,
-    // not subtracted from it (D-073). Without this the board ranks by who risked the
-    // least and folders lead it. The view's own ORDER BY is dropped for the same
-    // reason: it ranks the pre-adjustment number.
-    openStakesByPlayer(db),
+    // The weekend projection (D-075). Stakes that can still come back belong on
+    // their owner's line and profit already earned belongs there too, so the board
+    // moves as each game goes final instead of sitting dead until Monday. The view's
+    // own ORDER BY is dropped: it ranks the pre-adjustment number.
+    loadProjection(db),
   ]);
-  const standings = withOpenStakes(rawStandings ?? [], openStakes);
+  const standings = withProjection(rawStandings ?? [], proj);
   const favTeamOf = new Map((favTeams ?? []).map((p) => [p.id, p.favorite_team]));
 
   let deltas = new Map<string, number>();
@@ -65,14 +65,16 @@ const loadBoard = cache(async () => {
     felts = new Set((wps ?? []).filter((w) => w.felt).map((w) => w.player_id));
   }
 
-  return { standings, week, deltas, felts, favTeamOf };
+  return { standings, week, deltas, felts, favTeamOf, proj };
 });
 
 export async function Leaderboard({ playerId }: { playerId: string }) {
-  const { standings, week, deltas, felts, favTeamOf } = await loadBoard();
+  const { standings, week, deltas, felts, favTeamOf, proj } = await loadBoard();
   const teamNames = await getTeamNames();
 
-  const rows: LbRow[] = (standings ?? []).map((s) => {
+  const pj = (id: string) => proj?.byPlayer.get(id);
+
+  const rows: LbRow[] = standings.map((s) => {
     const decided = (s.bets_won ?? 0) + (s.bets_lost ?? 0);
     const favTeam = favTeamOf.get(s.player_id);
     return {
@@ -82,7 +84,13 @@ export async function Leaderboard({ playerId }: { playerId: string }) {
       team: favTeam ? (teamNames.get(favTeam) ?? null) : null,
       status: s.status ?? "approved",
       stack: s.stack ?? 0,
-      delta: week ? (deltas.get(s.player_id) ?? 0) : null,
+      // The week's projected gain, not the raw ledger delta. The ledger delta during
+      // the revealed window is ante + every stake withdrawn, i.e. the most negative
+      // number a player will see all week and none of it decided. Adding back what
+      // can still return plus the profit already banked makes this §14's gain as far
+      // as the games have got: -ante - losses + profit.
+      delta: week ? (deltas.get(s.player_id) ?? 0) + (pj(s.player_id)?.returnable ?? 0) + (pj(s.player_id)?.profit ?? 0) : null,
+      atRisk: pj(s.player_id)?.atRisk ?? null,
       won: s.bets_won ?? 0,
       lost: s.bets_lost ?? 0,
       winPct: decided > 0 ? Math.round(((s.bets_won ?? 0) / decided) * 100) : null,
@@ -102,6 +110,7 @@ export async function Leaderboard({ playerId }: { playerId: string }) {
     player: await getContent("lb.player"),
     stack: await getContent("lb.stack"),
     delta: await getContent("lb.delta"),
+    atRisk: await getContent("lb.at_risk"),
     won: await getContent("lb.won"),
     lost: await getContent("lb.lost"),
     winPct: await getContent("lb.win_pct"),

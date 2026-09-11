@@ -2131,3 +2131,47 @@ visible; caught by rendering the real chat and looking at it, not by reasoning.
 
 Verified against production's own messages in both the grouped and ungrouped cases.
 The two Aug 26 messages stay ungrouped, correctly — they are ninety minutes apart.
+
+## D-075 — The board moves as the games come in (2026-09-11)
+
+Owner's ask: make the four days between the reveal and settlement worth logging in for,
+without touching the ledger. "Everybody evens up on Monday as it's been planned."
+
+D-073 had made the revealed-window board honest by adding every stake back, so it read
+level — nothing decided yet. True on Thursday afternoon and decreasingly true all
+weekend: once a game is final those chips ARE decided, and pretending otherwise is its
+own lie. This generalises that fix rather than replacing it. With no games in, the
+projection is byte-identical to D-073's level board.
+
+`projectWeek` (`lib/engine/projection.ts`) is pure and lives next to settlement on
+purpose, because it has to agree with it. It calls the SAME `multiplierFor` and
+`profitFor`, reads head counts off every ticket the same way, applies §8's shove rule
+(even money, never the crowd price), and maps a game's state with the same ladder
+`settleWeek` uses, in the same order. Three deliberate differences, all documented in
+the file: an undecided game is carried as at-risk rather than guessed at, the §9 felt
+floor is not applied (a settlement action — the projection has no business inventing
+the Pot's chip early), and the Pot award is not projected at all, because it depends on
+every player's final gain and it is the Monday surprise.
+
+No new surface, per the owner: "I don't want to get so many things people have to look
+at." The existing leaderboard already defaults to sorting on `stack`, so making that
+number live made the default sort the projection for free. `Δ wk` becomes §14's gain as
+far as the games have got (−ante − losses + profit) instead of the raw ledger delta,
+which during the revealed window is the most negative number a player sees all week and
+none of it decided. A small muted "N live" rides beside it, so a player can tell how
+much of their line is still a question.
+
+A game flagged `final` with no score stays PENDING. `settleWeek` halts on that (§8.12
+posture); a projection has even less business inventing a winner.
+
+Read-only throughout: SELECT only, no writes, no migration, the ledger untouched, and
+settlement still the one event that moves a chip. Applied at all three consumers so
+they cannot disagree — leaderboard, the ticker's leader line, Table Talk's green tag —
+and the loader is wrapped in React `cache()` because the dashboard mounts the
+leaderboard twice (D-051) and all three want the same numbers.
+
+Verified against live Week 1 with SF @ LA final 27–7: the two SF backers moved to +2,
+three more to −4, the three LA backers to −20/−30, and the two folders dropped from
+first to mid-table. Winners banked 42 of profit against 50 of lost stakes, so 8 chips
+have swept — and 7342 projected + 150 Pot + 8 swept = 7500, every chip accounted for.
+Nine unit tests, `SEASON CLEAN` at 13,500.

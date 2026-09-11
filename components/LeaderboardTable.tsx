@@ -15,6 +15,8 @@ export interface LbRow {
   status: string; // 'approved' | 'deactivated'
   stack: number;
   delta: number | null;
+  /** Chips on games not yet final. Null outside the revealed window (D-075). */
+  atRisk: number | null;
   won: number;
   lost: number;
   winPct: number | null;
@@ -33,6 +35,7 @@ export interface LbCopy {
   player: string;
   stack: string;
   delta: string;
+  atRisk: string;
   won: string;
   lost: string;
   winPct: string;
@@ -134,6 +137,14 @@ export function LeaderboardTable({ rows, copy }: { rows: LbRow[]; copy: LbCopy }
                 <td className="nums px-2 py-2 text-right font-semibold text-[color:var(--color-text-hi)]">{r.stack}</td>
                 <td className={`nums px-2 py-2 text-right ${r.delta === null ? "text-[color:var(--color-text-low)]" : r.delta >= 0 ? "text-[color:var(--color-win)]" : "text-[color:var(--color-loss)]"}`}>
                   {r.delta === null ? "—" : r.delta >= 0 ? `+${r.delta}` : `−${-r.delta}`}
+                  {/* What is still live for them. The delta above counts undecided
+                      chips as not-yet-lost, so this says how much of it is still a
+                      question rather than a result (D-075). */}
+                  {r.atRisk !== null && r.atRisk > 0 && (
+                    <span className="ml-1.5 text-[11px] font-normal text-[color:var(--color-text-low)]">
+                      {r.atRisk} {copy.atRisk}
+                    </span>
+                  )}
                 </td>
                 <td className="nums px-2 py-2 text-right">{r.won}</td>
                 <td className="nums px-2 py-2 text-right">{r.lost}</td>

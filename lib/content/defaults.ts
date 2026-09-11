@@ -359,6 +359,7 @@ export const contentDefaults: Record<string, string> = {
   "lb.player": "Player",
   "lb.stack": "Stack",
   "lb.delta": "Δ wk",
+  "lb.at_risk": "live",
   "lb.won": "W",
   "lb.lost": "L",
   "lb.win_pct": "Win %",
