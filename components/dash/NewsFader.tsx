@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 type Item = { id: string; title: string; url: string | null; source: string | null };
 
-// Four seconds on, two seconds off. Nothing else (D-077).
+// Six seconds on, two seconds off. Nothing else (D-077, timing tuned in D-078).
 //
 // Two previous versions cross-faded, and both could show two headlines at once. This
 // one cannot, because it never describes two: the box renders EITHER one headline or
@@ -14,7 +14,7 @@ type Item = { id: string; title: string; url: string | null; source: string | nu
 // One timeout exists at a time. It is created by the effect and cleared by the same
 // effect's cleanup, so a re-render, a pause or an unmount cannot leave one queued.
 
-const ON_MS = 4000;
+const ON_MS = 6000; // long enough to actually read a headline
 const OFF_MS = 2000;
 
 export function NewsFader({ items, sourceLabel }: { items: Item[]; sourceLabel: string }) {
