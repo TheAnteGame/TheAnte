@@ -2,9 +2,9 @@ import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { NewsFader } from "./NewsFader";
 
-// Fav Team News (ANTE-PLAYER §7): the player's team's headlines, cross-fading every
-// 7s, falling back to league-wide items when a team has none. Fully automatic from
-// the feed; the commissioner curates only by hiding (ADMIN §0).
+// Your team's headlines (ANTE-PLAYER §7). Every feed that carries the team feeds this
+// box — the source shown is simply whoever wrote the story on screen. Team news first,
+// league-wide when the team has none. The commissioner curates only by hiding (§0).
 
 export async function NewsBox({ playerId }: { playerId: string }) {
   const db = createUserClient();
@@ -16,54 +16,28 @@ export async function NewsBox({ playerId }: { playerId: string }) {
     getContent("dash.news.source_label"),
   ]);
 
-  // The source travels with the item so a player can see who wrote it and go read it.
+  // The source travels with the item so a player can see who wrote it.
   type Row = { id: string; title: string; url: string | null; feed_sources: { name: string } | { name: string }[] | null };
-  const named = (rows: Row[] | null) => {
-    // One story per headline (D-076). A team feed and a league feed routinely carry
-    // the same wire copy, which put the same headline in the rotation twice under two
-    // different source names — read as the box showing "more than one source" for
-    // what looked like one story. First source in wins; the rest are the same news.
-    const seen = new Set<string>();
-    const out: Array<{ id: string; title: string; url: string | null; source: string | null }> = [];
-    for (const r of rows ?? []) {
-      const key = r.title.trim().toLowerCase().replace(/\s+/g, " ");
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({
-        id: r.id,
-        title: r.title,
-        url: r.url,
-        source: (Array.isArray(r.feed_sources) ? r.feed_sources[0]?.name : r.feed_sources?.name) ?? null,
-      });
-    }
-    return out;
+  const named = (rows: Row[] | null) =>
+    (rows ?? []).map((r) => ({
+      id: r.id,
+      title: r.title,
+      url: r.url,
+      source: (Array.isArray(r.feed_sources) ? r.feed_sources[0]?.name : r.feed_sources?.name) ?? null,
+    }));
+
+  const fetchRows = async (teamCode: string | null) => {
+    const q = db
+      .from("feed_items")
+      .select("id, title, url, feed_sources(name)")
+      .order("published_at", { ascending: false })
+      .limit(8);
+    const { data } = await (teamCode === null ? q.is("team_code", null) : q.eq("team_code", teamCode));
+    return named(data as Row[] | null);
   };
 
-  let items: Array<{ id: string; title: string; url: string | null; source: string | null }> = [];
-  if (me?.favorite_team) {
-    const { data } = await db
-      .from("feed_items")
-      .select("id, title, url, feed_sources(name)")
-      .eq("team_code", me.favorite_team)
-      .order("published_at", { ascending: false })
-      .limit(8);
-    items = named(data as Row[] | null);
-  }
-  if (items.length === 0) {
-    const { data } = await db
-      .from("feed_items")
-      .select("id, title, url, feed_sources(name)")
-      .is("team_code", null)
-      .order("published_at", { ascending: false })
-      .limit(8);
-    items = named(data as Row[] | null);
-  }
-
-  const { data: rotate } = await db.from("app_settings").select("value").eq("key", "news.rotate_ms").maybeSingle();
-  // 7s, not 5s (D-052): a second longer to read, as asked, and deliberately out of
-  // step with the dashboard's 5s router.refresh() so a poll cannot keep landing on
-  // top of the cross-fade.
-  const rotateMs = typeof rotate?.value === "number" ? rotate.value : 7000;
+  let items = me?.favorite_team ? await fetchRows(me.favorite_team) : [];
+  if (items.length === 0) items = await fetchRows(null);
 
   return (
     <section aria-label={heading} className="panel">
@@ -73,7 +47,7 @@ export async function NewsBox({ playerId }: { playerId: string }) {
       {items.length === 0 ? (
         <p className="px-4 py-4 text-sm text-[color:var(--color-text-mid)]">{empty}</p>
       ) : (
-        <NewsFader items={items} rotateMs={rotateMs} sourceLabel={sourceLabel} />
+        <NewsFader items={items} sourceLabel={sourceLabel} />
       )}
     </section>
   );

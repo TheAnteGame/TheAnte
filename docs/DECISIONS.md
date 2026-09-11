@@ -2217,3 +2217,38 @@ source names — a plausible reading of "sometimes there's more than one source"
 Honest note: I could not reproduce the original layering from the code, and the
 rewrite is justified by making the failure impossible rather than by a diagnosis. If
 it recurs, a screenshot of it happening is worth more than another read of the file.
+
+## D-077 — The news box: four on, two off, one source line (2026-09-11)
+
+Third report on the same box, and the first two fixes were aimed at the wrong thing.
+D-076 rewrote the CYCLE and left the rendering alone; the owner's complaint was never
+really about timing, it was that the source line appeared **three times stacked at the
+bottom of the box**.
+
+A further misread on the way: "one source" was taken to mean restrict which feeds
+supply the box. It does not. Every feed that carries the team still feeds it — twelve
+Broncos sources is fine. It means show ONE source line, for the story currently on
+screen. That change was made and reverted in the same pass.
+
+The box is now the whole specification and nothing else:
+
+- a headline appears and stays **4 seconds**
+- the box is **empty for 2 seconds**
+- the next headline, 4 on, 2 off, forever
+- **no fade, no transition** of any kind
+- at most one headline and one source line exist at any instant
+
+Everything else is gone: no cross-fade, no keyed swap, no opacity chain, no timer
+queue, no hover-pause, no `rotateMs` setting (it had no admin control, so nothing is
+left dead behind it). The component renders EITHER one headline or nothing, and the
+index advances only during the empty beat, so two stories cannot coexist — not because
+a timer is well-behaved, but because the component never describes two.
+
+Verified against production's real DEN rows, sampled 20×/second for 18.5 seconds:
+max source lines on screen **1**, max headlines **1**, visible 12.4s against blank
+6.0s — a ratio of 2.06 against the 2.00 the spec asks for.
+
+Standing note for the next person: the data was never the problem. Those eight DEN
+rows come from a single source already, with no duplicate titles and `feed_sources`
+returning one object, not an array. Two rewrites were spent on mechanism before anyone
+checked that.
