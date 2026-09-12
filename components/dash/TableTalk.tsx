@@ -13,7 +13,8 @@ import { loadProjection, withProjection } from "@/lib/stats/standings";
 
 // Table Talk (ANTE-PLAYER §7): a real chat panel. System messages are distinct and
 // carry weight — they are the only place the commissioner's authority is visible.
-// Hidden messages render as tombstones, never gaps (ADMIN §4.3).
+// A hidden message is simply gone from the room — no tombstone, no notice (D-080,
+// the owner's call over ADMIN §4.3). The row survives in the table for the record.
 
 export async function TableTalk({
   playerId,
@@ -25,15 +26,16 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, tombstone, helpAria, helpTitle, helpMentions, helpEmoji, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
     // panel's business.
     db
       .from("chat_messages")
-      .select("id, player_id, body, is_system, hidden_at, hidden_reason, created_at")
+      .select("id, player_id, body, is_system, created_at")
       .eq("is_system", false)
+      .is("hidden_at", null)
       .order("created_at", { ascending: false })
       .limit(50),
     db.from("players").select("is_muted, muted_until").eq("id", playerId).maybeSingle(),
@@ -43,7 +45,6 @@ export async function TableTalk({
     getContent("dash.tabletalk.placeholder"),
     getContent("dash.tabletalk.live_label"),
     getContent("dash.tabletalk.muted_notice"),
-    getContent("dash.tabletalk.tombstone"),
     getContent("dash.tabletalk.help_aria"),
     getContent("dash.tabletalk.help_title"),
     getContent("dash.tabletalk.help_mentions"),
@@ -123,7 +124,7 @@ export async function TableTalk({
   /** Does list[i] continue the message before it, as a reader sees the order? */
   const groupedAt = list.map((m, i) => {
     const older = list[i + 1];
-    if (!older || m.is_system || older.is_system || m.hidden_at || older.hidden_at) return false;
+    if (!older || m.is_system || older.is_system) return false;
     if (older.player_id !== m.player_id) return false;
     if (!dayOf(m.created_at).equals(dayOf(older.created_at))) return false;
     // Fifteen minutes keeps a genuine follow-up attached and lets a reply hours later
@@ -163,7 +164,7 @@ export async function TableTalk({
           // between this message and the one continuing it belongs to THIS li, and
           // must be suppressed here — not on the grouped message below it.
           const continued = i > 0 && groupedAt[i - 1];
-          const ann = !m.hidden_at && !m.is_system ? announcement(m.body) : null;
+          const ann = !m.is_system ? announcement(m.body) : null;
           return (
           <li
             key={m.id}
@@ -178,9 +179,7 @@ export async function TableTalk({
                 <span className="h-px flex-1 bg-[color:var(--color-border)] opacity-40" />
               </div>
             )}
-            {m.hidden_at ? (
-              <span className="italic text-[color:var(--color-text-low)]">{tombstone}</span>
-            ) : m.is_system ? (
+            {m.is_system ? (
               <span className="text-[color:var(--color-gold)]">{m.body}</span>
             ) : (
               <>

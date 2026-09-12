@@ -14,8 +14,9 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 > called the action. New `/admin/chat` ("Chat" in the console nav): last 100 player
 > messages newest first, Hide form per row (reason required, confirm), hidden rows stay
 > listed struck through with who/when/why. No migration, no ledger, no RLS change.
-> Mute controls were located (Players page, collapsed "Moderation & roster actions")
-> and left as they are.
+> **D-080:** the owner asked for no tombstone — a hidden message is simply absent from
+> the room (query filters `hidden_at is null`; the content key is gone). Mute controls
+> were located (Players page, collapsed "Moderation & roster actions") and left alone.
 
 > **2026-08-29 (twenty-sixth pass):** **Functions moved next to the database (D-050).**
 > Live-site complaint of slowness turned out to be worse than slow: functions ran in

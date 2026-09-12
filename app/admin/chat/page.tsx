@@ -7,8 +7,8 @@ import { hideChatMessage } from "../actions";
 
 // Table Talk, from the commissioner's side (ANTE-ADMIN §4.3 "Message moderation").
 // Muting stops the next message; this page deals with the one already posted.
-// Hiding is a soft delete: the row and its body survive, players see a tombstone
-// line where the message was, and an audit entry is written. There is no hard
+// Hiding is a soft delete: the row and its body survive here and in the audit log,
+// and the room simply stops showing the message — no tombstone, no notice (D-080). There is no hard
 // delete of chat — the record of what happened is what makes the authority
 // trustworthy. Muting itself stays on the Players page.
 
@@ -48,8 +48,8 @@ export default async function ChatAdmin() {
     <div className="flex flex-col gap-8">
       <Section title="Table Talk">
         <p className="mb-4 text-sm text-[color:var(--color-text-mid)]">
-          The last {PAGE} player messages, newest first. Hiding one takes it off the room and leaves a tombstone in
-          its place — the body stays in the record and the audit log names who hid it and why. Nothing here is ever
+          The last {PAGE} player messages, newest first. Hiding one removes it from the room with no notice to
+          players — the body stays in the record here and the audit log names who hid it and why. Nothing here is ever
           deleted, and nothing here touches betting. To stop a player&rsquo;s <em>next</em> message, mute them from
           the Players page.
         </p>
@@ -108,7 +108,7 @@ export default async function ChatAdmin() {
                             submitLabel="Hide"
                             danger
                             inline
-                            confirmText="Hide this message? Players see a tombstone where it was. The body stays in the record and the audit log names you. This cannot be undone from here."
+                            confirmText="Remove this message from the room? Players are not told. The body stays in the record and the audit log names you. This cannot be undone from here."
                           >
                             <input type="hidden" name="messageId" value={m.id} />
                             <input

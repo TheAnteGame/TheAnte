@@ -2283,3 +2283,18 @@ Also found on the way, not changed: the mute controls the owner could not find a
 on the Players page under a **collapsed** "Moderation & roster actions" disclosure
 below the roster table. They work end to end. The owner saw them once pointed there
 and asked that they stay as they are.
+
+## D-080 — A hidden message is just gone (2026-09-12)
+
+D-079 shipped the hide button and kept the tombstone the spec asked for: an italic
+"a message was hidden by the Commissioner" line where the message had been
+(ANTE-ADMIN §4.3, acceptance test 22). The owner's reaction on seeing it: there is
+no reason to announce it in League Chat. Just remove the message.
+
+**Decision: hidden messages do not render at all.** Table Talk's query now filters
+`hidden_at is null`, so the room never receives a hidden row, and the tombstone
+branch and its content key (`dash.tabletalk.tombstone`) are gone. This overrides the
+spec's tombstone on the owner's call. What the spec was protecting is intact: the row
+and body survive, the audit log records who hid it and why, and the console's Chat
+page still lists hidden messages struck through. The record exists for the
+commissioner; the players are simply not told.

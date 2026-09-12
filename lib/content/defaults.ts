@@ -403,7 +403,6 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.live_label": "Chat with the league",
   "dash.tabletalk.placeholder": "Say it to the whole room…",
   "dash.tabletalk.muted_notice": "You're muted until {expiry}. You can read, and you can still bet.",
-  "dash.tabletalk.tombstone": "— a message was hidden by the Commissioner —",
   "dash.tabletalk.help_aria": "How Table Talk works",
   "dash.tabletalk.help_title": "How Table Talk works",
   "dash.tabletalk.help_mentions":
