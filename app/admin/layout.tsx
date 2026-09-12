@@ -11,6 +11,7 @@ const NAV = [
   ["/admin", "Ops"],
   ["/admin/week", "Week"],
   ["/admin/players", "Players"],
+  ["/admin/chat", "Chat"],
   ["/admin/support", "Support"],
   ["/admin/content", "Content"],
   ["/admin/ticker", "Ticker"],

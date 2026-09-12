@@ -193,6 +193,7 @@ export async function hideChatMessage(fd: FormData): Promise<ActionResult> {
   if (error) return fail(error.message);
   await writeAudit(ctx, "chat.hide", "chat_message", messageId, reason);
   revalidatePath("/dashboard");
+  revalidatePath("/admin/chat");
   return { ok: true };
 }
 

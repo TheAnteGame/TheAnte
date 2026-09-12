@@ -2252,3 +2252,34 @@ Standing note for the next person: the data was never the problem. Those eight D
 rows come from a single source already, with no duplicate titles and `feed_sources`
 returning one object, not an array. Two rewrites were spent on mechanism before anyone
 checked that.
+
+## D-079 — The hide button that was never drawn (2026-09-12)
+
+The owner needed to remove an inappropriate message from Table Talk and could not.
+The backend for it had existed since the first admin pass: `hideChatMessage` in
+`app/admin/actions.ts` requires a reason, stamps `hidden_at` / `hidden_by` /
+`hidden_reason`, writes a `chat.hide` audit entry, and the room already renders a
+hidden row as a tombstone. A trigger (`chat_hide_only`, migration 0002) lets a chat
+row be hidden and nothing else. Nothing in the app called the action. ANTE-ADMIN
+§4.3 asks for a commissioner-only hover affordance in the chat view and a "Chat
+activity" section in the player drawer; neither had been built.
+
+**Decision: a Chat page in the console, not a hover control in the room.** The
+owner's words were "remove them in the background on the commissioner side", and a
+list is a better moderation surface than hunting through the dashboard: newest first,
+the last 100 player messages, each with a Hide form (reason required, native confirm,
+danger styling) wired to the existing action. Hidden rows stay in the list struck
+through, with who hid them, when, and why, so the page is also the record. The
+author's current mute state shows beside the name, and the page points at Players
+for muting — muting stops the *next* message, this page handles the one already
+posted. The hover affordance from the spec can still come later; it would call the
+same action.
+
+Nothing new touches the database. No migration, no RLS change, no ledger. The
+commissioner client is service-role, so the hide lands regardless of policy, and the
+trigger is what keeps it a hide rather than an edit or a delete.
+
+Also found on the way, not changed: the mute controls the owner could not find are
+on the Players page under a **collapsed** "Moderation & roster actions" disclosure
+below the roster table. They work end to end. The owner saw them once pointed there
+and asked that they stay as they are.

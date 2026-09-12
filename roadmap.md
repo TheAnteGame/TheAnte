@@ -8,6 +8,15 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-12 (twenty-seventh pass):** **Hide a chat message from the console (D-079).**
+> The owner could not remove an inappropriate Table Talk message. The server action,
+> the audit entry, the tombstone render and the hide-only trigger all existed; no page
+> called the action. New `/admin/chat` ("Chat" in the console nav): last 100 player
+> messages newest first, Hide form per row (reason required, confirm), hidden rows stay
+> listed struck through with who/when/why. No migration, no ledger, no RLS change.
+> Mute controls were located (Players page, collapsed "Moderation & roster actions")
+> and left as they are.
+
 > **2026-08-29 (twenty-sixth pass):** **Functions moved next to the database (D-050).**
 > Live-site complaint of slowness turned out to be worse than slow: functions ran in
 > iad1 while Supabase is us-west-2, and 25% of homepage requests never returned. A CDN
