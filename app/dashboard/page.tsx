@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "@clerk/nextjs";
 import { createUserClient } from "@/lib/db/supabase";
@@ -70,14 +70,7 @@ export default async function Dashboard() {
             padding stays, or the logo sits on the ticker. */}
         <header className="rail flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 pb-3 pt-0">
           <Link href="/dashboard" className="shrink-0">
-            <Image
-              src="/logo.png"
-              alt={logoAlt}
-              width={104}
-              height={66}
-              priority
-              className="h-auto w-[83px] sm:w-[104px]"
-            />
+            <Logo alt={logoAlt} width={104} height={66} priority className="h-auto w-[83px] sm:w-[104px]" />
           </Link>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.14em]">

@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { redirect } from "next/navigation";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
@@ -72,7 +72,7 @@ export default async function Season() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-10">
       <Link href="/dashboard" className="self-center">
-        <Image src="/logo.png" alt={logoAlt} width={166} height={106} priority />
+        <Logo alt={logoAlt} width={166} height={106} priority />
       </Link>
       <p className="text-center text-[color:var(--color-text-mid)]">{intro}</p>
 

@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
 import { acceptHowToPlay } from "@/app/actions/player";
@@ -101,7 +101,7 @@ export default async function HowToPlay({
     <div className="min-h-screen">
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10 sm:px-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <Image src="/logo.png" alt={logoAlt} width={140} height={90} priority />
+          <Logo alt={logoAlt} width={140} height={90} priority />
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-wide text-[color:var(--color-heading)]">
             {heading}
           </h1>

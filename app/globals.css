@@ -162,6 +162,14 @@
   display: none;
 }
 
+/* The logo comes in two files, one per ground (components/Logo.tsx): the white
+   wordmark on the dark site, the black wordmark on the light one. Each is hidden on
+   the ground it was not drawn for; the visible one keeps its natural display. */
+:root:not([data-theme="light"]) .logo-for-light,
+:root[data-theme="light"] .logo-for-dark {
+  display: none;
+}
+
 html {
   background-color: var(--color-canvas);
 }

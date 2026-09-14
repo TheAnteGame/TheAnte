@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { redirect } from "next/navigation";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
@@ -49,7 +49,7 @@ export default async function WeekResults({
       <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
         <header className="rail flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-3">
           <Link href="/dashboard" className="shrink-0">
-            <Image src="/logo.png" alt={logoAlt} width={104} height={66} className="h-auto w-[83px] sm:w-[104px]" priority />
+            <Logo alt={logoAlt} width={104} height={66} className="h-auto w-[83px] sm:w-[104px]" priority />
           </Link>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             {stats.weeks

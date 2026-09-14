@@ -8,6 +8,13 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-14 (twenty-eighth pass):** **The black wordmark on the grey site (D-081).**
+> Light mode showed the white-wordmark logo and lost the word. The owner's "Colored
+> Black" file now serves as `public/logo-on-light.png`; `components/Logo.tsx` renders
+> both and a CSS rule pair keyed on `[data-theme="light"]` shows the right one. Landing
+> page pinned to white (dark-only, redirects signed-in players). Also this week: D-079
+> hide a chat message from the console, D-080 no tombstone in the room.
+
 > **2026-09-12 (twenty-seventh pass):** **Hide a chat message from the console (D-079).**
 > The owner could not remove an inappropriate Table Talk message. The server action,
 > the audit entry, the tombstone render and the hide-only trigger all existed; no page

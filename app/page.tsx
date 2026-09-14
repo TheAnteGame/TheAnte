@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
 import { serviceDb } from "@/lib/jobs/util";
@@ -71,6 +71,8 @@ export default async function Home() {
       />
 
       <div className="rise" style={{ animationDelay: "0ms" }}>
+        {/* Always the white wordmark: this page is dark-only (its own backdrop below), and
+            it redirects every signed-in player, so no light preference can reach it. */}
         <Image src="/logo.png" alt={logoAlt} width={333} height={213} priority />
       </div>
 

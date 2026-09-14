@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import { createAnonServerClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
@@ -56,7 +56,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 py-16 text-center">
-      <Image src="/logo.png" alt={logoAlt} width={222} height={142} priority />
+      <Logo alt={logoAlt} width={222} height={142} priority />
       <div className="flex flex-col gap-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-wide text-[color:var(--color-heading)]">
           {heading}

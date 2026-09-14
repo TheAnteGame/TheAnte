@@ -2298,3 +2298,26 @@ spec's tombstone on the owner's call. What the spec was protecting is intact: th
 and body survive, the audit log records who hid it and why, and the console's Chat
 page still lists hidden messages struck through. The record exists for the
 commissioner; the players are simply not told.
+
+## D-081 — The black wordmark on the grey site (2026-09-14)
+
+Light mode was showing the dark site's logo: `public/logo.png` is byte-for-byte the
+owner's "Ante Logo Colored White" file, and its white wordmark vanishes into the
+light header, leaving only the gem ring. The matching "Ante Logo Colored Black" file
+had been in `assets/ante logo/` since the first commit and was never served.
+
+**Decision: two files, one rule pair.** `public/logo-on-light.png` is the Colored
+Black file, untouched. `components/Logo.tsx` renders both images and
+`globals.css` hides each on the ground it was not drawn for, keyed on
+`[data-theme="light"]` — the only place light mode exists (D-061). No client code,
+no flash, and the visible image keeps the exact width, height and classes each page
+already passed. Eight pages swapped to the component: dashboard, guide, results,
+profile, season, how-to-play, onboarding, and the two gate pages through GatePage.
+
+**The landing page stays on the white wordmark.** It paints its own dark backdrop
+and redirects every signed-in player, and only a signed-in player can hold a light
+preference — so a black wordmark could never legitimately show there, and pinning it
+avoids one on the purple ground if that ever changed.
+
+Verified on the dev server: default shows only the white-wordmark image, and with
+the light attribute set only the black-wordmark image renders, at the same width.

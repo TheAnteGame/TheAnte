@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { redirect } from "next/navigation";
 import { createAnonServerClient, createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
@@ -58,7 +58,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 py-16 text-center">
       <Link href="/dashboard">
-        <Image src="/logo.png" alt={logoAlt} width={166} height={106} priority />
+        <Logo alt={logoAlt} width={166} height={106} priority />
       </Link>
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-wide text-[color:var(--color-heading)]">
         {heading}
