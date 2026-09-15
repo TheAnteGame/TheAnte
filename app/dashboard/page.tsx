@@ -15,7 +15,6 @@ import { NewsBox } from "@/components/dash/NewsBox";
 import { PromoBox } from "@/components/dash/PromoBox";
 import { SupportBox } from "@/components/dash/SupportBox";
 import { LeagueStats } from "@/components/dash/LeagueStats";
-import { RuleBookQA } from "@/components/dash/RuleBookQA";
 import { PollRefresh } from "@/components/wager/PollRefresh";
 
 // The dashboard (ANTE-PLAYER §4): header, ticker, stakes band, then two columns —
@@ -47,6 +46,7 @@ export default async function Dashboard() {
     commissionerLabel,
     guideLabel,
     tutorialLabel,
+    faqLabel,
     commissioner,
   ] = await Promise.all([
     getContent("dash.header_rank_label"),
@@ -56,6 +56,7 @@ export default async function Dashboard() {
     getContent("dash.commissioner_link_label"),
     getContent("dash.guide_link_label"),
     getContent("dash.tutorial_link_label"),
+    getContent("dash.faq_link_label"),
     getCommissioner(),
   ]);
 
@@ -88,6 +89,15 @@ export default async function Dashboard() {
                 className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
               >
                 {tutorialLabel}
+              </Link>
+              <span aria-hidden className="text-[color:var(--color-border)]">
+                ·
+              </span>
+              <Link
+                href="/faq"
+                className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
+              >
+                {faqLabel}
               </Link>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
@@ -143,18 +153,12 @@ export default async function Dashboard() {
             <div className="hidden min-[900px]:block">
               <Leaderboard playerId={playerId} />
             </div>
-            <div className="hidden min-[900px]:block">
-              <RuleBookQA />
-            </div>
           </div>
           <div className="flex min-w-0 flex-col gap-6">
             <TableTalk playerId={playerId} />
             {/* Mobile order (§4): wager, table talk, leaderboard, news, promo, support. */}
             <div className="min-[900px]:hidden">
               <Leaderboard playerId={playerId} />
-            </div>
-            <div className="min-[900px]:hidden">
-              <RuleBookQA />
             </div>
             {/* Owner's order: the promo rides with the chat at the top, and simply is
                 not rendered when no heading is set, so nothing collapses to a gap.

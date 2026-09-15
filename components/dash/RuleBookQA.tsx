@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getContent } from "@/lib/content/getContent";
 
-// Q&A under the leaderboard (D-037): the ten questions the room actually asks,
+// Q&A (D-037), now the body of /faq (D-083): the ten questions the room actually asks,
 // answered in the rulebook's own words, each expandable. Native <details> — no
 // client JS, keyboard-accessible for free, and the panel stays honest: every
 // answer ends where the rulebook begins, and the full document is one tap away.

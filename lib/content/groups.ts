@@ -16,6 +16,7 @@ const CONTENT_GROUPS: Record<string, GroupInfo> = {
   profile: { title: "Profile page", where: "The player's own profile screen and its error messages." },
   howto: { title: "Tutorial (click-through)", where: "The interactive tutorial every player walks through once, and can replay." },
   guide: { title: "How to Play page", where: "The written instructions page at /guide, linked from the dashboard header." },
+  faq: { title: "FAQ page", where: "The quick-answers page at /faq, linked from the dashboard header beside How to Play and Tutorial." },
   rules: { title: "Rulebook intro", where: "The one editable line above the rulebook. The rulebook itself ships with the code." },
   dash: { title: "Dashboard", where: "The main player screen: header, Game Board, bet slip, Table Talk, news, support." },
   band: { title: "Stakes band", where: "The big coloured bar across the top of the dashboard — week, tier, ante, Pot, limit, deadline." },

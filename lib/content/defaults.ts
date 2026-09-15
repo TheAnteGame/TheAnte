@@ -126,6 +126,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.logout_label": "Log out",
   "dash.guide_link_label": "How to Play",
   "dash.tutorial_link_label": "Tutorial",
+  "dash.faq_link_label": "FAQ",
   "guide.heading": "How to Play",
   "guide.intro": "ANTE is a season-long football pool. You bet chips on NFL games. The biggest stack on the last Sunday wins. Here is the whole thing in plain English.",
   "guide.back_cta": "Back to the game board",
@@ -268,9 +269,12 @@ export const contentDefaults: Record<string, string> = {
   "ticker.marker": "The Pot is carrying a {marker}-chip marker",
   "ticker.reveal": "The room is open — every ticket is live",
   "ticker.leader": "{name} leads with {stack}",
-  // Rulebook Q&A on the dashboard (D-037) — the ten questions the room actually
-  // asks. Answers compress the rulebook, never contradict it; §-precision lives at
-  // /rules and every answer defers there.
+  // Rulebook Q&A (D-037), on its own page at /faq since D-083 — the ten questions
+  // the room actually asks. Answers compress the rulebook, never contradict it;
+  // §-precision lives at /rules and every answer defers there.
+  "faq.page_heading": "FAQ",
+  "faq.page_intro": "The questions the room asks most, answered in the rulebook\u2019s own words. The full rulebook settles anything these don\u2019t.",
+  "faq.back_cta": "Back to the dashboard",
   "faq.heading": "Quick answers",
   "faq.more": "The full rulebook settles everything \u2192",
   "faq.q1": "How do I win the season?",

@@ -2360,3 +2360,17 @@ D-081 logo swap moved onto two custom properties set inside that block, so Auto
 gets the black wordmark on a light device with no third rule. The light-dark() CSS
 function would have avoided the mirror but would blank every token on an older
 Safari; the mirror degrades to dark instead, which is the safe failure.
+
+## D-083 — The FAQ is a page, not a panel (2026-09-14)
+
+D-037 put ten quick answers under the dashboard leaderboard. Owner's call: the board
+was getting cluttered, and the answers belong with the other reading material.
+
+New `/faq`, signed-in like `/guide`, built on the guide page's frame: masthead with
+the logo and a back link, heading, one-line intro, then the same `RuleBookQA` panel
+(same ten `faq.*` keys, same closing link to the rulebook), and two buttons on to
+How to Play and the tutorial. The dashboard header's top-right links now read
+**How to Play · Tutorial · FAQ**, and the panel is gone from the dashboard at both
+breakpoints. No content was rewritten; three keys were added (`faq.page_heading`,
+`faq.page_intro`, `faq.back_cta`) plus the link label (`dash.faq_link_label`), and
+the console's content editor gains an "FAQ page" group so the keys are findable.

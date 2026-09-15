@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-14 (thirtieth pass):** **The FAQ is a page (D-083).** Quick answers left
+> the dashboard for `/faq` (guide-page frame, same panel and keys). Header links now
+> How to Play · Tutorial · FAQ. Dashboard panel removed at both breakpoints.
+
 > **2026-09-14 (twenty-ninth pass):** **Screen mode: Auto follows the device (D-082).**
 > Auto had been a synonym for Dark since D-061; owner set usability first. Signed-in
 > Auto now follows prefers-color-scheme live, Light/Dark hold regardless, signed-out
