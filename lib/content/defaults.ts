@@ -415,6 +415,8 @@ export const contentDefaults: Record<string, string> = {
     "Type @ and a name to call somebody out \u2014 pick from the list that pops up. They get an email pointing them back to the room. Five mentions per message, tops.",
   "dash.tabletalk.help_emoji":
     "Emojis work everywhere: tap the \ud83d\ude42 by the send button, or use your keyboard \u2014 Ctrl+\u2318+Space on a Mac, Win+. on Windows, the emoji key on your phone.",
+  "dash.tabletalk.help_format":
+    "Bullet points: start a line with - and a space. Numbers: 1. and a space. On a computer, Enter sends and Shift+Enter starts a new line. On a phone, Return starts a new line and the arrow sends.",
   "dash.tabletalk.emoji_aria": "Add an emoji",
   "dash.tabletalk.tag_commish": "Commish",
   "dash.tabletalk.tag_leader": "League Leader",

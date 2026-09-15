@@ -2374,3 +2374,30 @@ How to Play and the tutorial. The dashboard header's top-right links now read
 breakpoints. No content was rewritten; three keys were added (`faq.page_heading`,
 `faq.page_intro`, `faq.back_cta`) plus the link label (`dash.faq_link_label`), and
 the console's content editor gains an "FAQ page" group so the keys are findable.
+
+## D-084 — Bullets in Table Talk (2026-09-14)
+
+Owner wanted formatting in the room, bullet points first. Two things stood in the
+way: the composer was a single-line input, and a body rendered as one inline span,
+so a line break could neither be typed nor shown.
+
+**No markup language.** Players type what they would type in a text message. A line
+starting with "-", "*" or "•" and a space is a bullet; "1." or "1)" and a space is a
+numbered item; consecutive items form one list; a blank line separates paragraphs;
+a single line break inside a paragraph is kept. That is the whole grammar, in
+`lib/chat/format.ts`, pure and tested (`format.test.ts`) — a bare "-", a spread like
+"Bills -3" or a score like "24-17" are not lists. A message with no line breaks is
+one plain paragraph and renders inline after the clock exactly as before, so the
+room's look is unchanged until somebody uses a line. Lists render with a gold
+bullet or number, and @mentions still highlight inside every line.
+
+**The composer is a textarea that grows** to about six lines. On a keyboard-and-
+mouse device Enter sends and Shift+Enter breaks the line (every desktop chat); on a
+touch device Return breaks the line and the arrow button sends (every phone
+messenger — a phone keyboard has no Shift+Enter). Decided by a media query after
+mount, never guessed on the server. Enter still takes the single remaining @match.
+The help popover gains a third line saying all of this (`dash.tabletalk.help_format`).
+
+Nothing server-side changed: the 2000-character cap, the mention emails and the
+console's Chat page (which already rendered bodies whitespace-pre-wrap) all take
+line breaks as they are.

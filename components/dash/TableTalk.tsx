@@ -6,7 +6,8 @@ import { ET } from "@/lib/time";
 import { ChatComposer } from "./ChatComposer";
 import { ChatHelp } from "./ChatHelp";
 import { PlayerTip } from "../ui/PlayerTip";
-import { buildHandles, segmentBody } from "@/lib/chat/mentions";
+import { buildHandles, segmentBody, type Handle } from "@/lib/chat/mentions";
+import { blocksOf, isPlain } from "@/lib/chat/format";
 import { leaderFrom } from "@/lib/ticker/leader";
 import { ChatTag, type TagTone } from "./ChatTag";
 import { loadProjection, withProjection } from "@/lib/stats/standings";
@@ -26,7 +27,7 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -49,6 +50,7 @@ export async function TableTalk({
     getContent("dash.tabletalk.help_title"),
     getContent("dash.tabletalk.help_mentions"),
     getContent("dash.tabletalk.help_emoji"),
+    getContent("dash.tabletalk.help_format"),
     getContent("dash.tabletalk.emoji_aria"),
     getContent("dash.tabletalk.tag_commish"),
     getContent("dash.tabletalk.tag_leader"),
@@ -152,7 +154,7 @@ export async function TableTalk({
         <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
           {heading}
         </h2>
-        <ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} />
+        <ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} />
       </div>
       <ul className="chat-list flex max-h-[32rem] min-h-[9rem] flex-col-reverse overflow-y-auto px-4 py-2">
         {list.map((m, i) => {
@@ -215,29 +217,11 @@ export async function TableTalk({
                       {ann.label}
                     </span>
                     <span className="mt-0.5 block break-words text-[color:var(--color-text-mid)]">
-                      {segmentBody(ann.rest, handles).map((seg, j) =>
-                        seg.mention ? (
-                          <span key={j} className="font-semibold text-[color:var(--color-gold)]">
-                            {seg.text}
-                          </span>
-                        ) : (
-                          <span key={j}>{seg.text}</span>
-                        ),
-                      )}
+                      <Body text={ann.rest} handles={handles} />
                     </span>
                   </span>
                 ) : (
-                  <span className="break-words text-[color:var(--color-text-mid)]">
-                    {segmentBody(m.body, handles).map((seg, j) =>
-                      seg.mention ? (
-                        <span key={j} className="font-semibold text-[color:var(--color-gold)]">
-                          {seg.text}
-                        </span>
-                      ) : (
-                        <span key={j}>{seg.text}</span>
-                      ),
-                    )}
-                  </span>
+                  <Body text={m.body} handles={handles} />
                 )}
               </>
             )}
@@ -257,5 +241,60 @@ export async function TableTalk({
         />
       )}
     </section>
+  );
+}
+
+/** @mentions highlighted inside one run of text. */
+function Mentions({ text, handles }: { text: string; handles: Handle[] }) {
+  return (
+    <>
+      {segmentBody(text, handles).map((seg, j) =>
+        seg.mention ? (
+          <span key={j} className="font-semibold text-[color:var(--color-gold)]">
+            {seg.text}
+          </span>
+        ) : (
+          <span key={j}>{seg.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+/** A message body (D-084). One plain line renders inline after the clock exactly as
+ *  before; anything with line breaks or list items becomes blocks under it. */
+function Body({ text, handles }: { text: string; handles: Handle[] }) {
+  const blocks = blocksOf(text);
+  if (blocks.length === 0) return null;
+  if (isPlain(blocks)) {
+    return (
+      <span className="break-words text-[color:var(--color-text-mid)]">
+        <Mentions text={blocks[0].kind === "p" ? blocks[0].text : ""} handles={handles} />
+      </span>
+    );
+  }
+  return (
+    <span className="mt-1 block break-words text-[color:var(--color-text-mid)]">
+      {blocks.map((b, i) =>
+        b.kind === "p" ? (
+          <span key={i} className={`block whitespace-pre-line ${i > 0 ? "mt-1.5" : ""}`}>
+            <Mentions text={b.text} handles={handles} />
+          </span>
+        ) : (
+          <span key={i} role="list" className={`block ${i > 0 ? "mt-1.5" : ""}`}>
+            {b.items.map((item, k) => (
+              <span key={k} role="listitem" className="flex gap-2 pl-1">
+                <span aria-hidden className="shrink-0 select-none text-[color:var(--color-gold)]">
+                  {b.kind === "ul" ? "\u2022" : `${k + 1}.`}
+                </span>
+                <span className="min-w-0">
+                  <Mentions text={item} handles={handles} />
+                </span>
+              </span>
+            ))}
+          </span>
+        ),
+      )}
+    </span>
   );
 }

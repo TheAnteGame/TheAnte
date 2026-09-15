@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { postChatMessage } from "@/app/actions/chat";
 import type { Handle } from "@/lib/chat/mentions";
 
@@ -14,10 +14,17 @@ import type { Handle } from "@/lib/chat/mentions";
 //
 // Typing "@" opens the roster (D-019). Handles come from the server so the picker,
 // the highlighting and the email all agree on who "@Robert" is.
+//
+// Multi-line since D-084: a textarea that grows with the message. On a keyboard-and-
+// mouse device Enter sends and Shift+Enter breaks the line, the way every desktop
+// chat works; on a touch device Return breaks the line and the arrow sends, the way
+// every phone messenger works — a phone keyboard has no Shift+Enter. Bullets are
+// typed, not inserted: "- " at the start of a line (lib/chat/format.ts).
 
 // Fixed strip, league register — one tap for the desktop users who never find the OS
 // emoji shortcut. Data, not copy: the content grep ignores non-letter JSX.
 const EMOJIS = ["🏈", "🔥", "😂", "💀", "🤝", "🎉", "😤", "🧊"];
+const FINE_POINTER = "(hover: hover) and (pointer: fine)";
 
 export function ChatComposer({
   placeholder,
@@ -33,11 +40,30 @@ export function ChatComposer({
   emojiAria: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState("");
   const [value, setValue] = useState("");
   const [query, setQuery] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  // Keyboard-and-mouse device or not — subscribed, not set-in-effect (the pattern the
+  // tutorial uses for reduced motion): SSR gets a stable false, a laptop that docks a
+  // mouse mid-session flips live, and there is no cascading first render.
+  const enterSends = useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia(FINE_POINTER);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(FINE_POINTER).matches,
+    () => false,
+  );
+
+  // One line at rest, taller as the message grows, never past six lines or so.
+  const fit = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 168)}px`;
+  };
 
   // The "@word" immediately before the caret, if there is one.
   const readQuery = (text: string, caret: number) => {
@@ -95,6 +121,7 @@ export function ChatComposer({
             formRef.current?.reset();
             setValue("");
             setQuery(null);
+            fit(inputRef.current);
           }
         }}
         className={`flex flex-wrap gap-2 px-3 pb-3 ${showLive ? "pt-2" : "pt-3"}`}
@@ -120,9 +147,10 @@ export function ChatComposer({
             </ul>
           )}
 
-          <input
+          <textarea
             ref={inputRef}
             name="body"
+            rows={1}
             maxLength={2000}
             autoComplete="off"
             placeholder={placeholder}
@@ -131,17 +159,26 @@ export function ChatComposer({
             onChange={(e) => {
               setValue(e.target.value);
               setQuery(readQuery(e.target.value, e.target.selectionStart ?? e.target.value.length));
+              fit(e.target);
             }}
             onBlur={() => setQuery(null)}
             onKeyDown={(e) => {
               if (e.key === "Escape") setQuery(null);
+              if (e.key !== "Enter") return;
               // Enter takes the only remaining match rather than posting a half-typed name.
-              if (e.key === "Enter" && matches.length === 1) {
+              if (matches.length === 1) {
                 e.preventDefault();
                 insert(matches[0].handle);
+                return;
+              }
+              // Desktop: Enter sends, Shift+Enter breaks the line. Touch: Return breaks
+              // the line and the arrow sends. A blank message never posts from a key.
+              if (enterSends && !e.shiftKey) {
+                e.preventDefault();
+                if (value.trim().length > 0) formRef.current?.requestSubmit();
               }
             }}
-            className="w-full bg-[color:var(--color-surface-2)] px-3 py-2 text-sm text-[color:var(--color-text-hi)] outline-none placeholder:text-[color:var(--color-text-low)] focus:outline-2 focus:outline-[color:var(--color-chrome)]"
+            className="block w-full resize-none bg-[color:var(--color-surface-2)] px-3 py-2 text-sm leading-5 text-[color:var(--color-text-hi)] outline-none placeholder:text-[color:var(--color-text-low)] focus:outline-2 focus:outline-[color:var(--color-chrome)]"
           />
 
           {showLive && (

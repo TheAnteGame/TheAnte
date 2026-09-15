@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-14 (thirty-first pass):** **Bullets in Table Talk (D-084).** Typed, not
+> inserted: "- " bullets, "1. " numbers, blank-line paragraphs (`lib/chat/format.ts`,
+> 7 tests). Composer is now a growing textarea — Enter sends / Shift+Enter breaks on
+> desktop, Return breaks / arrow sends on touch. One-line messages render exactly as
+> before. Help popover explains it.
+
 > **2026-09-14 (thirtieth pass):** **The FAQ is a page (D-083).** Quick answers left
 > the dashboard for `/faq` (guide-page frame, same panel and keys). Header links now
 > How to Play · Tutorial · FAQ. Dashboard panel removed at both breakpoints.

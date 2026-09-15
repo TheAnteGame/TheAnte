@@ -11,11 +11,13 @@ export function ChatHelp({
   title,
   mentionsLine,
   emojiLine,
+  formatLine,
 }: {
   ariaLabel: string;
   title: string;
   mentionsLine: string;
   emojiLine: string;
+  formatLine: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -53,6 +55,7 @@ export function ChatHelp({
           <p className="text-[12px] font-bold uppercase tracking-wider text-[color:var(--color-gold)]">{title}</p>
           <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{mentionsLine}</p>
           <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{emojiLine}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{formatLine}</p>
         </div>
       )}
     </div>
