@@ -15,6 +15,7 @@ interface Copy {
   themeAutoLabel: string;
   themeLightLabel: string;
   themeDarkLabel: string;
+  themeHelp: string;
   submitLabel: string;
   errorGeneric: string;
 }
@@ -74,6 +75,8 @@ export function ProfileForm({ teams, copy, prefill, showError }: { teams: Team[]
       </label>
       <fieldset className="flex flex-col gap-1 text-left">
         <legend className="text-xs uppercase tracking-wider text-[color:var(--color-text-mid)]">{copy.themeLabel}</legend>
+        {/* Says what the three choices do before anyone has to guess (D-082). */}
+        <p className="mb-1 text-xs leading-relaxed text-[color:var(--color-text-low)]">{copy.themeHelp}</p>
         <div className="flex gap-2">
           {(
             [

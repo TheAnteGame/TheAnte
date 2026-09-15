@@ -2321,3 +2321,42 @@ avoids one on the purple ground if that ever changed.
 
 Verified on the dev server: default shows only the white-wordmark image, and with
 the light attribute set only the black-wordmark image renders, at the same width.
+
+## D-082 — Screen mode: Auto follows the device, Light and Dark hold (2026-09-14)
+
+The owner set Auto on a light Mac and got the dark site. That was D-061 working as
+written — Auto had been made a synonym for Dark the same day it shipped, and the
+picker kept the word without the meaning. Owner's call, usability first: players
+must never have to keep re-choosing.
+
+**The three modes now mean what they say, for a signed-in player:**
+
+- **Light** stays light on every device, whatever the system says.
+- **Dark** stays dark the same way.
+- **Auto** (the default) follows the device's own light-or-dark setting and
+  switches live when it does — a CSS media query, no client script, no reload.
+
+Signed-out visitors carry no attribute and still see the black table, so the brand
+greets every first visit; that half of D-061 survives. D-061's other half is
+superseded. Linux is explicitly out of scope for now (the owner's league is Windows
+and Mac); its system signal depends on the desktop, which is exactly why the explicit
+Light and Dark choices stay as the fallback.
+
+**Two things that made explicit choices look "messed up" are fixed alongside:**
+`color-scheme` is now declared per mode, so native controls — the favorite-team
+dropdown, scrollbars, focus rings, autofill — match the site rather than the OS; and
+the root layout now emits `theme-color` per mode, so the mobile browser's own bar
+matches the canvas.
+
+**The picker explains itself** (`profile.theme_help`, on signup and on /profile):
+what Auto does, that Light and Dark hold everywhere, and that it can be changed any
+time. Nobody left in the dark.
+
+**Mechanics.** Light is one declaration block in `globals.css`, written twice —
+unconditionally for `[data-theme="light"]` and under the media query for
+`[data-theme="auto"]` — because CSS cannot share a block across two conditions
+without a script. `tests/theme/mirror.test.ts` fails if the two ever drift. The
+D-081 logo swap moved onto two custom properties set inside that block, so Auto
+gets the black wordmark on a light device with no third rule. The light-dark() CSS
+function would have avoided the mirror but would blank every token on an older
+Safari; the mirror degrades to dark instead, which is the safe failure.

@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["tests/engine/**/*.test.ts", "tests/notify/**/*.test.ts", "lib/**/*.test.ts"],
+    include: ["tests/engine/**/*.test.ts", "tests/notify/**/*.test.ts", "tests/theme/**/*.test.ts", "lib/**/*.test.ts"],
     // The blackout suite (tests/blackout) runs under Playwright, not Vitest.
   },
 });

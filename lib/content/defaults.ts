@@ -34,6 +34,8 @@ export const contentDefaults: Record<string, string> = {
   "profile.theme_auto": "Auto",
   "profile.theme_light": "Light",
   "profile.theme_dark": "Dark",
+  "profile.theme_help":
+    "Auto follows your phone or computer\u2019s own light-or-dark setting and changes with it. Light stays light and Dark stays dark on every device, whatever the system says. Change it here any time.",
   "profile.submit_label": "Continue",
   "profile.error_generic": "That didn't take. Try again.",
 

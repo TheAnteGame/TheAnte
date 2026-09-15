@@ -113,12 +113,20 @@
   --lit-drop: 0 18px 44px -26px rgba(0, 0, 0, 0.95), 0 2px 6px -2px rgba(0, 0, 0, 0.55);
 }
 
-/* ── Light mode (D-060, D-061, D-062) ─────────────────────────────────────────
-   Dark stays the default and untouched above — every token there is unchanged, and
-   it is what everyone sees until they say otherwise. "Auto" is not "follow the OS"
-   (D-061): light exists in exactly one place, unconditionally under
-   [data-theme="light"], set only when a player has explicitly chosen it on
-   /profile. Gold, chrome, the four gems, win/loss and the textures are untouched.
+/* ── Screen mode (D-060, D-062, D-082) ─────────────────────────────────────────
+   Dark is the base and untouched above — every token there is unchanged, and it is
+   what every signed-out visitor sees. Three signed-in modes, one attribute on <html>
+   set server-side by the root layout (no client script, no flash):
+
+     [data-theme="dark"]   stays dark, whatever the device says
+     [data-theme="light"]  stays light, whatever the device says
+     [data-theme="auto"]   follows the device's own light/dark setting, live
+
+   D-061 had made Auto a synonym for Dark; D-082 (owner's call, usability first)
+   makes it follow the device again — for signed-in players only, so the black table
+   still greets every first visit. Light exists as ONE declaration block below,
+   mirrored verbatim under the media query for Auto. tests/theme/mirror.test.ts
+   fails the build if the two blocks ever drift.
 
    A flat neutral grey, not a warm one (D-062 correction — the first pass leaned
    parchment/khaki, which is exactly the hue the dark ramp's own comment rules out:
@@ -132,8 +140,20 @@
    per instruction, they read as a muddy vignette, not a table. Turned off outright
    below; the flat canvas colour plus each panel's own --lit-drop shadow (unchanged,
    already a dark shadow in both themes) is what separates a panel from the ground —
-   exactly the offset asked for, without a background effect doing it. */
+   exactly the offset asked for, without a background effect doing it.
+
+   color-scheme tells the browser which scheme the PAGE is, so native controls — the
+   favorite-team dropdown, scrollbars, focus rings, autofill — match the site rather
+   than the OS. Without it a dark Mac put dark menus on the grey site (D-082). */
+:root {
+  color-scheme: dark;
+  --logo-for-dark: block;
+  --logo-for-light: none;
+}
 :root[data-theme="light"] {
+  color-scheme: light;
+  --logo-for-dark: none;
+  --logo-for-light: block;
   --color-canvas: #ececee;
   --color-surface-1: #fafafb;
   --color-surface-2: #e7e7ea;
@@ -153,21 +173,59 @@
   --color-tag-house-bd: #a98a4a;
   --color-tag-leader-fg: #35784f;
   --color-tag-leader-bd: #5f9a78;
+
+  & .chrome-face {
+    border-color: rgba(0, 0, 0, 0.22);
+  }
+  & body::before,
+  & body::after {
+    display: none;
+  }
 }
-:root[data-theme="light"] .chrome-face {
-  border-color: rgba(0, 0, 0, 0.22);
-}
-:root[data-theme="light"] body::before,
-:root[data-theme="light"] body::after {
-  display: none;
+/* MIRROR of the block above — identical by test, change both. */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    color-scheme: light;
+    --logo-for-dark: none;
+    --logo-for-light: block;
+    --color-canvas: #ececee;
+    --color-surface-1: #fafafb;
+    --color-surface-2: #e7e7ea;
+    --color-surface-3: #dadadf;
+    --color-border: #86868c;
+    --color-text-hi: #17171a;
+    --color-text-mid: #45454a;
+    --color-text-low: #6c6c72;
+    --color-ink: var(--color-text-hi);
+    --color-heading: var(--color-text-hi);
+    --lit-edge: inset 0 1px 0 rgba(0, 0, 0, 0.06), inset 1px 0 0 rgba(0, 0, 0, 0.03);
+
+    /* The tags darken here instead of inheriting. Measured on the light panel
+       (--color-surface-1, #fafafb): gold 5.60:1, green 5.18:1 — both clear AA for the
+       9px type they carry, and both still read unmistakably as gold and as green. */
+    --color-tag-house-fg: #7d6129;
+    --color-tag-house-bd: #a98a4a;
+    --color-tag-leader-fg: #35784f;
+    --color-tag-leader-bd: #5f9a78;
+
+    & .chrome-face {
+      border-color: rgba(0, 0, 0, 0.22);
+    }
+    & body::before,
+    & body::after {
+      display: none;
+    }
+  }
 }
 
-/* The logo comes in two files, one per ground (components/Logo.tsx): the white
-   wordmark on the dark site, the black wordmark on the light one. Each is hidden on
-   the ground it was not drawn for; the visible one keeps its natural display. */
-:root:not([data-theme="light"]) .logo-for-light,
-:root[data-theme="light"] .logo-for-dark {
-  display: none;
+/* The logo comes in two files, one per ground (components/Logo.tsx, D-081): the
+   white wordmark on the dark site, the black wordmark on the light one. The two
+   switches are set in the blocks above, so Auto is covered without a third rule. */
+.logo-for-dark {
+  display: var(--logo-for-dark);
+}
+.logo-for-light {
+  display: var(--logo-for-light);
 }
 
 html {

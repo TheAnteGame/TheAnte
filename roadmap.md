@@ -8,6 +8,14 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-14 (twenty-ninth pass):** **Screen mode: Auto follows the device (D-082).**
+> Auto had been a synonym for Dark since D-061; owner set usability first. Signed-in
+> Auto now follows prefers-color-scheme live, Light/Dark hold regardless, signed-out
+> stays the black table. `color-scheme` declared per mode (native controls matched
+> the OS, not the site), `theme-color` emitted per mode, picker gains a help line on
+> signup and /profile. Light block mirrored for Auto; `tests/theme/mirror.test.ts`
+> keeps the mirror honest. Linux out of scope by owner's call.
+
 > **2026-09-14 (twenty-eighth pass):** **The black wordmark on the grey site (D-081).**
 > Light mode showed the white-wordmark logo and lost the word. The owner's "Colored
 > Black" file now serves as `public/logo-on-light.png`; `components/Logo.tsx` renders

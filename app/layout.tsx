@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Archivo, Chakra_Petch } from "next/font/google";
 import { getPlayerState } from "@/lib/player";
@@ -26,17 +26,36 @@ export const metadata: Metadata = {
     "A season-long NFL chip pool. Everyone starts with 500. Nobody sees a pick until everyone is locked in. Biggest stack on the last Sunday wins.",
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // "auto" (the default, and every signed-out visitor) sets no attribute at all —
-  // globals.css's @media (prefers-color-scheme) then decides, no server read needed.
-  // An explicit choice sets data-theme so it wins over the system setting either way
-  // (D-059 pattern: base tokens + media-query override + [data-theme] override).
-  // This makes the root layout, and therefore every route under it, request-dynamic —
-  // a real cost (only /rules was static before this), accepted so the theme is right
-  // on first paint with no client-side flash.
+// The browser's own chrome (Safari/Chrome address bar, PWA title bar) follows the
+// screen mode too (D-082). getPlayerState is React-cached, so this read is free.
+const CANVAS_DARK = "#0b0b0d";
+const CANVAS_LIGHT = "#ececee";
+export async function generateViewport(): Promise<Viewport> {
   const state = await getPlayerState();
   const theme = state?.player?.themePreference;
-  const dataTheme = theme === "light" || theme === "dark" ? theme : undefined;
+  if (theme === "light") return { themeColor: CANVAS_LIGHT, colorScheme: "light" };
+  if (theme === "auto") {
+    return {
+      themeColor: [
+        { media: "(prefers-color-scheme: light)", color: CANVAS_LIGHT },
+        { media: "(prefers-color-scheme: dark)", color: CANVAS_DARK },
+      ],
+      colorScheme: "light dark",
+    };
+  }
+  return { themeColor: CANVAS_DARK, colorScheme: "dark" };
+}
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Screen mode (D-060, D-082). A signed-in player's choice goes on <html> as
+  // data-theme — "light" and "dark" hold regardless of the device; "auto" (the
+  // default) lets globals.css follow the device's prefers-color-scheme, live. A
+  // signed-out visitor gets no attribute at all and sees the black table: the brand
+  // greets every first visit (the surviving half of D-061). Server-side so the theme
+  // is right on first paint with no client script and no flash; this is what makes
+  // every route request-dynamic, an accepted cost.
+  const state = await getPlayerState();
+  const dataTheme = state?.player ? state.player.themePreference : undefined;
 
   return (
     <ClerkProvider>

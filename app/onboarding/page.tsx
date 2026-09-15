@@ -33,6 +33,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
     themeAutoLabel,
     themeLightLabel,
     themeDarkLabel,
+    themeHelp,
     submitLabel,
     errorGeneric,
     logoAlt,
@@ -47,6 +48,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
     getContent("profile.theme_auto"),
     getContent("profile.theme_light"),
     getContent("profile.theme_dark"),
+    getContent("profile.theme_help"),
     getContent("profile.submit_label"),
     getContent("profile.error_generic"),
     getContent("home.logo_alt"),
@@ -74,6 +76,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
           themeAutoLabel,
           themeLightLabel,
           themeDarkLabel,
+          themeHelp,
           submitLabel,
           errorGeneric,
         }}
