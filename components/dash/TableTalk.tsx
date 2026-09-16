@@ -176,7 +176,7 @@ export async function TableTalk({
       help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} />}
     >
     <section aria-label={heading} className="flex h-full min-h-0 flex-col">
-      <ul className="chat-list flex min-h-0 flex-1 flex-col-reverse overflow-y-auto px-4 py-2">
+      <ul className="chat-list flex min-h-0 flex-1 flex-col-reverse overflow-y-auto overscroll-contain px-4 py-2">
         {list.map((m, i) => {
           const older = list[i + 1];
           const newDay = !older || !dayOf(m.created_at).equals(dayOf(older.created_at));

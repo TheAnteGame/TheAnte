@@ -131,7 +131,7 @@ export function ChatDock({
           </button>
         )}
         {open && (
-          <div className="dock-slide-x dock inset-y-0 right-0 z-40 flex w-full flex-col sm:w-[380px]">
+          <div className="dock-slide-x dock inset-y-0 right-0 z-40 flex w-full flex-col overscroll-contain sm:w-[380px]">
             {strip}
             <div className="min-h-0 flex-1">{children}</div>
           </div>
@@ -147,7 +147,7 @@ export function ChatDock({
   const openHeight = corner ? "h-[85vh] sm:h-[min(600px,85vh)]" : "h-[85vh] sm:h-[60vh]";
 
   return (
-    <div className={`${frame} dock flex flex-col ${open ? `dock-slide-y ${openHeight}` : ""}`}>
+    <div className={`${frame} dock flex flex-col overscroll-contain ${open ? `dock-slide-y ${openHeight}` : ""}`}>
       {strip}
       {open && <div className="min-h-0 flex-1">{children}</div>}
     </div>
