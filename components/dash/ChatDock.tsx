@@ -102,7 +102,7 @@ export function ChatDock({
           <span className="chamfer bg-[color:var(--color-gold)] px-2 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{newLabel}</span>
         )}
       </button>
-      {open && <span className="flex items-center">{help}</span>}
+      {open && <span className="dock-help flex items-center">{help}</span>}
       <button
         type="button"
         onClick={() => writeOpen(!open)}
@@ -142,14 +142,14 @@ export function ChatDock({
 
   const corner = position === "corner";
   const frame = corner
-    ? "inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[360px]"
+    ? "inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:right-0 sm:w-[360px]"
     : "inset-x-0 bottom-0 z-40";
   const openHeight = corner ? "h-[85vh] sm:h-[min(600px,85vh)]" : "h-[85vh] sm:h-[60vh]";
 
   return (
     <div className={`${frame} dock flex flex-col ${open ? `dock-slide-y ${openHeight}` : ""}`}>
-      <div className={corner ? "" : "mx-auto w-full max-w-6xl"}>{strip}</div>
-      {open && <div className={`min-h-0 flex-1 ${corner ? "" : "mx-auto w-full max-w-6xl"}`}>{children}</div>}
+      {strip}
+      {open && <div className="min-h-0 flex-1">{children}</div>}
     </div>
   );
 }
