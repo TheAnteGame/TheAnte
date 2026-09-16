@@ -216,7 +216,11 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       // the week, the ante, the Pot and the deadline are the frame you read once on
       // arrival, not figures you consult mid-scroll — the bet slip's running tally is
       // the thing worth keeping in view, and it still sticks on its own.
-      className="band-in relative isolate z-30 flex flex-wrap items-center gap-x-6 gap-y-4 px-6 py-5"
+      // Phone (D-087): three deliberate rows — ring + week + the wall; the Pot full
+      // width; ante and limit side by side. Desktop is the single flowing row it was:
+      // the two row wrappers become `contents` from sm up, so every tray sits in the
+      // one flex row in its original order.
+      className="band-in relative isolate z-30 flex flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-4 sm:px-6 sm:py-5"
     >
       {/* Every painted layer lives in here, and the chamfer clip lives with it (D-045).
           It used to sit on the band itself — and a clip-path clips EVERY descendant
@@ -236,6 +240,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         <div className="shine-sweep absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.15)_50%,transparent_60%)]" />
       </div>
 
+      <div className="flex items-center gap-4 sm:contents">
       <Tip text={ringTip} label={`${weekLabel} ${week.number}, ${tierLabel}`}>
         <SeasonRing weekNumber={week.number} />
       </Tip>
@@ -255,12 +260,32 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         </span>
       </div>
 
+      {/* Hangs from its right edge: this tray sits at the margin, and a left-hung
+          tooltip would run off the screen on a phone. Last in the desktop row. */}
+      <span className="ml-auto sm:order-last">
+        {boardOpen ? (
+          // The wall is behind us — a deadline that has already passed is the least
+          // useful thing on the band, and what the player actually put in is one of
+          // the most (D-071). Same swap, same reason, as the limit tray.
+          <Tip text={yourWagerTip} label={yourWagerLabel} align="right">
+            {stat(yourWagerLabel, String(myWager))}
+          </Tip>
+        ) : (
+          <Tip text={deadlineTip} label={deadlineLabel} align="right">
+            {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}
+          </Tip>
+        )}
+      </span>
+      </div>
+
+      {/* Phone rows two and three: every tray fills its cell and matches heights. */}
+      <div className="grid grid-cols-2 gap-2 sm:contents max-sm:[&>span]:flex max-sm:[&>span>button]:w-full max-sm:[&>span>button>span]:h-full">
       <Tip text={anteTip} label={anteLabel}>
         {stat(anteLabel, String(week.ante))}
       </Tip>
 
       {/* The Pot is the house's money, so it is the one thing here wearing gold. */}
-      <Tip text={potTip} label={potLabel}>
+      <Tip text={potTip} label={potLabel} className="max-sm:order-first max-sm:col-span-2">
         <span className="well well-gold chamfer flex items-center gap-3 px-3.5 py-2">
           <PokerChip tone="gold" size={30} className="gold-pulse shrink-0" />
           <span className="flex flex-col">
@@ -289,23 +314,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
           </Tip>
         )
       )}
-
-      {/* Hangs from its right edge: this tray sits at the margin, and a left-hung
-          tooltip would run off the screen on a phone. */}
-      <span className="ml-auto">
-        {boardOpen ? (
-          // The wall is behind us — a deadline that has already passed is the least
-          // useful thing on the band, and what the player actually put in is one of
-          // the most (D-071). Same swap, same reason, as the limit tray.
-          <Tip text={yourWagerTip} label={yourWagerLabel} align="right">
-            {stat(yourWagerLabel, String(myWager))}
-          </Tip>
-        ) : (
-          <Tip text={deadlineTip} label={deadlineLabel} align="right">
-            {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}
-          </Tip>
-        )}
-      </span>
+      </div>
     </div>
   );
 }

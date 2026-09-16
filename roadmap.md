@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-16 (thirty-fourth pass):** **Phone layout (D-087).** Open dock heights use
+> dvh so the closing strip is always reachable on iOS; the stakes band gets three
+> deliberate phone rows (ring/week/wall · Pot · ante/limit), desktop unchanged. Dock
+> polish landed through the day: pinned for real (.dock, not .panel), flush to the
+> edges, ? inside the strip in ink, overscroll contained, well text lit in light mode.
+
 > **2026-09-16 (thirty-third pass):** **Table Talk is a dock (D-086).** The room leaves
 > the dashboard column for an always-on strip — lit gold with a live dot and "N new"
 > while unread, slides open in place, remembered open/closed. Three positions on

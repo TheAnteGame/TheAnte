@@ -13,6 +13,7 @@ export function Tip({
   label,
   children,
   align = "left",
+  className,
 }: {
   /** The explanation. */
   text: string;
@@ -21,9 +22,11 @@ export function Tip({
   children: ReactNode;
   /** Which edge to hang from — "right" keeps a right-hand tray on screen. */
   align?: "left" | "right";
+  /** Extra classes on the root, for grid placement (D-087). */
+  className?: string;
 }) {
   return (
-    <span className="group relative inline-flex">
+    <span className={`group relative inline-flex ${className ?? ""}`}>
       <button
         type="button"
         aria-label={`${label}. ${text}`}

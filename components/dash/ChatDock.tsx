@@ -131,7 +131,7 @@ export function ChatDock({
           </button>
         )}
         {open && (
-          <div className="dock-slide-x dock inset-y-0 right-0 z-40 flex w-full flex-col overscroll-contain sm:w-[380px]">
+          <div className="dock-slide-x dock bottom-0 right-0 top-6 z-40 flex w-full flex-col overscroll-contain sm:top-0 sm:w-[380px]">
             {strip}
             <div className="min-h-0 flex-1">{children}</div>
           </div>
@@ -144,7 +144,13 @@ export function ChatDock({
   const frame = corner
     ? "inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:right-0 sm:w-[360px]"
     : "inset-x-0 bottom-0 z-40";
-  const openHeight = corner ? "h-[85vh] sm:h-[min(600px,85vh)]" : "h-[85vh] sm:h-[60vh]";
+  // Phone heights use dvh, not vh: on iOS, vh is the viewport with Safari's bars hidden,
+  // so an 85vh box anchored to the bottom ran above the visible screen and put the
+  // strip out of reach — the room could be opened and never closed. dvh is what is
+  // actually visible; 1.5rem is left above so the strip is always a thumb away.
+  const openHeight = corner
+    ? "h-[calc(100dvh-1.5rem)] sm:h-[min(600px,85vh)]"
+    : "h-[calc(100dvh-1.5rem)] sm:h-[60vh]";
 
   return (
     <div className={`${frame} dock flex flex-col overscroll-contain ${open ? `dock-slide-y ${openHeight}` : ""}`}>

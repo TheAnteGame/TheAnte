@@ -2451,3 +2451,17 @@ guide or results, that is a layout move, not a dock change.
 **Deploy order matters:** the root layout now selects `chat_position` on every
 request, so the migration must be on production before this code is — the reverse
 breaks every page. Apply 0024, `npm run schema:check`, then push.
+
+## D-087 — The phone gets a layout, not a wrap (2026-09-16)
+
+Two phone findings from the owner, both fixed. **The open dock trapped you:** its
+height was 85vh, and on iOS `vh` is the viewport with Safari's bars hidden, so a
+box anchored to the bottom ran above the visible screen and the strip that closes
+it was out of reach. Heights are now `dvh` (what is actually visible) less 1.5rem,
+so the strip is always a thumb away; the side drawer starts 1.5rem down for the
+same reason. **The stakes band was a wrap, not a layout:** six trays flowing into
+whatever `flex-wrap` produced at 390px. It now has three deliberate rows on a phone
+— ring, week and tier with the wall at the right; the Pot full width; ante and
+limit side by side, equal height — and from `sm` up the two row wrappers become
+`contents`, so desktop is the single flowing row it always was, same order. No
+colour, type or copy changed. `Tip` gained a `className` for grid placement.
