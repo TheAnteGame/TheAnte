@@ -2401,3 +2401,13 @@ The help popover gains a third line saying all of this (`dash.tabletalk.help_for
 Nothing server-side changed: the 2000-character cap, the mention emails and the
 console's Chat page (which already rendered bodies whitespace-pre-wrap) all take
 line breaks as they are.
+
+## D-085 — The week-open email shows the whole table and your real rank (2026-09-15)
+
+Owner's Week 2 email read Rank "-" and a table that stopped at eight players. One
+cause: the standings were sliced to eight, and the reader's own rank was looked up
+in that sliced list, by display name. Anyone ninth or lower got both symptoms at
+once. New `lib/notify/leaders.ts` (tested): every approved player, ranked the way the
+site's `standings` view ranks — equal stacks share a place, the next is skipped —
+and the reader's rank keyed by id. The email now carries the full league; at forty
+players that is forty rows, which is what "the table" means.

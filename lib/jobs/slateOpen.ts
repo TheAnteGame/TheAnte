@@ -1,4 +1,5 @@
 import "server-only";
+import { emailStandings, type LeaderRow } from "@/lib/notify/leaders";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SLATE_MARGIN_MINUTES, computeSlateOpen, anteForWeek } from "@/lib/engine";
 import type { EngineLedgerEntry, EnginePlayer } from "@/lib/engine";
@@ -273,7 +274,8 @@ async function sendWeekOpenMail(
 
   // Week 1 has nothing to recap.
   const prevWeek = weekNumber > 1 ? weekNumber - 1 : null;
-  let leaders: Array<{ rank: string; name: string; stack: string; delta: string }> = [];
+  let leaders: LeaderRow[] = [];
+  let rankOf = new Map<string, string>();
   const deltaOf = new Map<string, number>();
   const stackOf = new Map<string, number>();
   let potWinner = "";
@@ -300,28 +302,18 @@ async function sendWeekOpenMail(
       }
     }
 
-    // The real standings. The old settlement email shipped a hardcoded em dash here
-    // and never computed a rank at all.
-    leaders = [...stackOf.entries()]
-      .filter(([id]) => nameOf.has(id))
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([id, stack], i) => {
-        const d = deltaOf.get(id) ?? 0;
-        return {
-          rank: String(i + 1),
-          name: nameOf.get(id) ?? "?",
-          stack: String(stack),
-          delta: (d >= 0 ? "+" : "-") + Math.abs(d),
-        };
-      });
+    // The real standings, all of them (D-085). A first version cut the table to
+    // eight and looked the reader's own rank up in that cut list, so everyone ninth
+    // or lower got a table that stopped short of them and a rank of "-".
+    ({ leaders, rankOf } = emailStandings(
+      [...stackOf.entries()]
+        .filter(([id]) => nameOf.has(id))
+        .map(([id, stack]) => ({ id, name: nameOf.get(id) ?? "?", stack, delta: deltaOf.get(id) ?? 0 })),
+    ));
   }
-
-  const rankOf = new Map(leaders.map((l) => [l.name, l.rank]));
 
   for (const p of players) {
     if (!p.email) continue;
-    const nm = nameOf.get(p.id) ?? "";
     const d = deltaOf.get(p.id) ?? 0;
     await emailDoc(
       db,
@@ -337,7 +329,7 @@ async function sendWeekOpenMail(
         prevWeek,
         delta: (d >= 0 ? "+" : "-") + Math.abs(d),
         stack: stackOf.get(p.id) ?? 0,
-        rank: rankOf.get(nm) ?? "-",
+        rank: rankOf.get(p.id) ?? "-",
         potWinner,
         potAmount,
         leaders,

@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-15 (thirty-second pass):** **Week-open email: whole table, real rank (D-085).**
+> The table was sliced to 8 and the reader's rank looked up in the slice by name, so
+> players 9+ read "-". `lib/notify/leaders.ts` ranks everyone with the standings
+> view's tie rule, keyed by id. Four tests.
+
 > **2026-09-14 (thirty-first pass):** **Bullets in Table Talk (D-084).** Typed, not
 > inserted: "- " bullets, "1. " numbers, blank-line paragraphs (`lib/chat/format.ts`,
 > 7 tests). Composer is now a growing textarea — Enter sends / Shift+Enter breaks on
