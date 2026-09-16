@@ -13,6 +13,7 @@ const props = {
   newLabel: "3 new",
   openAria: "Open league chat",
   closeAria: "Close league chat",
+  closeLabel: "Close",
   help: <span>?</span>,
   children: <div>room</div>,
 };

@@ -430,6 +430,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.dock_new": "{n} new",
   "dash.tabletalk.dock_open": "Open league chat",
   "dash.tabletalk.dock_close": "Close league chat",
+  "dash.tabletalk.dock_close_word": "Close",
   "dash.tabletalk.today": "Today",
   "dash.tabletalk.yesterday": "Yesterday",
   "dash.news.heading": "Your team",

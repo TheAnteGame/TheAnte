@@ -34,7 +34,7 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -67,6 +67,7 @@ export async function TableTalk({
     getContent("dash.tabletalk.dock_new"),
     getContent("dash.tabletalk.dock_open"),
     getContent("dash.tabletalk.dock_close"),
+    getContent("dash.tabletalk.dock_close_word"),
   ]);
 
   // Who wears a tag (D-066). Both reads go through the PLAYER client like everything
@@ -173,6 +174,7 @@ export async function TableTalk({
       newLabel={badge ? dockNew.replace("{n}", badge) : ""}
       openAria={dockOpen}
       closeAria={dockClose}
+      closeLabel={dockCloseWord}
       help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} />}
     >
     <section aria-label={heading} className="flex h-full min-h-0 flex-col">
