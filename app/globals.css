@@ -181,6 +181,14 @@
   & body::after {
     display: none;
   }
+  /* A .well stays a dark recess in light mode (its ground is hard-coded), so the
+     type inside it takes the dark theme's text ramp — light on dark, not ink on
+     dark. Gold is untouched; it already reads on the recess. */
+  & .well {
+    --color-text-hi: #f2f2f4;
+    --color-text-mid: #cfcfd8;
+    --color-text-low: #b4b4bd;
+  }
 }
 /* MIRROR of the block above — identical by test, change both. */
 @media (prefers-color-scheme: light) {
@@ -214,6 +222,14 @@
     & body::before,
     & body::after {
       display: none;
+    }
+    /* A .well stays a dark recess in light mode (its ground is hard-coded), so the
+       type inside it takes the dark theme's text ramp — light on dark, not ink on
+       dark. Gold is untouched; it already reads on the recess. */
+    & .well {
+      --color-text-hi: #f2f2f4;
+      --color-text-mid: #cfcfd8;
+      --color-text-low: #b4b4bd;
     }
   }
 }
