@@ -49,6 +49,7 @@ export function ChatDock({
   newLabel,
   openAria,
   closeAria,
+  closeLabel,
   help,
   children,
 }: {
@@ -61,6 +62,8 @@ export function ChatDock({
   newLabel: string;
   openAria: string;
   closeAria: string;
+  /** The word on the right of the open strip — older eyes need a word, not a caret. */
+  closeLabel: string;
   /** The circled ? — lives in the dock's own header now. */
   help: ReactNode;
   children: ReactNode;
@@ -107,10 +110,10 @@ export function ChatDock({
         type="button"
         onClick={() => writeOpen(!open)}
         aria-label={open ? closeAria : openAria}
-        tabIndex={-1}
-        className="ml-auto h-full px-4 text-[color:var(--color-text-low)]"
+        tabIndex={open ? 0 : -1}
+        className={`ml-auto h-full px-4 ${open ? "text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--color-ink)] underline-offset-4 hover:underline" : "text-[color:var(--color-text-low)]"}`}
       >
-        <span aria-hidden>{open ? "▾" : "▴"}</span>
+        {open ? closeLabel : <span aria-hidden>▴</span>}
       </button>
     </div>
   );
