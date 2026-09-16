@@ -116,7 +116,7 @@ export function ChatDock({
           </button>
         )}
         {open && (
-          <div className="dock-slide-x panel fixed inset-y-0 right-0 z-40 flex w-full flex-col sm:w-[380px]">
+          <div className="dock-slide-x dock inset-y-0 right-0 z-40 flex w-full flex-col sm:w-[380px]">
             <div className="flex items-center">
               <div className="min-w-0 flex-1">{strip}</div>
               <span className="px-3">{help}</span>
@@ -130,12 +130,12 @@ export function ChatDock({
 
   const corner = position === "corner";
   const frame = corner
-    ? "fixed inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[360px]"
-    : "fixed inset-x-0 bottom-0 z-40";
+    ? "inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[360px]"
+    : "inset-x-0 bottom-0 z-40";
   const openHeight = corner ? "h-[85vh] sm:h-[min(600px,85vh)]" : "h-[85vh] sm:h-[60vh]";
 
   return (
-    <div className={`${frame} panel flex flex-col ${open ? `dock-slide-y ${openHeight}` : ""}`}>
+    <div className={`${frame} dock flex flex-col ${open ? `dock-slide-y ${openHeight}` : ""}`}>
       <div className={`flex items-center ${corner ? "" : "mx-auto w-full max-w-6xl"}`}>
         <div className="min-w-0 flex-1">{strip}</div>
         {open && <span className="px-3">{help}</span>}

@@ -24,6 +24,9 @@ describe("ChatDock first paint", () => {
     expect(html).toContain("3 new");
     expect(html).toContain("dock-lit");
     expect(html).toContain("sm:w-[360px]");
+    // .dock, never .panel: .panel pins position relative and un-fixes the dock.
+    expect(html).toContain(" dock ");
+    expect(html).not.toContain(" panel ");
     expect(html).not.toContain("room");
   });
 
