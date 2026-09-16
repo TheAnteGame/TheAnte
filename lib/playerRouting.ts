@@ -10,6 +10,7 @@ export interface PlayerState {
     firstName: string | null;
     howToPlayAcceptedAt: string | null;
     themePreference: "auto" | "light" | "dark";
+    chatPosition: "corner" | "bar" | "side";
   } | null;
   rosterLocked: boolean;
 }

@@ -144,7 +144,8 @@ export default async function Dashboard() {
         <Ticker />
       </div>
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
+      {/* Bottom padding keeps the docked chat strip off the last panel. */}
+      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 pt-6 sm:px-6">
         <StakesBand playerId={playerId} />
 
         <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-[62fr_38fr]">
@@ -155,8 +156,8 @@ export default async function Dashboard() {
             </div>
           </div>
           <div className="flex min-w-0 flex-col gap-6">
-            <TableTalk playerId={playerId} />
-            {/* Mobile order (§4): wager, table talk, leaderboard, news, promo, support. */}
+            {/* Table Talk is no longer in this column — it is the dock at the foot of
+                the page (D-086). Mobile order: wager, leaderboard, news, promo, support. */}
             <div className="min-[900px]:hidden">
               <Leaderboard playerId={playerId} />
             </div>
@@ -170,6 +171,8 @@ export default async function Dashboard() {
           </div>
         </div>
       </main>
+
+      <TableTalk playerId={playerId} chatPosition={state.player!.chatPosition} />
     </div>
   );
 }

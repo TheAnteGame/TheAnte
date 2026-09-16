@@ -36,6 +36,12 @@ export const contentDefaults: Record<string, string> = {
   "profile.theme_dark": "Dark",
   "profile.theme_help":
     "Auto follows your phone or computer\u2019s own light-or-dark setting and changes with it. Light stays light and Dark stays dark on every device, whatever the system says. Change it here any time.",
+  "profile.chat_label": "League chat",
+  "profile.chat_help":
+    "Table Talk sits on screen the whole time and slides open when you tap it. Corner keeps it small at the bottom right. Bar runs it along the bottom edge. Side tucks it on the right edge. On a phone, Corner and Bar are the same bottom strip.",
+  "profile.chat_corner": "Corner",
+  "profile.chat_bar": "Bar",
+  "profile.chat_side": "Side",
   "profile.submit_label": "Continue",
   "profile.error_generic": "That didn't take. Try again.",
 
@@ -420,6 +426,10 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.emoji_aria": "Add an emoji",
   "dash.tabletalk.tag_commish": "Commish",
   "dash.tabletalk.tag_leader": "League Leader",
+  "dash.tabletalk.dock_label": "League Chat",
+  "dash.tabletalk.dock_new": "{n} new",
+  "dash.tabletalk.dock_open": "Open league chat",
+  "dash.tabletalk.dock_close": "Close league chat",
   "dash.tabletalk.today": "Today",
   "dash.tabletalk.yesterday": "Yesterday",
   "dash.news.heading": "Your team",

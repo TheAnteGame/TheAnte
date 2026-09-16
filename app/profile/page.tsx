@@ -19,7 +19,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
   const db = createUserClient();
   const { data: me } = await db
     .from("players")
-    .select("first_name, last_name, email, favorite_team, theme_preference")
+    .select("first_name, last_name, email, favorite_team, theme_preference, chat_position")
     .eq("id", state.player.id)
     .maybeSingle();
 
@@ -36,6 +36,11 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
     themeLightLabel,
     themeDarkLabel,
     themeHelp,
+    chatLabel,
+    chatHelp,
+    chatCornerLabel,
+    chatBarLabel,
+    chatSideLabel,
     submitLabel,
     errorGeneric,
     logoAlt,
@@ -50,6 +55,11 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
     getContent("profile.theme_light"),
     getContent("profile.theme_dark"),
     getContent("profile.theme_help"),
+    getContent("profile.chat_label"),
+    getContent("profile.chat_help"),
+    getContent("profile.chat_corner"),
+    getContent("profile.chat_bar"),
+    getContent("profile.chat_side"),
     getContent("profile.submit_label"),
     getContent("profile.error_generic"),
     getContent("home.logo_alt"),
@@ -77,6 +87,11 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
           themeLightLabel,
           themeDarkLabel,
           themeHelp,
+          chatLabel,
+          chatHelp,
+          chatCornerLabel,
+          chatBarLabel,
+          chatSideLabel,
           submitLabel,
           errorGeneric,
         }}
@@ -86,6 +101,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
           email: me?.email,
           favoriteTeam: me?.favorite_team,
           themePreference: me?.theme_preference as "auto" | "light" | "dark" | null | undefined,
+          chatPosition: me?.chat_position as "corner" | "bar" | "side" | null | undefined,
         }}
         showError={error === "1"}
       />

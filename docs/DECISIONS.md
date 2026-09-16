@@ -2411,3 +2411,43 @@ once. New `lib/notify/leaders.ts` (tested): every approved player, ranked the wa
 site's `standings` view ranks — equal stacks share a place, the next is skipped —
 and the reader's rank keyed by id. The email now carries the full league; at forty
 players that is forty rows, which is what "the table" means.
+
+## D-086 — Table Talk is a dock, not a panel (2026-09-16)
+
+Owner's call after a round of options: the room should behave like the chat strip
+at the bottom of Facebook — always on screen, lit when somebody has said something,
+sliding open in place — not like a website's support widget in a corner bubble. It
+also frees the dashboard's right column above the fold for stats.
+
+**The dock.** `components/dash/ChatDock.tsx` wraps the existing Table Talk panel
+(list, composer, mentions, bullets, help — all unchanged) in a strip reading
+"League Chat · 3 new". Closed, the strip glows gold and its live dot pulses while
+anything is unread; open, the panel slides up from the strip and the circled ? moves
+into the strip. The count also rides in the tab title, so a background tab shows it.
+Open/closed is remembered in localStorage, so it survives the five-second refresh and
+the next visit. Reduced motion stops the glow and the slide.
+
+**Three positions, one setting.** `players.chat_position` (migration 0024), chosen on
+/profile and at signup under a new "League chat" fieldset with its own help line:
+
+| | desktop | phone |
+|---|---|---|
+| corner (default) | 360px box, bottom-right | full-width bar at the bottom |
+| bar | full-width strip along the bottom | the same bar |
+| side | tab on the right edge, drawer slides in | the same tab, opens full screen |
+
+The phone strip keeps 16px type: one line, League Chat, the count, a caret.
+
+**Unread is real.** `players.chat_read_at` is stamped by a self-update server action
+when the dock opens, and again on any refresh that brings new messages while it is
+open. Unread = messages by others after that mark (`lib/chat/unread.ts`, pure,
+tested), counted over the page already loaded and capped "50+". Never having opened
+the dock counts everything — a new player should see the room is alive.
+
+**Not done here, on purpose:** the dock is on the dashboard only, where the poll
+lives. Other pages keep their back links. If the room should follow players to the
+guide or results, that is a layout move, not a dock change.
+
+**Deploy order matters:** the root layout now selects `chat_position` on every
+request, so the migration must be on production before this code is — the reverse
+breaks every page. Apply 0024, `npm run schema:check`, then push.

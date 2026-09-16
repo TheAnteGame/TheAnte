@@ -78,3 +78,13 @@ export async function postChatMessage(formData: FormData): Promise<PostResult> {
   revalidatePath("/dashboard");
   return { ok: true };
 }
+
+/** The dock was opened, or was open when new messages arrived (D-086): stamp the
+ *  player's own read mark. Self-update under RLS; no revalidation — the dashboard's
+ *  five-second poll picks it up, and the dock shows zero while open regardless. */
+export async function markChatRead(): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) return;
+  const db = createUserClient();
+  await db.from("players").update({ chat_read_at: new Date().toISOString() }).eq("clerk_user_id", userId);
+}

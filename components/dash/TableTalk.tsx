@@ -8,6 +8,8 @@ import { ChatHelp } from "./ChatHelp";
 import { PlayerTip } from "../ui/PlayerTip";
 import { buildHandles, segmentBody, type Handle } from "@/lib/chat/mentions";
 import { blocksOf, isPlain } from "@/lib/chat/format";
+import { countUnread, unreadBadge, type ChatPosition } from "@/lib/chat/unread";
+import { ChatDock } from "./ChatDock";
 import { leaderFrom } from "@/lib/ticker/leader";
 import { ChatTag, type TagTone } from "./ChatTag";
 import { loadProjection, withProjection } from "@/lib/stats/standings";
@@ -17,17 +19,22 @@ import { loadProjection, withProjection } from "@/lib/stats/standings";
 // A hidden message is simply gone from the room — no tombstone, no notice (D-080,
 // the owner's call over ADMIN §4.3). The row survives in the table for the record.
 
+const PAGE = 50;
+
 export async function TableTalk({
   playerId,
+  chatPosition = "corner",
   dbOverride,
 }: {
   playerId: string;
+  /** Where the dock sits (D-086), from the player's profile. */
+  chatPosition?: ChatPosition;
   /** LOCAL PREVIEW ONLY — dev harness injects its own client. Never set in app code. */
   dbOverride?: ReturnType<typeof createUserClient>;
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -38,8 +45,8 @@ export async function TableTalk({
       .eq("is_system", false)
       .is("hidden_at", null)
       .order("created_at", { ascending: false })
-      .limit(50),
-    db.from("players").select("is_muted, muted_until").eq("id", playerId).maybeSingle(),
+      .limit(PAGE),
+    db.from("players").select("is_muted, muted_until, chat_read_at").eq("id", playerId).maybeSingle(),
     // Has this player ever said anything? One row is enough to know.
     db.from("chat_messages").select("id").eq("player_id", playerId).limit(1),
     getContent("dash.tabletalk.heading"),
@@ -56,6 +63,10 @@ export async function TableTalk({
     getContent("dash.tabletalk.tag_leader"),
     getContent("dash.tabletalk.today"),
     getContent("dash.tabletalk.yesterday"),
+    getContent("dash.tabletalk.dock_label"),
+    getContent("dash.tabletalk.dock_new"),
+    getContent("dash.tabletalk.dock_open"),
+    getContent("dash.tabletalk.dock_close"),
   ]);
 
   // Who wears a tag (D-066). Both reads go through the PLAYER client like everything
@@ -148,15 +159,24 @@ export async function TableTalk({
     me?.muted_until ? DateTime.fromISO(me.muted_until).setZone(ET).toFormat("ccc h:mma 'ET'") : "lifted",
   );
 
+  // The dock's badge (D-086): what was said by others since this player last had
+  // the room open, counted over the page already loaded.
+  const unread = countUnread(list, me?.chat_read_at ?? null, playerId);
+  const badge = unreadBadge(unread, PAGE);
+
   return (
-    <section aria-label={heading} className="panel flex min-h-0 flex-col">
-      <div className="panel-head flex items-center justify-between px-4 py-3">
-        <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
-          {heading}
-        </h2>
-        <ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} />
-      </div>
-      <ul className="chat-list flex max-h-[32rem] min-h-[9rem] flex-col-reverse overflow-y-auto px-4 py-2">
+    <ChatDock
+      position={chatPosition}
+      unread={unread}
+      badge={badge}
+      label={dockLabel}
+      newLabel={badge ? dockNew.replace("{n}", badge) : ""}
+      openAria={dockOpen}
+      closeAria={dockClose}
+      help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} />}
+    >
+    <section aria-label={heading} className="flex h-full min-h-0 flex-col">
+      <ul className="chat-list flex min-h-0 flex-1 flex-col-reverse overflow-y-auto px-4 py-2">
         {list.map((m, i) => {
           const older = list[i + 1];
           const newDay = !older || !dayOf(m.created_at).equals(dayOf(older.created_at));
@@ -241,6 +261,7 @@ export async function TableTalk({
         />
       )}
     </section>
+    </ChatDock>
   );
 }
 

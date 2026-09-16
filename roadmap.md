@@ -8,6 +8,13 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-16 (thirty-third pass):** **Table Talk is a dock (D-086).** The room leaves
+> the dashboard column for an always-on strip — lit gold with a live dot and "N new"
+> while unread, slides open in place, remembered open/closed. Three positions on
+> /profile (corner / bar / side), each shaped for desktop and phone. Real unread via
+> `players.chat_read_at`; migration **0024** adds it and `chat_position`. **Apply 0024
+> to prod BEFORE deploying** — the root layout reads the column on every request.
+
 > **2026-09-15 (thirty-second pass):** **Week-open email: whole table, real rank (D-085).**
 > The table was sliced to 8 and the reader's rank looked up in the slice by name, so
 > players 9+ read "-". `lib/notify/leaders.ts` ranks everyone with the standings

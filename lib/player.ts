@@ -37,7 +37,7 @@ export const getPlayerState = cache(async (): Promise<PlayerState | null> => {
   const [{ data: player }, { data: season }] = await Promise.all([
     db
       .from("players")
-      .select("id, status, profile_complete, first_name, how_to_play_accepted_at, phone, theme_preference")
+      .select("id, status, profile_complete, first_name, how_to_play_accepted_at, phone, theme_preference, chat_position")
       .eq("clerk_user_id", userId)
       .maybeSingle(),
     db.from("seasons").select("week1_lock_at, status").order("year", { ascending: false }).limit(1).maybeSingle(),
@@ -64,6 +64,7 @@ export const getPlayerState = cache(async (): Promise<PlayerState | null> => {
           firstName: player.first_name,
           howToPlayAcceptedAt: player.how_to_play_accepted_at,
           themePreference: (player.theme_preference ?? "auto") as "auto" | "light" | "dark",
+          chatPosition: (player.chat_position ?? "corner") as "corner" | "bar" | "side",
         }
       : null,
     rosterLocked,

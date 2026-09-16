@@ -16,6 +16,11 @@ interface Copy {
   themeLightLabel: string;
   themeDarkLabel: string;
   themeHelp: string;
+  chatLabel: string;
+  chatHelp: string;
+  chatCornerLabel: string;
+  chatBarLabel: string;
+  chatSideLabel: string;
   submitLabel: string;
   errorGeneric: string;
 }
@@ -26,6 +31,7 @@ interface Prefill {
   email?: string | null;
   favoriteTeam?: string | null;
   themePreference?: "auto" | "light" | "dark" | null;
+  chatPosition?: "corner" | "bar" | "side" | null;
 }
 
 const fieldClass =
@@ -91,6 +97,33 @@ export function ProfileForm({ teams, copy, prefill, showError }: { teams: Team[]
                 name="themePreference"
                 value={value}
                 defaultChecked={(prefill?.themePreference ?? "auto") === value}
+                className="peer sr-only"
+              />
+              <span className="chamfer block cursor-pointer border border-[color:var(--color-border)] px-3 py-2 text-center text-sm text-[color:var(--color-text-mid)] peer-checked:border-[color:var(--color-chrome)] peer-checked:bg-[color:var(--color-surface-2)] peer-checked:text-[color:var(--color-text-hi)] peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-[color:var(--color-chrome)]">
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="flex flex-col gap-1 text-left">
+        <legend className="text-xs uppercase tracking-wider text-[color:var(--color-text-mid)]">{copy.chatLabel}</legend>
+        {/* Where the Table Talk dock sits (D-086), explained before anyone has to guess. */}
+        <p className="mb-1 text-xs leading-relaxed text-[color:var(--color-text-low)]">{copy.chatHelp}</p>
+        <div className="flex gap-2">
+          {(
+            [
+              ["corner", copy.chatCornerLabel],
+              ["bar", copy.chatBarLabel],
+              ["side", copy.chatSideLabel],
+            ] as const
+          ).map(([value, label]) => (
+            <label key={value} className="flex-1">
+              <input
+                type="radio"
+                name="chatPosition"
+                value={value}
+                defaultChecked={(prefill?.chatPosition ?? "corner") === value}
                 className="peer sr-only"
               />
               <span className="chamfer block cursor-pointer border border-[color:var(--color-border)] px-3 py-2 text-center text-sm text-[color:var(--color-text-mid)] peer-checked:border-[color:var(--color-chrome)] peer-checked:bg-[color:var(--color-surface-2)] peer-checked:text-[color:var(--color-text-hi)] peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-[color:var(--color-chrome)]">

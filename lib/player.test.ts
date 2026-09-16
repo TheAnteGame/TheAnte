@@ -16,6 +16,7 @@ function state(overrides: Partial<NonNullable<PlayerState["player"]>> | null, ro
           firstName: "Robert",
           howToPlayAcceptedAt: null,
           themePreference: "auto",
+          chatPosition: "corner",
           ...overrides,
         }
       : null,
