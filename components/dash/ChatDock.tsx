@@ -81,23 +81,38 @@ export function ChatDock({
   const lit = !open && unread > 0;
   const shown = open ? null : badge;
 
+  // The strip: label on the left (click to toggle), the circled ? right beside it
+  // while open, the caret on the right. Two toggle buttons rather than one big one,
+  // because the ? is itself a button and a button cannot sit inside a button.
+  const dot = (
+    <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${lit ? "live-dot bg-[color:var(--color-gold)]" : "bg-[color:var(--color-text-low)]"}`} />
+  );
   const strip = (
-    <button
-      type="button"
-      onClick={() => writeOpen(!open)}
-      aria-expanded={open}
-      aria-label={open ? closeAria : openAria}
-      className={`flex w-full items-center gap-3 px-4 text-left ${open ? "h-11" : "h-12"} ${lit ? "dock-lit" : ""} chrome-face`}
-    >
-      <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${lit ? "live-dot bg-[color:var(--color-gold)]" : "bg-[color:var(--color-text-low)]"}`} />
-      <span className="font-[family-name:var(--font-display)] text-[15px] font-bold uppercase tracking-[0.14em] sm:text-sm">{label}</span>
-      {shown && (
-        <span className="chamfer bg-[color:var(--color-gold)] px-2 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{newLabel}</span>
-      )}
-      <span aria-hidden className="ml-auto text-[color:var(--color-text-low)]">
-        {open ? "▾" : "▴"}
-      </span>
-    </button>
+    <div className={`chrome-face flex items-center ${open ? "h-11" : "h-12"} ${lit ? "dock-lit" : ""}`}>
+      <button
+        type="button"
+        onClick={() => writeOpen(!open)}
+        aria-expanded={open}
+        aria-label={open ? closeAria : openAria}
+        className="flex h-full min-w-0 items-center gap-3 pl-4 pr-2 text-left"
+      >
+        {dot}
+        <span className="font-[family-name:var(--font-display)] text-[15px] font-bold uppercase tracking-[0.14em] sm:text-sm">{label}</span>
+        {shown && (
+          <span className="chamfer bg-[color:var(--color-gold)] px-2 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{newLabel}</span>
+        )}
+      </button>
+      {open && <span className="flex items-center">{help}</span>}
+      <button
+        type="button"
+        onClick={() => writeOpen(!open)}
+        aria-label={open ? closeAria : openAria}
+        tabIndex={-1}
+        className="ml-auto h-full px-4 text-[color:var(--color-text-low)]"
+      >
+        <span aria-hidden>{open ? "▾" : "▴"}</span>
+      </button>
+    </div>
   );
 
   if (position === "side") {
@@ -110,17 +125,14 @@ export function ChatDock({
             aria-label={openAria}
             className={`chrome-face fixed right-0 top-1/3 z-40 flex items-center gap-2 px-2 py-4 [writing-mode:vertical-rl] ${lit ? "dock-lit" : ""}`}
           >
-            <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${lit ? "live-dot bg-[color:var(--color-gold)]" : "bg-[color:var(--color-text-low)]"}`} />
+            {dot}
             <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em]">{label}</span>
             {shown && <span className="chamfer bg-[color:var(--color-gold)] px-1.5 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{shown}</span>}
           </button>
         )}
         {open && (
           <div className="dock-slide-x dock inset-y-0 right-0 z-40 flex w-full flex-col sm:w-[380px]">
-            <div className="flex items-center">
-              <div className="min-w-0 flex-1">{strip}</div>
-              <span className="px-3">{help}</span>
-            </div>
+            {strip}
             <div className="min-h-0 flex-1">{children}</div>
           </div>
         )}
@@ -136,10 +148,7 @@ export function ChatDock({
 
   return (
     <div className={`${frame} dock flex flex-col ${open ? `dock-slide-y ${openHeight}` : ""}`}>
-      <div className={`flex items-center ${corner ? "" : "mx-auto w-full max-w-6xl"}`}>
-        <div className="min-w-0 flex-1">{strip}</div>
-        {open && <span className="px-3">{help}</span>}
-      </div>
+      <div className={corner ? "" : "mx-auto w-full max-w-6xl"}>{strip}</div>
       {open && <div className={`min-h-0 flex-1 ${corner ? "" : "mx-auto w-full max-w-6xl"}`}>{children}</div>}
     </div>
   );
