@@ -222,6 +222,7 @@ export const contentDefaults: Record<string, string> = {
   "mail.final_call.subject": "ANTE: Final Call for Week {week}",
   "mail.nudge.subject": "ANTE: The Room Is Waiting on You",
   "mail.mention.subject": "ANTE: {author} Mentioned You at the Table",
+  "mail.broadcast.subject": "ANTE: A Word From the Commissioner",
   "mail.support_new.subject": "ANTE: New Message From {player}",
   "mail.support_reply.subject": "ANTE: The Commissioner Answered",
   "mail.backup_reminder.subject": "ANTE: Your League Backup Is Due",

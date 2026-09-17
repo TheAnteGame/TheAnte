@@ -2465,3 +2465,28 @@ whatever `flex-wrap` produced at 390px. It now has three deliberate rows on a ph
 limit side by side, equal height — and from `sm` up the two row wrappers become
 `contents`, so desktop is the single flowing row it always was, same order. No
 colour, type or copy changed. `Tip` gained a `className` for grid placement.
+
+## D-088 — One-off league emails from the console (2026-09-16)
+
+The scheduled funnel covers the season. The owner needs to speak to the whole
+league off-calendar — an app update, an apology for a bug, a reminder — in the same
+envelope as everything else, without a deploy.
+
+**New Email tab** at `/admin/email`: subject, optional headline (defaults to the
+subject), body (blank lines make paragraphs), optional button label + link, and
+either Send now or Schedule at an Eastern time. **Preview** renders the real HTML
+into the pane — the same `render()` every email uses, so what is seen is what is
+sent. **Send test to me** puts one copy in the commissioner's own inbox first. A
+table below lists everything sent or queued, with Cancel on anything still queued.
+
+**Mechanics.** A `broadcasts` row (migration 0025) is the message. Sending is one
+`emailDoc` per approved player with an email, deduped in `notification_log` under
+`broadcast:<id>` — a job that runs twice, or a "send now" that races the cron,
+cannot mail anybody twice (proved on the local stack: second run "nothing due", one
+log row per player). "Send now" sends inline so nobody waits; the row still exists
+so the send is on the record. A new pg_cron entry, every five minutes, calls
+`/api/jobs/broadcast` for anything queued whose time has come; it appears in the
+console's job list and mail catalogue. Every create, send and cancel is audited.
+
+**Deploy order:** apply 0025 before pushing — the Email page reads the table on
+load. The cron URL is production's, as every cron in this project is.

@@ -14,6 +14,10 @@ import { emailDoc } from "@/lib/notify/templates";
 import { approved as approvedEmail } from "@/lib/notify/docs";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { RemovalError, computeRemoval } from "@/lib/engine/removal";
+import { DateTime } from "luxon";
+import { ET } from "@/lib/time";
+import { render } from "@/lib/notify/render";
+import { broadcastDoc, sendBroadcast, type BroadcastRow } from "@/lib/jobs/broadcast";
 import { DEADWEIGHT_WEEKS } from "@/lib/engine/constants";
 import { titleCase } from "@/lib/name";
 
@@ -1006,5 +1010,105 @@ export async function handoffCommissioner(fd: FormData): Promise<ActionResult> {
     publicLine: `${fullName} is the Commissioner now. The outgoing one is just a player again — same rules, same blackout, same odds of finishing behind their father-in-law.`,
   });
   revalidatePath("/admin");
+  return { ok: true };
+}
+
+// ── One-off league emails (D-088) ───────────────────────────────────────────────
+
+function broadcastFromForm(fd: FormData): BroadcastRow | string {
+  const subject = str(fd, "subject");
+  const body = str(fd, "body");
+  if (!subject) return "Subject is required";
+  if (!body) return "Body is required";
+  const ctaLabel = str(fd, "ctaLabel");
+  const ctaHref = str(fd, "ctaHref");
+  if ((ctaLabel && !ctaHref) || (!ctaLabel && ctaHref)) return "A button needs both a label and a link";
+  if (ctaHref && !/^https?:\/\//.test(ctaHref)) return "The button link must start with http:// or https://";
+  return {
+    id: "",
+    subject,
+    headline: str(fd, "headline") || subject.replace(/^ANTE:\s*/i, ""),
+    eyebrow: "ANTE",
+    body,
+    cta_label: ctaLabel || null,
+    cta_href: ctaHref || null,
+  };
+}
+
+/** The real rendering, for the preview pane — what is seen is what is sent. */
+export async function previewBroadcast(fd: FormData): Promise<ActionResult & { html?: string }> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const b = broadcastFromForm(fd);
+  if (typeof b === "string") return fail(b);
+  return { ok: true, html: render(broadcastDoc(b)).html };
+}
+
+/** One copy to the commissioner's own address. Never logged against a broadcast. */
+export async function sendTestBroadcast(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const b = broadcastFromForm(fd);
+  if (typeof b === "string") return fail(b);
+  const { data: me } = await ctx.db.from("players").select("id, email").eq("id", ctx.playerId).maybeSingle();
+  if (!me?.email) return fail("You have no email on file");
+  await emailDoc(ctx.db, { id: me.id, email: me.email }, "broadcast-test", `[TEST] ${b.subject}`, broadcastDoc(b));
+  return { ok: true };
+}
+
+/** Queue it — for now, or for a chosen ET time. "Now" sends inline so nobody waits
+ *  for the five-minute cron; the row still exists so the send is on the record. */
+export async function createBroadcast(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const b = broadcastFromForm(fd);
+  if (typeof b === "string") return fail(b);
+  const now = str(fd, "when") !== "later";
+  let sendAt: DateTime = DateTime.now();
+  if (!now) {
+    const raw = str(fd, "sendAt");
+    const parsed = DateTime.fromISO(raw, { zone: ET });
+    if (!raw || !parsed.isValid) return fail("Pick a send time");
+    if (parsed < DateTime.now()) return fail("That time has already passed");
+    sendAt = parsed;
+  }
+  const { data: row, error } = await ctx.db
+    .from("broadcasts")
+    .insert({
+      subject: b.subject,
+      headline: b.headline,
+      eyebrow: b.eyebrow,
+      body: b.body,
+      cta_label: b.cta_label,
+      cta_href: b.cta_href,
+      send_at: sendAt.toISO(),
+      created_by: ctx.playerId,
+    })
+    .select("id")
+    .single();
+  if (error || !row) return fail(error?.message ?? "Could not queue");
+  await writeAudit(ctx, "broadcast.create", "broadcast", row.id, now ? "Sent now" : `Scheduled ${sendAt.setZone(ET).toFormat("ccc LLL d h:mma 'ET'")}`);
+  if (now) {
+    try {
+      const n = await sendBroadcast(ctx.db, { ...b, id: row.id });
+      await writeAudit(ctx, "broadcast.sent", "broadcast", row.id, `${n} recipients`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await ctx.db.from("broadcasts").update({ status: "failed", error: msg }).eq("id", row.id);
+      return fail(msg);
+    }
+  }
+  revalidatePath("/admin/email");
+  return { ok: true };
+}
+
+export async function cancelBroadcast(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const id = str(fd, "broadcastId");
+  const { error } = await ctx.db.from("broadcasts").update({ status: "cancelled" }).eq("id", id).eq("status", "queued");
+  if (error) return fail(error.message);
+  await writeAudit(ctx, "broadcast.cancel", "broadcast", id, "Cancelled before send");
+  revalidatePath("/admin/email");
   return { ok: true };
 }

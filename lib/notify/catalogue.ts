@@ -50,6 +50,7 @@ export const MAIL_KINDS: MailKind[] = [
   { keyPrefix: "notify.mention", label: "Mentioned in Table Talk", trigger: "Another player @mentions them", bodySource: "template", subjectKey: "mail.mention.subject", bodyKey: "notify.mention" },
   { keyPrefix: "notify.support_new", label: "Support — new message", trigger: "A player writes to the commissioner", bodySource: "template", subjectKey: "mail.support_new.subject", bodyKey: "notify.support_new" },
   { keyPrefix: "notify.support_reply", label: "Support — reply", trigger: "Commissioner answers a support message", bodySource: "template", subjectKey: "mail.support_reply.subject", bodyKey: "notify.support_reply" },
+  { keyPrefix: "broadcast", label: "League email (one-off, from the Email page)", trigger: "Commissioner sends or schedules one on /admin/email", bodySource: "literal", subjectKey: "mail.broadcast.subject" },
   { keyPrefix: "backup-reminder", label: "Backup due (commissioner only)", trigger: "backup.reminder job, daily, until the file is confirmed", bodySource: "template", subjectKey: "mail.backup_reminder.subject", bodyKey: "notify.backup_reminder" },
 ];
 
@@ -77,6 +78,7 @@ export const SCHEDULED_JOBS: ScheduledJob[] = [
   { jobKey: "notify.reminders", cronName: "ante-reminders", expr: "0 13,14,22,23 * * 3,4", whenET: "Wed 6:00pm and Thu 9:00am", what: "Reminder and final call — unsubmitted players only", sends: true },
   { jobKey: "reveal.deadline", cronName: "ante-reveal-deadline", expr: "0,5 16,17 * * 4", whenET: "Thursday 12:00pm and 12:05pm", what: "Auto-folds, reveals, mails the open board", sends: true },
   { jobKey: "reveal.check", cronName: "ante-reveal-check", expr: "*/2 * * * 2-4", whenET: "Every 2 min, Tue–Thu", what: "Reveals early once the last ticket is in", sends: true },
+  { jobKey: "broadcast.send", cronName: "ante-broadcast", expr: "*/5 * * * *", whenET: "Every 5 min", what: "Sends any league email whose scheduled time has come", sends: true },
   { jobKey: "backup.reminder", cronName: "ante-backup-reminder", expr: "0 13 * * *", whenET: "Daily 9:00am", what: "Nags the commissioner for a backup — nobody else", sends: true },
   { jobKey: "scores.sync", cronName: "ante-scores-sync", expr: "*/5 * * * *", whenET: "Every 5 min", what: "Pulls scores; settles when the week is final", sends: false },
   { jobKey: "feeds.sync", cronName: "ante-feeds-sync", expr: "*/15 * * * *", whenET: "Every 15 min", what: "Pulls news for the ticker", sends: false },

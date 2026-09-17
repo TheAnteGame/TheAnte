@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-16 (thirty-fifth pass):** **One-off league emails (D-088).** New Email tab
+> in the console: compose subject/headline/body/button, real-HTML preview, test to
+> self, send now or schedule (ET), cancel while queued. `broadcasts` table + a
+> five-minute `ante-broadcast` cron — migration **0025, apply to prod BEFORE
+> deploying.** Dedupe per player under `broadcast:<id>`; proved on the local stack.
+
 > **2026-09-16 (thirty-fourth pass):** **Phone layout (D-087).** Open dock heights use
 > dvh so the closing strip is always reachable on iOS; the stakes band gets three
 > deliberate phone rows (ring/week/wall · Pot · ante/limit), desktop unchanged. Dock

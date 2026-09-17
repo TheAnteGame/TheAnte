@@ -18,6 +18,7 @@ const NAV = [
   ["/admin/feeds", "Feeds"],
   ["/admin/promo", "Promo"],
   ["/admin/notifications", "Notifications"],
+  ["/admin/email", "Email"],
   ["/admin/settings", "Settings"],
   ["/admin/audit", "Audit"],
   ["/admin/backup", "Backups"],
