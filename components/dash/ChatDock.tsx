@@ -90,7 +90,29 @@ export function ChatDock({
   const dot = (
     <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${lit ? "live-dot bg-[color:var(--color-gold)]" : "bg-[color:var(--color-text-low)]"}`} />
   );
-  const strip = (
+  const stripLabel = (
+    <>
+      {dot}
+      <span className="font-[family-name:var(--font-display)] text-[15px] font-bold uppercase tracking-[0.14em] sm:text-sm">{label}</span>
+      {shown && (
+        <span className="chamfer bg-[color:var(--color-gold)] px-2 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{newLabel}</span>
+      )}
+    </>
+  );
+  // Closed, the whole bar is one button — nothing else lives in it, and a player
+  // should be able to tap anywhere on it. Open, it is a row: label, the ?, Close.
+  const strip = !open ? (
+    <button
+      type="button"
+      onClick={() => writeOpen(true)}
+      aria-expanded={false}
+      aria-label={openAria}
+      className={`chrome-face flex h-12 w-full items-center gap-3 px-4 text-left ${lit ? "dock-lit" : ""}`}
+    >
+      {stripLabel}
+      <span aria-hidden className="ml-auto text-[color:var(--color-text-low)]">▴</span>
+    </button>
+  ) : (
     <div className={`chrome-face flex items-center ${open ? "h-11" : "h-12"} ${lit ? "dock-lit" : ""}`}>
       <button
         type="button"
@@ -99,11 +121,7 @@ export function ChatDock({
         aria-label={open ? closeAria : openAria}
         className="flex h-full min-w-0 items-center gap-3 pl-4 pr-2 text-left"
       >
-        {dot}
-        <span className="font-[family-name:var(--font-display)] text-[15px] font-bold uppercase tracking-[0.14em] sm:text-sm">{label}</span>
-        {shown && (
-          <span className="chamfer bg-[color:var(--color-gold)] px-2 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{newLabel}</span>
-        )}
+        {stripLabel}
       </button>
       {open && <span className="dock-help flex items-center">{help}</span>}
       <button
