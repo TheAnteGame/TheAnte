@@ -3,7 +3,7 @@ import { createUserClient } from "@/lib/db/supabase";
 import { potBalance as truePotBalance, wageredInWeek } from "@/lib/stats/pot";
 import { getContent } from "@/lib/content/getContent";
 import { ANTE_TIERS, tierForWeek } from "@/lib/engine";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { PokerChip } from "@/components/chip/PokerChip";
 import { Facets } from "@/components/ui/Facets";
 import { Tip } from "@/components/ui/Tip";
@@ -90,7 +90,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       .limit(1)
       .maybeSingle();
     const lock = season?.week1_lock_at
-      ? DateTime.fromISO(season.week1_lock_at).setZone(ET).toFormat("cccc, LLL d 'at' h:mma 'ET'")
+      ? DateTime.fromISO(season.week1_lock_at).setZone(LEAGUE_TZ).toFormat("cccc, LLL d 'at' h:mma 'MT'")
       : "—";
     const message = await getContent("band.preseason_message", { lock });
     return (
@@ -153,7 +153,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
 
   const tier = tierForWeek(week.number);
   const v = TIER_VARS[tier];
-  const deadline = DateTime.fromISO(week.deadline_at).setZone(ET);
+  const deadline = DateTime.fromISO(week.deadline_at).setZone(LEAGUE_TZ);
 
   // §4 — which side of the limit binds. Same test the slip uses, said plainly.
   const median = week.median_snapshot ?? 0;
@@ -162,7 +162,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
 
   // "in 6 days" / "tomorrow" / "in 3 hours" — rendered on the server, so it is
   // accurate to the request rather than to a stale build.
-  const countdown = deadline.toRelative({ base: DateTime.now().setZone(ET) }) ?? "";
+  const countdown = deadline.toRelative({ base: DateTime.now().setZone(LEAGUE_TZ) }) ?? "";
   const tierRange = ANTE_TIERS.find((t) => t.tier === tier)?.weeks ?? [1, 4];
 
   const tierLabel = await getContent(v.labelKey);
@@ -188,7 +188,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       ? getContent("band.limit_capped_stack", { stack: ownAfterAnte })
       : getContent("band.limit_capped_room", { median }),
     getContent(week.number === 1 ? "band.deadline_tip_first" : "band.deadline_tip", {
-      deadline: deadline.toFormat("cccc, LLLL d 'at' h:mma 'ET'"),
+      deadline: deadline.toFormat("cccc, LLLL d 'at' h:mma 'MT'"),
       countdown,
     }),
     getContent("band.ring_tip", {
@@ -272,7 +272,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
           </Tip>
         ) : (
           <Tip text={deadlineTip} label={deadlineLabel} align="right">
-            {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'ET'"))}
+            {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'MT'"))}
           </Tip>
         )}
       </span>

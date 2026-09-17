@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { BetSlip, type SlipCopy } from "./BetSlip";
 import { PollRefresh } from "./PollRefresh";
 import { PotMath } from "./PotMath";
@@ -200,7 +200,7 @@ export async function WagerArea({
         spread: g.spread_frozen,
         awayMoneyline: g.away_moneyline,
         homeMoneyline: g.home_moneyline,
-        kickoff: DateTime.fromISO(g.kickoff_at).setZone(ET).toFormat("ccc h:mma"),
+        kickoff: DateTime.fromISO(g.kickoff_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma"),
         kickedOff: new Date(g.kickoff_at) <= new Date(),
       }))}
       snapshot={{ stackPreAnte: snap.stack_pre_ante, felt: snap.felt, houseLimit: snap.house_limit }}

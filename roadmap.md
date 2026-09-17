@@ -8,6 +8,13 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-17 (thirty-sixth pass):** **Mountain time (D-089).** The noon-Eastern wall
+> folded three players at 10am their time. Every clock is now `America/Denver`
+> (`LEAGUE_TZ`); kickoffs still parse in Eastern (`NFL_TZ`, the feed's zone). Migration
+> **0026** moves the slate-open, reminders and deadline crons — **apply before Tue Sep 22
+> 6am MT, and deploy the code with it.** Rulebook v1.3, copy, overrides, tests all MT.
+> Week 2 stands revealed; a public ante refund for the three is the commissioner's option.
+
 > **2026-09-16 (thirty-fifth pass):** **One-off league emails (D-088).** New Email tab
 > in the console: compose subject/headline/body/button, real-HTML preview, test to
 > self, send now or schedule (ET), cancel while queued. `broadcasts` table + a

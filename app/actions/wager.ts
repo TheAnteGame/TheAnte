@@ -9,7 +9,7 @@ import { revealCheck } from "@/lib/jobs/reveal";
 import { emailDoc } from "@/lib/notify/templates";
 import { ticket as ticketEmail } from "@/lib/notify/docs";
 import { DateTime } from "luxon";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { getContent } from "@/lib/content/getContent";
 
 // Submission runs as the player through the submit_ticket RPC — every slip rule is
@@ -127,7 +127,7 @@ async function sendTicketReceipt(clerkUserId: string, weekId: string): Promise<v
       isShove: t.is_shove,
       bets: rows,
       total: t.total_chips ?? rows.reduce((s, r) => s + r.chips, 0),
-      deadline: DateTime.fromISO(week.deadline_at).setZone(ET).toFormat("cccc h:mma 'ET'"),
+      deadline: DateTime.fromISO(week.deadline_at).setZone(LEAGUE_TZ).toFormat("cccc h:mma 'MT'"),
     }),
     `player.ticket:w${week.number}:${me.id}`,
   );

@@ -15,7 +15,7 @@ import { approved as approvedEmail } from "@/lib/notify/docs";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { RemovalError, computeRemoval } from "@/lib/engine/removal";
 import { DateTime } from "luxon";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { render } from "@/lib/notify/render";
 import { broadcastDoc, sendBroadcast, type BroadcastRow } from "@/lib/jobs/broadcast";
 import { DEADWEIGHT_WEEKS } from "@/lib/engine/constants";
@@ -158,7 +158,7 @@ export async function mutePlayer(fd: FormData): Promise<ActionResult> {
     .maybeSingle();
   await writeAudit(ctx, "player.mute", "player", playerId, reason, {
     isPublic: true,
-    publicLine: `${p?.first_name ?? "A player"} ${(p?.last_name ?? "").slice(0, 1)}. is muted${until ? ` until ${new Date(until).toLocaleString("en-US", { timeZone: "America/New_York" })} ET` : ""}. They can still bet — muting never touches the game.`,
+    publicLine: `${p?.first_name ?? "A player"} ${(p?.last_name ?? "").slice(0, 1)}. is muted${until ? ` until ${new Date(until).toLocaleString("en-US", { timeZone: LEAGUE_TZ })} MT` : ""}. They can still bet — muting never touches the game.`,
   });
   revalidatePath("/admin/players");
   return { ok: true };
@@ -1056,7 +1056,7 @@ export async function sendTestBroadcast(fd: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** Queue it — for now, or for a chosen ET time. "Now" sends inline so nobody waits
+/** Queue it — for now, or for a chosen Mountain time. "Now" sends inline so nobody waits
  *  for the five-minute cron; the row still exists so the send is on the record. */
 export async function createBroadcast(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
@@ -1067,7 +1067,7 @@ export async function createBroadcast(fd: FormData): Promise<ActionResult> {
   let sendAt: DateTime = DateTime.now();
   if (!now) {
     const raw = str(fd, "sendAt");
-    const parsed = DateTime.fromISO(raw, { zone: ET });
+    const parsed = DateTime.fromISO(raw, { zone: LEAGUE_TZ });
     if (!raw || !parsed.isValid) return fail("Pick a send time");
     if (parsed < DateTime.now()) return fail("That time has already passed");
     sendAt = parsed;
@@ -1087,7 +1087,7 @@ export async function createBroadcast(fd: FormData): Promise<ActionResult> {
     .select("id")
     .single();
   if (error || !row) return fail(error?.message ?? "Could not queue");
-  await writeAudit(ctx, "broadcast.create", "broadcast", row.id, now ? "Sent now" : `Scheduled ${sendAt.setZone(ET).toFormat("ccc LLL d h:mma 'ET'")}`);
+  await writeAudit(ctx, "broadcast.create", "broadcast", row.id, now ? "Sent now" : `Scheduled ${sendAt.setZone(LEAGUE_TZ).toFormat("ccc LLL d h:mma 'MT'")}`);
   if (now) {
     try {
       const n = await sendBroadcast(ctx.db, { ...b, id: row.id });

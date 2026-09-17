@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Section, Stat, inputCls, thCls, tdCls } from "@/components/admin/ui";
 import { confirmBackupDownload, takeSnapshotNow } from "../actions";
@@ -51,7 +51,7 @@ export default async function Backup() {
         <div className="flex flex-wrap items-end gap-8">
           <Stat
             label="Last saved to your disk"
-            value={lastConfirmed ? (lastConfirmed.setZone(ET).toRelative() ?? "—") : "never"}
+            value={lastConfirmed ? (lastConfirmed.setZone(LEAGUE_TZ).toRelative() ?? "—") : "never"}
             accent={overdue ? "loss" : undefined}
           />
           <Stat label="Snapshots held" value={rows.length} />
@@ -110,7 +110,7 @@ export default async function Backup() {
               {rows.map((r) => (
                 <tr key={r.id} className="border-t border-[color:var(--color-border)]">
                   <td className={`${tdCls} nums text-[color:var(--color-text-hi)]`}>
-                    {DateTime.fromISO(r.created_at).setZone(ET).toFormat("LLL d, h:mma 'ET'")}
+                    {DateTime.fromISO(r.created_at).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma 'MT'")}
                   </td>
                   <td className={`${tdCls} text-[color:var(--color-text-mid)]`}>{r.reason}</td>
                   <td className={`${tdCls} nums text-[color:var(--color-text-mid)]`}>{r.chip_total ?? "—"}</td>

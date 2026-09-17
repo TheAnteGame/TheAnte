@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
 import { createUserClient } from "@/lib/db/supabase";
 import { tierForWeek } from "@/lib/engine";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { nudgePlayer } from "./actions";
 import { Section, Stat } from "@/components/admin/ui";
@@ -78,7 +78,7 @@ export default async function Ops() {
             <Stat label="Week" value={week.number} />
             <Stat label="Phase" value={week.phase} />
             <Stat label="Ante" value={`${week.ante} (${tierForWeek(week.number)})`} />
-            <Stat label="Deadline" value={DateTime.fromISO(week.deadline_at).setZone(ET).toFormat("ccc h:mma 'ET'")} />
+            <Stat label="Deadline" value={DateTime.fromISO(week.deadline_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MT'")} />
             <Stat label="Median" value={week.median_snapshot ?? "—"} />
             <Stat label="Places tier" value={`${week.places_tier_snapshot ?? "—"} (of ${week.active_count_snapshot ?? "—"})`} />
           </div>

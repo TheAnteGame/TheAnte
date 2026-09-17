@@ -2490,3 +2490,41 @@ console's job list and mail catalogue. Every create, send and cancel is audited.
 
 **Deploy order:** apply 0025 before pushing — the Email page reads the table on
 load. The cron URL is production's, as every cron in this project is.
+
+## D-089 — The league keeps Mountain time (2026-09-17)
+
+The Week 2 wall fired at noon Eastern — 10:00am where the league actually lives —
+and three players were folded before they thought the morning was over. Owner's
+call, effective immediately: **every clock in the game is Mountain time.** The
+hours are unchanged (slate Tuesday 6:00am, wall Thursday noon, reminders Wednesday
+6pm and Thursday 9am); the zone moved.
+
+**What moved.** `lib/time.ts` now anchors weeks in `America/Denver` (`LEAGUE_TZ`),
+and every on-screen clock, email timestamp, job guard and admin page formats in
+it — the old `ET` identifier is gone so nothing can quietly keep using it. The one
+deliberate exception: the NFL feed reports kickoffs in Eastern, so
+`kickoffFromNflverse` parses in `NFL_TZ` = America/New_York; a kickoff is an
+instant, and the zone it was written in is the feed's business. Migration 0026
+moves the three local-hour crons to the UTC hours that are 6am / 6pm / 9am / noon
+Mountain in both halves of the DST year; the reveal-check sweep already covers the
+new hour. Player copy, the two production content overrides, the mail catalogue,
+the rulebook (v1.3) and the tests all say MT.
+
+**A consequence worth knowing:** noon Mountain is 2pm Eastern, so Thanksgiving's
+early game (12:30 Eastern, Week 12) now kicks off before the wall and drops off
+that slate under the existing rule — a 14-game Week 12. The Thursday nighter is
+six and a quarter hours after the wall instead of eight and a half. Recorded in the
+rulebook.
+
+**Week 2 itself cannot be reopened.** The reveal fired at the old wall and every
+ticket in the league has been public since; three players were auto-folded at that
+instant. A locked ticket is immutable by trigger and by §13, and re-opening a
+revealed week would let the folded bet with everyone's picks in front of them.
+What the commissioner CAN do is a public ledger correction refunding those three
+players their Week 2 ante, with the reason stated — the spec's remedy for a wrong
+the rules can't undo. That is the owner's call, not this change's.
+
+**Deploy order:** the code and migration 0026 must BOTH be in before Tuesday
+Sep 22, 6:00am MT. Code without the cron: the old crons fire at the old UTC hours
+and the guards skip, so the slate would not open and Thursday's wall would not
+fire. Cron without the code: the reverse. Apply 0026, then push.

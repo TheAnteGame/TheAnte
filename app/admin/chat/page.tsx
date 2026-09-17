@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Section, inputCls, thCls, tdCls } from "@/components/admin/ui";
 import { hideChatMessage } from "../actions";
@@ -81,7 +81,7 @@ export default async function ChatAdmin() {
                       }`}
                     >
                       <td className={`${tdCls} whitespace-nowrap text-xs text-[color:var(--color-text-low)]`}>
-                        {DateTime.fromISO(m.created_at).setZone(ET).toFormat("LLL d, h:mma")}
+                        {DateTime.fromISO(m.created_at).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma")}
                       </td>
                       <td className={`${tdCls} whitespace-nowrap text-[color:var(--color-text-hi)]`}>
                         {nameOf(m.player_id)}
@@ -93,7 +93,7 @@ export default async function ChatAdmin() {
                         <span className={isHidden ? "line-through" : ""}>{m.body}</span>
                         {isHidden && (
                           <span className="mt-1 block text-xs italic text-[color:var(--color-text-low)]">
-                            Hidden {DateTime.fromISO(m.hidden_at!).setZone(ET).toFormat("LLL d, h:mma")} by{" "}
+                            Hidden {DateTime.fromISO(m.hidden_at!).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma")} by{" "}
                             {nameOf(m.hidden_by)}
                             {m.hidden_reason ? ` — ${m.hidden_reason}` : ""}
                           </span>

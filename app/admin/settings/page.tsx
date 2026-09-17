@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
 import { ANTE_TIERS, LIMIT_DIVISOR, MAX_BET, MIN_BET, MIN_GAMES, MIN_PLAYERS, PAYOUT_CAP, PAYOUT_FLOOR, POT_PLACES, ROUNDING_STEP } from "@/lib/engine";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { activateSeason, handoffCommissioner } from "../actions";
 import { Section, Stat, inputCls } from "@/components/admin/ui";
@@ -40,7 +40,7 @@ export default async function Settings() {
           <Stat label="Approved players" value={`${approvedCount ?? 0} / ${MIN_PLAYERS} to start`} />
           <Stat
             label="Week 1 lock"
-            value={season?.week1_lock_at ? DateTime.fromISO(season.week1_lock_at).setZone(ET).toFormat("ccc LLL d, h:mma 'ET'") : "—"}
+            value={season?.week1_lock_at ? DateTime.fromISO(season.week1_lock_at).setZone(LEAGUE_TZ).toFormat("ccc LLL d, h:mma 'MT'") : "—"}
           />
           {season?.status === "preseason" && (
             <AdminForm

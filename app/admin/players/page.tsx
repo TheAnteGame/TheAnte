@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
 import { DEADWEIGHT_WEEKS } from "@/lib/engine/constants";
 import { fetchAllRows } from "@/lib/db/fetchAll";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import {
   approvePlayer,
@@ -84,7 +84,7 @@ export default async function Players() {
               <li key={p.id} className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-[color:var(--color-text-hi)]">
                   {p.first_name ?? "—"} {p.last_name ?? ""} · {p.email ?? "no email"} · {p.favorite_team ?? "—"} ·
-                  applied {DateTime.fromISO(p.applied_at).setZone(ET).toRelative()}
+                  applied {DateTime.fromISO(p.applied_at).setZone(LEAGUE_TZ).toRelative()}
                 </span>
                 {admissionOpen && (
                   <>
@@ -134,7 +134,7 @@ export default async function Players() {
                   <td className={tdCls}>{p.shove_used_week === null ? "held" : `Wk ${p.shove_used_week}`}</td>
                   <td className={tdCls}>{p.status}</td>
                   <td className={`${tdCls} text-xs text-[color:var(--color-text-low)]`}>
-                    {lastSubmit(p.id) ? DateTime.fromISO(lastSubmit(p.id)!).setZone(ET).toFormat("ccc h:mma") : "never"}
+                    {lastSubmit(p.id) ? DateTime.fromISO(lastSubmit(p.id)!).setZone(LEAGUE_TZ).toFormat("ccc h:mma") : "never"}
                   </td>
                 </tr>
               ))}
@@ -244,7 +244,7 @@ export default async function Players() {
                     {p.first_name} {p.last_name}
                   </span>{" "}
                   · {p.email ?? "no email"} · removed{" "}
-                  {p.removed_at ? DateTime.fromISO(p.removed_at).setZone(ET).toFormat("LLL d") : "—"} ·{" "}
+                  {p.removed_at ? DateTime.fromISO(p.removed_at).setZone(LEAGUE_TZ).toFormat("LLL d") : "—"} ·{" "}
                   {p.removal_reason ?? "no reason recorded"}
                   <span className="ml-2 nums text-[color:var(--color-text-low)]">stack {stackOf(p.id)}</span>
                 </li>

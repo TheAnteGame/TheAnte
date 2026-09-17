@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DateTime } from "luxon";
 import { emailPlayer, mailSubject } from "@/lib/notify/templates";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import type { JobOutcome } from "./util";
 
 // backup.reminder (D-017). The org is on Supabase's free plan — no automated
@@ -36,8 +36,8 @@ export async function backupReminder(db: SupabaseClient): Promise<JobOutcome> {
   const { data: commish } = await db.from("players").select("id, email").eq("id", seat.player_id).maybeSingle();
   if (!commish?.email) return { status: "skipped", detail: { reason: "commissioner has no email" } };
 
-  // One send per calendar day in ET, however many times the cron fires.
-  const today = DateTime.now().setZone(ET).toFormat("yyyy-LL-dd");
+  // One send per calendar day in league time, however many times the cron fires.
+  const today = DateTime.now().setZone(LEAGUE_TZ).toFormat("yyyy-LL-dd");
   await emailPlayer(
     db,
     commish,

@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { correctGame, forceReveal, openWeekEarly, resettle, runSettlement } from "../actions";
 import { Section, inputCls, thCls, tdCls } from "@/components/admin/ui";
@@ -32,7 +32,7 @@ export default async function WeekControl() {
         {season?.status === "active" ? (
           <Section title="Open the week early (D-035)">
             <p className="mb-3 text-sm text-[color:var(--color-text-mid)]">
-              Opens the next week&apos;s board now instead of Tuesday 6:00am ET. The Thursday-noon deadline does not move,
+              Opens the next week&apos;s board now instead of Tuesday 6:00am MT. The Thursday-noon deadline does not move,
               and while admission is open only the deadline reveals — early tickets stay sealed however few players are in.
             </p>
             <AdminForm
@@ -65,7 +65,7 @@ export default async function WeekControl() {
           <table className="w-full min-w-[760px]">
             <thead>
               <tr className="border-b border-[color:var(--color-border)]">
-                <th className={thCls}>Kickoff (ET)</th>
+                <th className={thCls}>Kickoff (MT)</th>
                 <th className={thCls}>Game</th>
                 <th className={thCls}>Spread</th>
                 <th className={thCls}>Status</th>
@@ -76,7 +76,7 @@ export default async function WeekControl() {
             <tbody>
               {(games ?? []).map((g) => (
                 <tr key={g.id} className={`border-b border-[color:var(--color-border)] last:border-b-0 ${!g.on_slate ? "opacity-40 line-through" : ""}`}>
-                  <td className={`${tdCls} nums`}>{DateTime.fromISO(g.kickoff_at).setZone(ET).toFormat("ccc h:mma")}</td>
+                  <td className={`${tdCls} nums`}>{DateTime.fromISO(g.kickoff_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma")}</td>
                   <td className={tdCls}>
                     {g.away_team} @ {g.home_team}
                     {!g.on_slate && <span className="ml-2 text-[12px] uppercase no-underline">off-slate</span>}
@@ -140,7 +140,7 @@ export default async function WeekControl() {
       {week.phase === "settled" && (
         <Section title="Settled">
           <p className="mb-4 text-sm text-[color:var(--color-text-mid)]">
-            Settled {week.settled_at ? DateTime.fromISO(week.settled_at).setZone(ET).toFormat("ccc h:mma 'ET'") : ""} — swept {week.pot_swept ?? 0},
+            Settled {week.settled_at ? DateTime.fromISO(week.settled_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MT'") : ""} — swept {week.pot_swept ?? 0},
             awarded {week.pot_awarded ?? 0}{week.marker > 0 ? `, marker ${week.marker}` : ""}.
           </p>
           <p className="mb-2 text-sm text-[color:var(--color-text-mid)]">

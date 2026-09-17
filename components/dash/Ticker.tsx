@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { TickerMarquee, type TickerItem } from "./TickerMarquee";
 import { DEFAULT_ACCENT, DEFAULT_SPEED, DEFAULT_TEXT, clampSpeed, colorCss } from "@/lib/ticker/style";
 import { leaderFrom } from "@/lib/ticker/leader";
@@ -51,8 +51,8 @@ export async function Ticker() {
     const potBalance = await truePotBalance(db);
 
     if (week.phase === "open" && sysOn("deadline")) {
-      const deadline = DateTime.fromISO(week.deadline_at).setZone(ET);
-      const diff = deadline.diff(DateTime.now().setZone(ET), ["days", "hours"]);
+      const deadline = DateTime.fromISO(week.deadline_at).setZone(LEAGUE_TZ);
+      const diff = deadline.diff(DateTime.now().setZone(LEAGUE_TZ), ["days", "hours"]);
       if (diff.toMillis() > 0) {
         const remaining = `${Math.floor(diff.days)}d ${Math.floor(diff.hours)}h`;
         system.push({ text: await getContent("ticker.deadline", { remaining }), priority: 3 });

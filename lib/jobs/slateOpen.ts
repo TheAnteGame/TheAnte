@@ -4,12 +4,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { SLATE_MARGIN_MINUTES, computeSlateOpen, anteForWeek } from "@/lib/engine";
 import type { EngineLedgerEntry, EnginePlayer } from "@/lib/engine";
 import { fetchNflverseWeek, type NflverseFetch } from "@/lib/sports/nflverse";
-import { nowET, weekAnchors } from "@/lib/time";
+import { nowLeague, weekAnchors } from "@/lib/time";
 import { emailDoc, mailSubject } from "@/lib/notify/templates";
 import { weekOpen as weekOpenDoc } from "@/lib/notify/docs";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { DateTime } from "luxon";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { stacksByPlayer, type JobOutcome } from "./util";
 
 // slate.open (ANTE-ADMIN §5): freeze spreads, snapshot the median BEFORE antes,
@@ -29,7 +29,7 @@ export async function slateOpen(db: SupabaseClient): Promise<JobOutcome> {
   const firstKick = feed.games.reduce((min, g) => (g.kickoffAt < min ? g.kickoffAt : min), feed.games[0].kickoffAt);
   const { opensAt, deadlineAt } = weekAnchors(firstKick);
 
-  if (nowET().toJSDate() < opensAt) {
+  if (nowLeague().toJSDate() < opensAt) {
     return { status: "skipped", detail: { reason: `week ${weekNumber} opens ${opensAt.toISOString()}` } };
   }
 
@@ -52,7 +52,7 @@ export async function slateOpenEarly(db: SupabaseClient): Promise<JobOutcome> {
   const firstKick = feed.games.reduce((min, g) => (g.kickoffAt < min ? g.kickoffAt : min), feed.games[0].kickoffAt);
   const { deadlineAt } = weekAnchors(firstKick);
 
-  const now = nowET().toJSDate();
+  const now = nowLeague().toJSDate();
   if (now >= deadlineAt) {
     return { status: "skipped", detail: { reason: `week ${weekNumber}'s deadline has already passed` } };
   }
@@ -268,7 +268,7 @@ async function sendWeekOpenMail(
     .eq("status", "approved");
   if (!players || players.length === 0) return;
 
-  const deadline = DateTime.fromJSDate(deadlineAt).setZone(ET).toFormat("cccc h:mma 'ET'");
+  const deadline = DateTime.fromJSDate(deadlineAt).setZone(LEAGUE_TZ).toFormat("cccc h:mma 'MT'");
   const ante = anteForWeek(weekNumber);
   const nameOf = new Map(players.map((p) => [p.id, `${p.first_name ?? "?"} ${(p.last_name ?? "").slice(0, 1)}.`.trim()]));
 

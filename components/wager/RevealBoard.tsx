@@ -3,7 +3,7 @@ import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { multiplierFor, formatMultiplier, maxTake } from "@/lib/engine";
 import { getTeamNames } from "@/lib/teams";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { RevealExperience, type RevealData } from "./RevealExperience";
 
 // Server assembly of the revealed board (ANTE-PLAYER §5.4). Every read here runs as
@@ -91,7 +91,7 @@ export async function RevealBoard({
       away: g.away_team,
       home: g.home_team,
       spread: g.spread_frozen,
-      kickoff: DateTime.fromISO(g.kickoff_at).setZone(ET).toFormat("ccc h:mma"),
+      kickoff: DateTime.fromISO(g.kickoff_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma"),
       sides: {
         away: { count: away.length, pays: price(away.length, home.length), entries: away },
         home: { count: home.length, pays: price(home.length, away.length), entries: home },

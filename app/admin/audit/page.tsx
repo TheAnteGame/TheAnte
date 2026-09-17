@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { Section, inputCls, thCls, tdCls } from "@/components/admin/ui";
 
 // The audit log (ANTE-ADMIN §4.9): append-only at the database level — a
@@ -37,7 +37,7 @@ export default async function Audit({ searchParams }: { searchParams: Promise<{ 
           <table className="w-full min-w-[760px]">
             <thead>
               <tr className="border-b border-[color:var(--color-border)]">
-                <th className={thCls}>When (ET)</th>
+                <th className={thCls}>When (MT)</th>
                 <th className={thCls}>Actor</th>
                 <th className={thCls}>Action</th>
                 <th className={thCls}>Entity</th>
@@ -49,7 +49,7 @@ export default async function Audit({ searchParams }: { searchParams: Promise<{ 
               {(entries ?? []).map((e) => (
                 <tr key={e.id} className="border-b border-[color:var(--color-border)] align-top last:border-b-0">
                   <td className={`${tdCls} nums whitespace-nowrap text-xs text-[color:var(--color-text-low)]`}>
-                    {DateTime.fromISO(e.created_at).setZone(ET).toFormat("LL/dd h:mma")}
+                    {DateTime.fromISO(e.created_at).setZone(LEAGUE_TZ).toFormat("LL/dd h:mma")}
                   </td>
                   <td className={tdCls}>{nameOf(e.actor_player_id)}</td>
                   <td className={`${tdCls} text-[color:var(--color-text-hi)]`}>{e.action}</td>

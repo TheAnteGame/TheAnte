@@ -100,7 +100,7 @@ export function ticket(v: {
           text: "You still paid this week's ante, and a fold can never win the Pot. Nothing else happens: you keep your chips, you keep your place in the standings, and you're dealt into next week like everyone else.",
         },
         { kind: "para", text: "Miss three weeks running with no ticket at all and I'm allowed to remove the seat and split the chips across everyone still playing. Submitting anything, even a deliberate fold, resets that count to zero." },
-        { kind: "cta", label: "Get in next week", href: SITE, sub: "The new slate opens Tuesday at 6:00am ET." },
+        { kind: "cta", label: "Get in next week", href: SITE, sub: "The new slate opens Tuesday at 6:00am MT." },
       ],
     };
   }

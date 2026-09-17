@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { composeTickerItem, hideFeedItem, hideTickerItem, saveFeedSource, toggleFeedSource } from "../actions";
 import { Section, inputCls, thCls, tdCls } from "@/components/admin/ui";
@@ -97,7 +97,7 @@ export default async function Feeds() {
                 </td>
                 <td className={tdCls}>{s.kind}</td>
                 <td className={`${tdCls} text-xs text-[color:var(--color-text-low)]`}>
-                  {s.last_fetched_at ? DateTime.fromISO(s.last_fetched_at).setZone(ET).toRelative() : "never"}
+                  {s.last_fetched_at ? DateTime.fromISO(s.last_fetched_at).setZone(LEAGUE_TZ).toRelative() : "never"}
                 </td>
                 <td className={`${tdCls} ${s.last_status === "error" ? "text-[color:var(--color-loss)]" : ""}`}>
                   {s.enabled ? (s.last_status ?? "—") : "disabled"}

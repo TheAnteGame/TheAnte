@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { ChatComposer } from "./ChatComposer";
 import { ChatHelp } from "./ChatHelp";
 import { PlayerTip } from "../ui/PlayerTip";
@@ -124,11 +124,11 @@ export async function TableTalk({
   // still flows normally, which is why a day divider can be placed at the top of a
   // message's own <li> and appear above it.
   const list = messages ?? [];
-  const dayOf = (iso: string) => DateTime.fromISO(iso).setZone(ET).startOf("day");
+  const dayOf = (iso: string) => DateTime.fromISO(iso).setZone(LEAGUE_TZ).startOf("day");
 
   const dayLabel = (iso: string) => {
     const d = dayOf(iso);
-    const today = DateTime.now().setZone(ET).startOf("day");
+    const today = DateTime.now().setZone(LEAGUE_TZ).startOf("day");
     const days = today.diff(d, "days").days;
     if (days === 0) return todayLabel;
     if (days === 1) return yesterdayLabel;
@@ -157,7 +157,7 @@ export async function TableTalk({
   const muted = !!me?.is_muted && (!me.muted_until || new Date(me.muted_until) > new Date());
   const mutedText = mutedNotice.replace(
     "{expiry}",
-    me?.muted_until ? DateTime.fromISO(me.muted_until).setZone(ET).toFormat("ccc h:mma 'ET'") : "lifted",
+    me?.muted_until ? DateTime.fromISO(me.muted_until).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MT'") : "lifted",
   );
 
   // The dock's badge (D-086): what was said by others since this player last had
@@ -228,7 +228,7 @@ export async function TableTalk({
                     A grouped message keeps its time — that is the whole point of the
                     grouping, to leave the timeline readable without the name. */}
                 <span className="mr-2 text-[12px] text-[color:var(--color-text-low)]">
-                  {DateTime.fromISO(m.created_at).setZone(ET).toFormat("h:mma")}
+                  {DateTime.fromISO(m.created_at).setZone(LEAGUE_TZ).toFormat("h:mma")}
                 </span>
                 {ann ? (
                   // An announcement is doing a different job from chatter, so it gets

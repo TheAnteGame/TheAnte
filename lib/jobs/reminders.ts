@@ -1,12 +1,12 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DateTime } from "luxon";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { emailPlayer, mailSubject } from "@/lib/notify/templates";
 import type { JobOutcome } from "./util";
 
-// Reminder (Wed 6pm ET) and final call (Thu 9am ET), unsubmitted players only
-// (ADMIN §4.7). The cron fires on both possible UTC hours; the ET guard picks the
+// Reminder (Wed 6pm MT) and final call (Thu 9am MT), unsubmitted players only
+// (ADMIN §4.7). The cron fires on both possible UTC hours; the MT guard picks the
 // right one, and the notification_log dedupe makes repeats harmless.
 
 export async function reminders(db: SupabaseClient): Promise<JobOutcome> {
@@ -19,7 +19,7 @@ export async function reminders(db: SupabaseClient): Promise<JobOutcome> {
     .maybeSingle();
   if (!week) return { status: "skipped", detail: { reason: "no open week" } };
 
-  const now = DateTime.now().setZone(ET);
+  const now = DateTime.now().setZone(LEAGUE_TZ);
   let templateKey: string;
   let subject: string;
   let vars: Record<string, string | number>;
@@ -41,7 +41,7 @@ export async function reminders(db: SupabaseClient): Promise<JobOutcome> {
     vars = { week: week.number };
     look = { eyebrow: `Week ${week.number} final call`, headline: "Noon is the wall" };
   } else {
-    return { status: "skipped", detail: { reason: "outside reminder windows (ET)" } };
+    return { status: "skipped", detail: { reason: "outside reminder windows (MT)" } };
   }
 
   const [{ data: active }, { data: tickets }] = await Promise.all([

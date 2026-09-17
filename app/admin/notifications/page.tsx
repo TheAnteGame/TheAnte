@@ -4,7 +4,7 @@ import { contentDefaults } from "@/lib/content/defaults";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { saveContent } from "../actions";
 import { Section, inputCls } from "@/components/admin/ui";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { MAIL_KINDS, SCHEDULED_JOBS } from "@/lib/notify/catalogue";
 
 // Notifications (ANTE-ADMIN §4.7), rebuilt as a mail LOG rather than a template list
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 const PAGE = 150;
 
 function fmt(iso: string | null): string {
-  return iso ? DateTime.fromISO(iso).setZone(ET).toFormat("ccc LLL d, h:mma") : "—";
+  return iso ? DateTime.fromISO(iso).setZone(LEAGUE_TZ).toFormat("ccc LLL d, h:mma") : "—";
 }
 
 /** Longest matching prefix — template keys carry a week and a player id after it. */
@@ -108,7 +108,7 @@ export default async function Notifications() {
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-[color:var(--color-text-low)]">
                 <th className="py-2 pr-3">Job</th>
-                <th className="py-2 pr-3">Fires (ET)</th>
+                <th className="py-2 pr-3">Fires (MT)</th>
                 <th className="py-2 pr-3">Emails players</th>
                 <th className="py-2 pr-3">Last run</th>
                 <th className="py-2">What it does</th>

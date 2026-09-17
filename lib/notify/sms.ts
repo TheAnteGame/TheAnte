@@ -8,7 +8,7 @@ import type { NotifyResult } from "./index";
 //   2. Set TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_MESSAGING_SERVICE_SID
 //   3. Replace this stub with the Twilio Programmable Messaging call
 //   4. Flip the per-event channel toggles in /admin/notifications
-// Quiet hours (22:00–08:00 ET, queue never drop), sms_opt_in, and the STOP webhook
+// Quiet hours (22:00–08:00 MT, queue never drop), sms_opt_in, and the STOP webhook
 // are specced in ANTE-ADMIN §4.7 and must be honored by the real implementation.
 
 export async function sendSms(

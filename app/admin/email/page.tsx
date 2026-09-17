@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { BroadcastComposer } from "@/components/admin/BroadcastComposer";
 import { Section, inputCls, thCls, tdCls } from "@/components/admin/ui";
@@ -9,7 +9,7 @@ import { cancelBroadcast, createBroadcast, previewBroadcast, sendTestBroadcast }
 // One-off league emails (D-088). The scheduled funnel covers the season; this is
 // the commissioner's own word to the room — an app update, a mea culpa for a bug, a
 // reminder outside the calendar. Same envelope as every other email, previewed as
-// the real rendering, sent now or at a chosen ET time by the broadcast.send cron.
+// the real rendering, sent now or at a chosen Mountain time by the broadcast.send cron.
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function EmailAdmin() {
       .order("created_at", { ascending: false })
       .limit(40),
   ]);
-  const fmt = (iso: string) => DateTime.fromISO(iso).setZone(ET).toFormat("ccc LLL d, h:mma");
+  const fmt = (iso: string) => DateTime.fromISO(iso).setZone(LEAGUE_TZ).toFormat("ccc LLL d, h:mma");
 
   return (
     <div className="flex flex-col gap-8">
@@ -32,7 +32,7 @@ export default async function EmailAdmin() {
         <p className="mb-4 text-sm text-[color:var(--color-text-mid)]">
           Goes to every approved player with an email on file ({count ?? 0} right now), in the same envelope as
           every other ANTE email. Blank lines make paragraphs. Preview shows the real rendering; Send test puts one
-          copy in your own inbox first. Times are Eastern.
+          copy in your own inbox first. Times are Mountain.
         </p>
         <BroadcastComposer
           create={createBroadcast}
@@ -48,7 +48,7 @@ export default async function EmailAdmin() {
             ctaHref: "Button link",
             whenNow: "Send now",
             whenLater: "Schedule",
-            sendAt: "Send at (ET)",
+            sendAt: "Send at (MT)",
             preview: "Preview",
             test: "Send test to me",
             submitNow: "Send to the league",

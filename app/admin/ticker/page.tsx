@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { contentDefaults } from "@/lib/content/defaults";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { TickerSpeed } from "@/components/admin/TickerSpeed";
@@ -204,7 +204,7 @@ export default async function TickerAdmin() {
                   </td>
                   <td className={`${tdCls} text-[color:var(--color-text-mid)]`}>{t.source}</td>
                   <td className={`${tdCls} nums text-[color:var(--color-text-low)]`}>
-                    {DateTime.fromISO(t.created_at).setZone(ET).toFormat("LLL d, h:mma")}
+                    {DateTime.fromISO(t.created_at).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma")}
                   </td>
                   <td className={tdCls}>
                     <AdminForm

@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { getCommissioner } from "@/lib/admin";
-import { ET } from "@/lib/time";
+import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Section, inputCls } from "@/components/admin/ui";
 import { replySupportMessage } from "../actions";
@@ -50,7 +50,7 @@ export default async function Support() {
           <span className="font-semibold text-[color:var(--color-text-hi)]">{p.name}</span>
           <span className="text-xs text-[color:var(--color-text-low)]">{p.email ?? "no email on file"}</span>
           <span className="nums ml-auto text-xs text-[color:var(--color-text-low)]">
-            {DateTime.fromISO(r.created_at).setZone(ET).toFormat("LLL d, h:mma 'ET'")}
+            {DateTime.fromISO(r.created_at).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma 'MT'")}
           </span>
         </header>
 
@@ -81,7 +81,7 @@ export default async function Support() {
           <div className="mt-3 border-l-2 border-[color:var(--color-gold-dim)] pl-3">
             <p className="text-[12px] uppercase tracking-wider text-[color:var(--color-gold)]">
               Answered{" "}
-              {r.answered_at && DateTime.fromISO(r.answered_at).setZone(ET).toFormat("LLL d, h:mma 'ET'")} — emailed
+              {r.answered_at && DateTime.fromISO(r.answered_at).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma 'MT'")} — emailed
             </p>
             <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-[color:var(--color-text-mid)]">{r.reply}</p>
           </div>

@@ -144,7 +144,7 @@ export const contentDefaults: Record<string, string> = {
   "guide.ante_title": "Every week you pay an ante",
   "guide.ante_body": "An ante is a small fee you pay before you bet. Everyone pays it, even if you sit the week out. It starts at 10 chips and grows to 30 chips by the end of the season. Every ante goes straight into the Pot.",
   "guide.pick_title": "Pick games and put chips on them",
-  "guide.pick_body": "The slate opens Tuesday at 6:00am ET. Pick the team you like in each game, then put chips on it. You bet in tens: at least 10 chips on a game, and no more than 50. You have to bet at least 5 games. You cannot bet both teams in the same game. The deadline is Thursday at 12:00 noon ET, every single week.",
+  "guide.pick_body": "The slate opens Tuesday at 6:00am MT. Pick the team you like in each game, then put chips on it. You bet in tens: at least 10 chips on a game, and no more than 50. You have to bet at least 5 games. You cannot bet both teams in the same game. The deadline is Thursday at 12:00 noon MT, every single week.",
   "guide.lock_title": "Once you send it in, it is locked",
   "guide.lock_body": "When you submit your picks, you cannot change them. Neither can the Commissioner. So take your time before you press the button. If you send nothing by Thursday noon, you folded for the week \u2014 and you still pay the ante.",
   "guide.limit_title": "The house limit keeps you safe",
@@ -166,7 +166,7 @@ export const contentDefaults: Record<string, string> = {
   "guide.win_title": "How you win the season",
   "guide.win_body": "Biggest stack after Week 18 wins. If two players tie, we look at who had the most winning bets. Still tied? Most Pots won, then fewest weeks folded, then one public card draw.",
   "dash.wager.heading": "Game Board",
-  "dash.wager.closed_message": "The slate opens Tuesday at 6:00am ET.",
+  "dash.wager.closed_message": "The slate opens Tuesday at 6:00am MT.",
   "dash.wager.submitted_message": "Your ticket is in. Locked. No edits — not by you, not by anyone.",
   "dash.wager.blackout_notice": "Nobody sees a pick until everyone is in.",
   "dash.wager.waiting_on_label": "Waiting on",
@@ -227,7 +227,7 @@ export const contentDefaults: Record<string, string> = {
   "mail.support_reply.subject": "ANTE: The Commissioner Answered",
   "mail.backup_reminder.subject": "ANTE: Your League Backup Is Due",
   "notify.reminder": "Week {week}: {hours_left} hours to the wall, and your name is on the waiting list.",
-  "notify.final_call": "Final call for Week {week}. Submit by noon ET or you're folded — and you still owe the ante.",
+  "notify.final_call": "Final call for Week {week}. Submit by noon MT or you're folded — and you still owe the ante.",
   "notify.nudge":
     "{first_name} — every player who has already put a ticket in can see your name sitting on the waiting list.\n\nThursday noon is the wall. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot.",
 
@@ -270,7 +270,7 @@ export const contentDefaults: Record<string, string> = {
     "Week {week} of 18. The ring tracks the four ante tiers a season passes through — purple, red, teal, gold. You are in {tier}, weeks {range}. The ante rises with each one, so the cost of sitting out rises too.",
 
   // Ticker system items (ADMIN §4.5.3 — wording is content-managed)
-  "ticker.deadline": "Thursday noon ET — {remaining}",
+  "ticker.deadline": "Thursday noon MT — {remaining}",
   "ticker.waiting_on": "{in} of {total} in — waiting on {names}",
   "ticker.pot": "This week's Pot: {pot} chips",
   "ticker.marker": "The Pot is carrying a {marker}-chip marker",
@@ -298,7 +298,7 @@ export const contentDefaults: Record<string, string> = {
     "Head counts, not odds: the people against you divided by the people with you, counting yourself. Alone against four pays 2.50\u00d7 \u2014 the cap. Riding with the crowd pays a fraction \u2014 the floor is 0.25\u00d7. Nobody on the other side pays even money.",
   "faq.q5": "When do I see everyone's picks?",
   "faq.a5":
-    "At the reveal: the moment the last ticket lands, or Thursday noon ET \u2014 whichever comes first. Until then you see nothing about anybody's picks. Not a side, not a chip, not a count of who took what. Exactly one thing is public before the reveal, and it is not a pick: the list of who hasn't submitted yet.",
+    "At the reveal: the moment the last ticket lands, or Thursday noon MT \u2014 whichever comes first. Until then you see nothing about anybody's picks. Not a side, not a chip, not a count of who took what. Exactly one thing is public before the reveal, and it is not a pick: the list of who hasn't submitted yet.",
   "faq.q6": "Can I change my ticket after submitting?",
   "faq.a6": "No. Not you, not the Commissioner, not for any reason. Submitted is stone.",
   "faq.q7": "What happens if I skip a week?",
