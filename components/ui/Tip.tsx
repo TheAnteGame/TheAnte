@@ -1,12 +1,18 @@
-import type { ReactNode } from "react";
+"use client";
 
-// One tooltip, CSS-only, for surfaces that need to explain themselves without
-// shipping client JS (D-045). Hover OR focus-within, the same pair the bet slip
-// already uses: a phone has no hover, so a hover-only tooltip is invisible to most
-// of the league. The trigger is a real <button> precisely so a tap focuses it.
+import { useEffect, useId, useState, type ReactNode } from "react";
+
+// One tooltip for surfaces that need to explain themselves. Desktop: hover, as
+// before. Everywhere: TAP toggles it (D-090) — the CSS-only version relied on a tap
+// focusing the button, which Android does and iOS Safari never has, so most of the
+// league's phones saw nothing. One open at a time; a tap anywhere else, a second
+// tap, or Escape closes it. The trigger carries a small mark so a phone user can
+// tell a figure is tappable at all; names use a dotted underline instead.
 //
 // Everything inside the trigger must be phrasing content — a <button> cannot legally
 // contain a <div>. Callers pass spans.
+
+const OPEN_EVENT = "ante-tip-open";
 
 export function Tip({
   text,
@@ -14,6 +20,7 @@ export function Tip({
   children,
   align = "left",
   className,
+  marker = "info",
 }: {
   /** The explanation. */
   text: string;
@@ -24,22 +31,66 @@ export function Tip({
   align?: "left" | "right";
   /** Extra classes on the root, for grid placement (D-087). */
   className?: string;
+  /** How the trigger shows it can be tapped: a small ⓘ, a dotted underline, or nothing. */
+  marker?: "info" | "underline" | "none";
 }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      const root = document.getElementById(id);
+      if (root && !root.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    // Another tip opening closes this one.
+    const onOther = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== id) setOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener(OPEN_EVENT, onOther);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(OPEN_EVENT, onOther);
+    };
+  }, [open, id]);
+
+  const toggle = () => {
+    if (!open) window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: id }));
+    setOpen((o) => !o);
+  };
+
   return (
-    <span className={`group relative inline-flex ${className ?? ""}`}>
+    <span id={id} className={`group relative inline-flex ${className ?? ""}`}>
       <button
         type="button"
+        onClick={toggle}
+        aria-expanded={open}
         aria-label={`${label}. ${text}`}
-        className="cursor-help rounded-none text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-chrome)]"
+        className={`relative cursor-help rounded-none text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-chrome)] ${
+          marker === "underline" ? "underline decoration-dotted decoration-[color:var(--color-text-low)] underline-offset-4" : ""
+        }`}
       >
         {children}
+        {/* The trays are block-level wells, so the mark pins to the corner rather
+            than trailing the content onto a second line. */}
+        {marker === "info" && (
+          <span aria-hidden className="pointer-events-none absolute right-1.5 top-1 text-[10px] leading-none text-white/55">
+            ⓘ
+          </span>
+        )}
       </button>
       {/* Never wider than the viewport it has to fit inside. */}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute top-full z-50 mt-2 hidden w-[min(20rem,calc(100vw-3rem))] border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] px-3 py-2 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-[color:var(--color-text-mid)] shadow-lg group-hover:block group-focus-within:block ${
-          align === "right" ? "right-0" : "left-0"
-        }`}
+        className={`pointer-events-none absolute top-full z-50 mt-2 w-[min(20rem,calc(100vw-3rem))] border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] px-3 py-2 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-[color:var(--color-text-mid)] shadow-lg group-hover:block ${
+          open ? "block" : "hidden"
+        } ${align === "right" ? "right-0" : "left-0"}`}
       >
         {text}
       </span>

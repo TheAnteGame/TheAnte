@@ -2528,3 +2528,15 @@ the rules can't undo. That is the owner's call, not this change's.
 Sep 22, 6:00am MT. Code without the cron: the old crons fire at the old UTC hours
 and the guards skip, so the slate would not open and Thursday's wall would not
 fire. Cron without the code: the reverse. Apply 0026, then push.
+
+## D-090 — Tooltips open on a tap (2026-09-17)
+
+The explainers on the band and bet slip, and the player-name bubbles, opened on
+hover or focus with no client JS (D-045) — on the theory that a tap focuses the
+button. Android does; iOS Safari never has, so the league's iPhones saw nothing.
+Owner picked the lightest fix: `Tip` is now a small client component. Tap opens it
+below the trigger, a tap anywhere else, a second tap or Escape closes it, one open
+at a time; hover still works on desktop. The trigger carries a mark so a phone user
+knows a figure is tappable — a tiny ⓘ after figures, a dotted underline under
+names. Screen readers keep the full text in the label as before. A bottom sheet on
+phones was the alternative and stays available as an upgrade on the same triggers.

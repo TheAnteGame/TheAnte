@@ -241,7 +241,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       </div>
 
       <div className="flex items-center gap-4 sm:contents">
-      <Tip text={ringTip} label={`${weekLabel} ${week.number}, ${tierLabel}`}>
+      <Tip text={ringTip} label={`${weekLabel} ${week.number}, ${tierLabel}`} marker="none">
         <SeasonRing weekNumber={week.number} />
       </Tip>
 

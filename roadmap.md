@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-17 (thirty-seventh pass):** **Tooltips tap open (D-090).** iOS never focused
+> the trigger, so the hover/focus tooltips were invisible on iPhones. `Tip` is now a
+> client component: tap toggles, outside tap / second tap / Escape closes, one open at
+> a time, hover kept on desktop, ⓘ mark on figures and dotted underline on names.
+
 > **2026-09-17 (thirty-sixth pass):** **Mountain time (D-089).** The noon-Eastern wall
 > folded three players at 10am their time. Every clock is now `America/Denver`
 > (`LEAGUE_TZ`); kickoffs still parse in Eastern (`NFL_TZ`, the feed's zone). Migration
