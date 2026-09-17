@@ -2540,3 +2540,14 @@ at a time; hover still works on desktop. The trigger carries a mark so a phone u
 knows a figure is tappable — a tiny ⓘ after figures, a dotted underline under
 names. Screen readers keep the full text in the label as before. A bottom sheet on
 phones was the alternative and stays available as an upgrade on the same triggers.
+
+## D-091 — A window into the cron table (2026-09-17)
+
+D-089 moved three crons and nobody could confirm it without the SQL editor:
+PostgREST cannot see the cron schema, so the console's job list was a hand-kept
+copy and a paste from the owner was the only proof. Migration 0027 adds
+`ante_cron_jobs()`, a SECURITY DEFINER read of `cron.job` for the ante-* jobs,
+executable by the service role only. The Notifications page now prints a "live"
+line under each declared schedule — matches, differs (with the real value), NOT
+SCHEDULED, or not visible when 0027 is not applied — and any session can verify a
+cron from here with one rpc call. It reads; it cannot change a schedule.

@@ -42,6 +42,13 @@ export default async function Notifications() {
   // two minutes and holds 651 of the rows; a single ordered read — even 400 deep —
   // never reaches back to slate.open, which fires twice a week, and the page then
   // reported a perfectly healthy job as "never seen". Eight indexed reads instead.
+  // The cron table itself, through 0027's read-only window (D-091). Before that
+  // migration is applied the rpc errors; the page then says "not visible", not wrong.
+  const { data: cronRows } = await ctx.db.rpc("ante_cron_jobs");
+  const liveCron = new Map(
+    ((cronRows ?? []) as Array<{ jobname: string; schedule: string; active: boolean }>).map((c) => [c.jobname, c]),
+  );
+
   const [{ data: overrides }, { data: log }, { data: players }, ...runRows] = await Promise.all([
     ctx.db.from("content_blocks").select("key, value").like("key", "notify.%"),
     ctx.db
@@ -117,6 +124,7 @@ export default async function Notifications() {
             <tbody>
               {SCHEDULED_JOBS.map((j) => {
                 const r = lastRun.get(j.jobKey);
+                const live = liveCron.get(j.cronName);
                 return (
                   <tr key={j.jobKey} className="border-t border-[color:var(--color-border)] align-top">
                     <td className="py-2 pr-3 text-[color:var(--color-text-hi)]">
@@ -126,6 +134,18 @@ export default async function Notifications() {
                     <td className="py-2 pr-3 text-[color:var(--color-text-mid)]">
                       {j.whenET}
                       <div className="nums text-xs text-[color:var(--color-text-low)]">{j.expr}</div>
+                      {liveCron.size === 0 ? (
+                        <div className="text-xs text-[color:var(--color-text-low)]">live: not visible</div>
+                      ) : !live ? (
+                        <div className="text-xs text-[color:var(--color-loss)]">live: NOT SCHEDULED</div>
+                      ) : live.schedule !== j.expr || !live.active ? (
+                        <div className="nums text-xs text-[color:var(--color-loss)]">
+                          live: {live.schedule}
+                          {!live.active ? " (paused)" : ""} — differs
+                        </div>
+                      ) : (
+                        <div className="text-xs text-[color:var(--color-win)]">live: matches</div>
+                      )}
                     </td>
                     <td className="py-2 pr-3">
                       {j.sends ? (
@@ -152,7 +172,7 @@ export default async function Notifications() {
           </table>
         </div>
         <p className="mt-3 text-xs text-[color:var(--color-text-low)]">
-          Schedules are declared by migrations 0006, 0010, 0011 and 0017 and run inside Supabase (pg_cron), not Vercel.
+          Schedules are declared by migrations 0006, 0010, 0011, 0017, 0025 and 0026 and run inside Supabase (pg_cron), not Vercel; the &ldquo;live&rdquo; line reads the cron table itself (0027).
           Last-run times are live from job_runs. Nothing here can be paused from this screen — that takes a migration.
         </p>
       </Section>

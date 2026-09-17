@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-17 (thirty-eighth pass):** **Cron window (D-091).** `ante_cron_jobs()`
+> (migration **0027**, service role only) reads the live pg_cron schedules; the
+> Notifications page shows matches / differs / NOT SCHEDULED per job. Apply 0027 and
+> the D-089 cron move can be verified from here without the SQL editor.
+
 > **2026-09-17 (thirty-seventh pass):** **Tooltips tap open (D-090).** iOS never focused
 > the trigger, so the hover/focus tooltips were invisible on iPhones. `Tip` is now a
 > client component: tap toggles, outside tap / second tap / Escape closes, one open at
