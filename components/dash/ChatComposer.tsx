@@ -26,18 +26,31 @@ import type { Handle } from "@/lib/chat/mentions";
 const EMOJIS = ["🏈", "🔥", "😂", "💀", "🤝", "🎉", "😤", "🧊"];
 const FINE_POINTER = "(hover: hover) and (pointer: fine)";
 
+interface Gif {
+  id: string;
+  preview: string;
+  url: string;
+}
+
 export function ChatComposer({
   placeholder,
   liveLabel,
   showLive,
   handles,
   emojiAria,
+  gifEnabled,
+  gifAria,
+  gifPlaceholder,
 }: {
   placeholder: string;
   liveLabel: string;
   showLive: boolean;
   handles: Handle[];
   emojiAria: string;
+  /** False until TENOR_API_KEY is set on the server — the button is simply absent. */
+  gifEnabled: boolean;
+  gifAria: string;
+  gifPlaceholder: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -45,6 +58,44 @@ export function ChatComposer({
   const [value, setValue] = useState("");
   const [query, setQuery] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  // GIF picker (D-094): search the provider through our own route, pick one, and the
+  // message posts at once with the link on its own line under whatever was typed.
+  const [gifOpen, setGifOpen] = useState(false);
+  const [gifQuery, setGifQuery] = useState("");
+  const [gifs, setGifs] = useState<Gif[]>([]);
+  const [gifBusy, setGifBusy] = useState(false);
+  const searchGifs = async (q: string) => {
+    setGifBusy(true);
+    try {
+      const res = await fetch(`/api/gif?q=${encodeURIComponent(q)}`);
+      const data = (await res.json()) as { gifs?: Gif[]; error?: string };
+      setGifs(data.gifs ?? []);
+      if (data.error) setError(data.error);
+    } catch {
+      setGifs([]);
+    } finally {
+      setGifBusy(false);
+    }
+  };
+  const openGifs = () => {
+    setEmojiOpen(false);
+    setGifOpen((o) => !o);
+    if (!gifOpen && gifs.length === 0) void searchGifs("");
+  };
+  const pickGif = async (g: Gif) => {
+    const fd = new FormData();
+    fd.set("body", `${value.trim()}\n${g.url}`.trim());
+    setError("");
+    const result = await postChatMessage(fd);
+    if (!result.ok && result.error) setError(result.error);
+    else {
+      formRef.current?.reset();
+      setValue("");
+      setQuery(null);
+      setGifOpen(false);
+      fit(inputRef.current);
+    }
+  };
   // Keyboard-and-mouse device or not — subscribed, not set-in-effect (the pattern the
   // tutorial uses for reduced motion): SSR gets a stable false, a laptop that docks a
   // mouse mid-session flips live, and there is no cascading first render.
@@ -188,10 +239,54 @@ export function ChatComposer({
           )}
         </span>
 
+        {gifEnabled && (
+          <span className="relative">
+            <button
+              type="button"
+              onClick={openGifs}
+              aria-label={gifAria}
+              aria-expanded={gifOpen}
+              className="chamfer h-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] px-2.5 text-[11px] font-bold uppercase tracking-wider hover:border-[color:var(--color-chrome-dim)] hover:bg-[color:var(--color-surface-3)]"
+            >
+              <span aria-hidden>GIF</span>
+            </button>
+            {gifOpen && (
+              <span className="absolute bottom-full right-0 z-30 mb-1 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2 border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] p-2 shadow-lg">
+                <input
+                  value={gifQuery}
+                  onChange={(e) => setGifQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void searchGifs(gifQuery);
+                    }
+                    if (e.key === "Escape") setGifOpen(false);
+                  }}
+                  placeholder={gifPlaceholder}
+                  aria-label={gifPlaceholder}
+                  autoFocus
+                  className="w-full bg-[color:var(--color-surface-2)] px-2 py-1.5 text-sm text-[color:var(--color-text-hi)] outline-none placeholder:text-[color:var(--color-text-low)] focus:outline-2 focus:outline-[color:var(--color-chrome)]"
+                />
+                <span className={`grid max-h-64 grid-cols-3 gap-1 overflow-y-auto overscroll-contain ${gifBusy ? "opacity-50" : ""}`}>
+                  {gifs.map((g) => (
+                    <button key={g.id} type="button" onClick={() => void pickGif(g)} className="block aspect-square overflow-hidden bg-black/30 hover:outline hover:outline-2 hover:outline-[color:var(--color-gold)]">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- provider-hosted preview, not an optimisable asset */}
+                      <img src={g.preview} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </span>
+              </span>
+            )}
+          </span>
+        )}
+
         <span className="relative">
           <button
             type="button"
-            onClick={() => setEmojiOpen((o) => !o)}
+            onClick={() => {
+              setGifOpen(false);
+              setEmojiOpen((o) => !o);
+            }}
             aria-label={emojiAria}
             aria-expanded={emojiOpen}
             className="chamfer h-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-2)] px-3 text-sm hover:border-[color:var(--color-chrome-dim)] hover:bg-[color:var(--color-surface-3)]"

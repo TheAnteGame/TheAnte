@@ -425,6 +425,10 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.help_format":
     "Bullet points: start a line with - and a space. Numbers: 1. and a space. On a computer, Enter sends and Shift+Enter starts a new line. On a phone, Return starts a new line and the arrow sends.",
   "dash.tabletalk.emoji_aria": "Add an emoji",
+  "dash.tabletalk.gif_aria": "Add a GIF",
+  "dash.tabletalk.gif_placeholder": "Search GIFs\u2026",
+  "dash.tabletalk.help_gif":
+    "GIFs: tap GIF by the send button, search, and pick one \u2014 it posts right away, under anything you typed. One per message.",
   "dash.tabletalk.tag_commish": "Commish",
   "dash.tabletalk.tag_leader": "League Leader",
   "dash.tabletalk.dock_label": "League Chat",

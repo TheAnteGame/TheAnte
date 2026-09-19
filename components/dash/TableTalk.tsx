@@ -9,6 +9,7 @@ import { PlayerTip } from "../ui/PlayerTip";
 import { buildHandles, segmentBody, type Handle } from "@/lib/chat/mentions";
 import { blocksOf, isPlain } from "@/lib/chat/format";
 import { countUnread, unreadBadge, type ChatPosition } from "@/lib/chat/unread";
+import { extractGif } from "@/lib/chat/gif";
 import { ChatDock } from "./ChatDock";
 import { leaderFrom } from "@/lib/ticker/leader";
 import { ChatTag, type TagTone } from "./ChatTag";
@@ -34,7 +35,7 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord, gifAria, gifPlaceholder, helpGif] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -68,6 +69,9 @@ export async function TableTalk({
     getContent("dash.tabletalk.dock_open"),
     getContent("dash.tabletalk.dock_close"),
     getContent("dash.tabletalk.dock_close_word"),
+    getContent("dash.tabletalk.gif_aria"),
+    getContent("dash.tabletalk.gif_placeholder"),
+    getContent("dash.tabletalk.help_gif"),
   ]);
 
   // Who wears a tag (D-066). Both reads go through the PLAYER client like everything
@@ -175,7 +179,7 @@ export async function TableTalk({
       openAria={dockOpen}
       closeAria={dockClose}
       closeLabel={dockCloseWord}
-      help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} />}
+      help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} gifLine={helpGif} />}
     >
     <section aria-label={heading} className="flex h-full min-h-0 flex-col">
       <ul className="chat-list flex min-h-0 flex-1 flex-col-reverse overflow-y-auto overscroll-contain px-4 py-2">
@@ -260,6 +264,9 @@ export async function TableTalk({
           showLive={(mine ?? []).length === 0}
           handles={handles}
           emojiAria={emojiAria}
+          gifEnabled={!!process.env.TENOR_API_KEY}
+          gifAria={gifAria}
+          gifPlaceholder={gifPlaceholder}
         />
       )}
     </section>
@@ -286,10 +293,18 @@ function Mentions({ text, handles }: { text: string; handles: Handle[] }) {
 
 /** A message body (D-084). One plain line renders inline after the clock exactly as
  *  before; anything with line breaks or list items becomes blocks under it. */
-function Body({ text, handles }: { text: string; handles: Handle[] }) {
+function Body({ text: raw, handles }: { text: string; handles: Handle[] }) {
+  // A provider GIF link on its own line renders as the image (D-094); one per message.
+  const { text, gif } = extractGif(raw);
   const blocks = blocksOf(text);
-  if (blocks.length === 0) return null;
-  if (isPlain(blocks)) {
+  const image = gif ? (
+    <a href={gif} target="_blank" rel="noopener noreferrer" className="mt-1.5 block w-fit">
+      {/* eslint-disable-next-line @next/next/no-img-element -- provider-hosted GIF, not an optimisable asset */}
+      <img src={gif} alt="" loading="lazy" className="max-h-56 max-w-full border border-[color:var(--color-border)]" />
+    </a>
+  ) : null;
+  if (blocks.length === 0) return image ? <span className="block">{image}</span> : null;
+  if (isPlain(blocks) && !image) {
     return (
       <span className="break-words text-[color:var(--color-text-mid)]">
         <Mentions text={blocks[0].kind === "p" ? blocks[0].text : ""} handles={handles} />
@@ -318,6 +333,7 @@ function Body({ text, handles }: { text: string; handles: Handle[] }) {
           </span>
         ),
       )}
+      {image}
     </span>
   );
 }
