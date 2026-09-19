@@ -427,8 +427,9 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.emoji_aria": "Add an emoji",
   "dash.tabletalk.gif_aria": "Add a GIF",
   "dash.tabletalk.gif_placeholder": "Search GIFs\u2026",
+  "dash.tabletalk.gif_remove_aria": "Remove the GIF",
   "dash.tabletalk.help_gif":
-    "GIFs: tap GIF by the send button, search, and pick one \u2014 it posts right away, under anything you typed. One per message.",
+    "GIFs: tap GIF by the send button, search, and pick one. It sits above the box until you send, under anything you typed. One per message.",
   "dash.tabletalk.tag_commish": "Commish",
   "dash.tabletalk.tag_leader": "League Leader",
   "dash.tabletalk.dock_label": "League Chat",

@@ -35,7 +35,7 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord, gifAria, gifPlaceholder, helpGif] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord, gifAria, gifPlaceholder, gifRemoveAria, helpGif] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -71,6 +71,7 @@ export async function TableTalk({
     getContent("dash.tabletalk.dock_close_word"),
     getContent("dash.tabletalk.gif_aria"),
     getContent("dash.tabletalk.gif_placeholder"),
+    getContent("dash.tabletalk.gif_remove_aria"),
     getContent("dash.tabletalk.help_gif"),
   ]);
 
@@ -267,6 +268,7 @@ export async function TableTalk({
           gifEnabled={!!process.env.GIPHY_API_KEY}
           gifAria={gifAria}
           gifPlaceholder={gifPlaceholder}
+          gifRemoveAria={gifRemoveAria}
         />
       )}
     </section>
@@ -300,7 +302,7 @@ function Body({ text: raw, handles }: { text: string; handles: Handle[] }) {
   const image = gif ? (
     <a href={gif} target="_blank" rel="noopener noreferrer" className="mt-1.5 block w-fit">
       {/* eslint-disable-next-line @next/next/no-img-element -- provider-hosted GIF, not an optimisable asset */}
-      <img src={gif} alt="" loading="lazy" className="max-h-56 max-w-full border border-[color:var(--color-border)]" />
+      <img src={gif} alt="" loading="lazy" className="max-h-64 max-w-full border border-[color:var(--color-border)]" />
     </a>
   ) : null;
   if (blocks.length === 0) return image ? <span className="block">{image}</span> : null;

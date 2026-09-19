@@ -33,7 +33,7 @@ export async function GET(req: Request) {
   const gifs = (data.data ?? [])
     .map((r) => ({
       id: r.id,
-      preview: r.images.fixed_width_small?.url ?? r.images.fixed_height_small?.url ?? r.images.fixed_height?.url,
+      preview: r.images.fixed_width?.url ?? r.images.fixed_height?.url,
       url: r.images.fixed_height?.url ?? r.images.original?.url,
     }))
     .filter((g) => g.preview && g.url);

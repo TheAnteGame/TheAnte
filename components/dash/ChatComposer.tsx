@@ -41,6 +41,7 @@ export function ChatComposer({
   gifEnabled,
   gifAria,
   gifPlaceholder,
+  gifRemoveAria,
 }: {
   placeholder: string;
   liveLabel: string;
@@ -51,6 +52,7 @@ export function ChatComposer({
   gifEnabled: boolean;
   gifAria: string;
   gifPlaceholder: string;
+  gifRemoveAria: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -82,20 +84,16 @@ export function ChatComposer({
     setGifOpen((o) => !o);
     if (!gifOpen && gifs.length === 0) void searchGifs("");
   };
-  const pickGif = async (g: Gif) => {
-    const fd = new FormData();
-    fd.set("body", `${value.trim()}\n${g.url}`.trim());
-    setError("");
-    const result = await postChatMessage(fd);
-    if (!result.ok && result.error) setError(result.error);
-    else {
-      formRef.current?.reset();
-      setValue("");
-      setQuery(null);
-      setGifOpen(false);
-      fit(inputRef.current);
-    }
+  // Picking a GIF stages it (D-094 follow-up): it shows above the box with an × and
+  // goes out with the arrow or Enter, under whatever was typed — nobody posts a meme
+  // they have not looked at first.
+  const [pending, setPending] = useState<Gif | null>(null);
+  const pickGif = (g: Gif) => {
+    setPending(g);
+    setGifOpen(false);
+    inputRef.current?.focus();
   };
+  const withGif = (body: string) => (pending ? `${body.trim()}\n${pending.url}`.trim() : body);
   // Keyboard-and-mouse device or not — subscribed, not set-in-effect (the pattern the
   // tutorial uses for reduced motion): SSR gets a stable false, a laptop that docks a
   // mouse mid-session flips live, and there is no cascading first render.
@@ -166,17 +164,33 @@ export function ChatComposer({
         ref={formRef}
         action={async (fd) => {
           setError("");
+          fd.set("body", withGif(String(fd.get("body") ?? "")));
           const result = await postChatMessage(fd);
           if (!result.ok && result.error) setError(result.error);
           else {
             formRef.current?.reset();
             setValue("");
+            setPending(null);
             setQuery(null);
             fit(inputRef.current);
           }
         }}
         className={`flex flex-wrap gap-2 px-3 pb-3 ${showLive ? "pt-2" : "pt-3"}`}
       >
+        {pending && (
+          <span className="flex w-full items-start gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- provider-hosted GIF preview */}
+            <img src={pending.preview} alt="" className="max-h-32 border border-[color:var(--color-border)]" />
+            <button
+              type="button"
+              onClick={() => setPending(null)}
+              aria-label={gifRemoveAria}
+              className="chamfer border border-[color:var(--color-border)] px-2 py-1 text-xs text-[color:var(--color-text-mid)] hover:border-[color:var(--color-loss)] hover:text-[color:var(--color-loss)]"
+            >
+              ×
+            </button>
+          </span>
+        )}
         <span className="relative flex-1">
           {matches.length > 0 && (
             <ul className="absolute bottom-full left-0 z-30 mb-1 w-56 border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] py-1 shadow-lg">
@@ -226,7 +240,7 @@ export function ChatComposer({
               // the line and the arrow sends. A blank message never posts from a key.
               if (enterSends && !e.shiftKey) {
                 e.preventDefault();
-                if (value.trim().length > 0) formRef.current?.requestSubmit();
+                if (value.trim().length > 0 || pending) formRef.current?.requestSubmit();
               }
             }}
             className="block w-full resize-none bg-[color:var(--color-surface-2)] px-3 py-2 text-sm leading-5 text-[color:var(--color-text-hi)] outline-none placeholder:text-[color:var(--color-text-low)] focus:outline-2 focus:outline-[color:var(--color-chrome)]"
@@ -251,7 +265,7 @@ export function ChatComposer({
               <span aria-hidden>GIF</span>
             </button>
             {gifOpen && (
-              <span className="absolute bottom-full right-0 z-30 mb-1 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2 border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] p-2 shadow-lg">
+              <span className="absolute bottom-full right-0 z-30 mb-1 flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2 border border-[color:var(--color-border)] bg-[color:var(--color-surface-3)] p-2 shadow-lg">
                 <input
                   value={gifQuery}
                   onChange={(e) => setGifQuery(e.target.value)}
@@ -267,11 +281,11 @@ export function ChatComposer({
                   autoFocus
                   className="w-full bg-[color:var(--color-surface-2)] px-2 py-1.5 text-sm text-[color:var(--color-text-hi)] outline-none placeholder:text-[color:var(--color-text-low)] focus:outline-2 focus:outline-[color:var(--color-chrome)]"
                 />
-                <span className={`grid max-h-64 grid-cols-3 gap-1 overflow-y-auto overscroll-contain ${gifBusy ? "opacity-50" : ""}`}>
+                <span className={`grid max-h-[24rem] grid-cols-2 gap-1.5 overflow-y-auto overscroll-contain ${gifBusy ? "opacity-50" : ""}`}>
                   {gifs.map((g) => (
-                    <button key={g.id} type="button" onClick={() => void pickGif(g)} className="block aspect-square overflow-hidden bg-black/30 hover:outline hover:outline-2 hover:outline-[color:var(--color-gold)]">
+                    <button key={g.id} type="button" onClick={() => pickGif(g)} className="block overflow-hidden bg-black/30 hover:outline hover:outline-2 hover:outline-[color:var(--color-gold)]">
                       {/* eslint-disable-next-line @next/next/no-img-element -- provider-hosted preview, not an optimisable asset */}
-                      <img src={g.preview} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      <img src={g.preview} alt="" loading="lazy" className="block h-auto w-full" />
                     </button>
                   ))}
                 </span>
