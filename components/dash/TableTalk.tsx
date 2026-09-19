@@ -10,6 +10,9 @@ import { buildHandles, segmentBody, type Handle } from "@/lib/chat/mentions";
 import { blocksOf, isPlain } from "@/lib/chat/format";
 import { countUnread, unreadBadge, type ChatPosition } from "@/lib/chat/unread";
 import { extractGif } from "@/lib/chat/gif";
+import { serviceDb } from "@/lib/jobs/util";
+import { phaseOf, tally } from "@/lib/polls/tally";
+import { PollCard, type PollView } from "./PollCard";
 import { ChatDock } from "./ChatDock";
 import { leaderFrom } from "@/lib/ticker/leader";
 import { ChatTag, type TagTone } from "./ChatTag";
@@ -35,7 +38,7 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord, gifAria, gifPlaceholder, gifRemoveAria, helpGif] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord, gifAria, gifPlaceholder, gifRemoveAria, helpGif, pollEyebrow, pollCloses, pollClosed, pollVotes, pollChange, pollYourVote] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -73,6 +76,12 @@ export async function TableTalk({
     getContent("dash.tabletalk.gif_placeholder"),
     getContent("dash.tabletalk.gif_remove_aria"),
     getContent("dash.tabletalk.help_gif"),
+    getContent("dash.poll.eyebrow"),
+    getContent("dash.poll.closes"),
+    getContent("dash.poll.closed"),
+    getContent("dash.poll.votes"),
+    getContent("dash.poll.change"),
+    getContent("dash.poll.your_vote"),
   ]);
 
   // Who wears a tag (D-066). Both reads go through the PLAYER client like everything
@@ -170,6 +179,38 @@ export async function TableTalk({
   const unread = countUnread(list, me?.chat_read_at ?? null, playerId);
   const badge = unreadBadge(unread, PAGE);
 
+  // League polls (D-095): anything open, plus anything closed in the last three
+  // days so the result is seen. Read with the service client — the room only ever
+  // receives aggregates and the reader's own vote, never who voted for what.
+  const svc = serviceDb();
+  const pollNow = new Date();
+  const { data: pollRows } = await svc
+    .from("polls")
+    .select("id, question, options, opens_at, closes_at, closed_at")
+    .lte("opens_at", pollNow.toISOString())
+    .gte("closes_at", new Date(pollNow.getTime() - 3 * 86400_000).toISOString())
+    .order("closes_at", { ascending: false });
+  const polls: PollView[] = [];
+  for (const p of pollRows ?? []) {
+    const { data: votes } = await svc.from("poll_votes").select("player_id, option_index").eq("poll_id", p.id);
+    const options = p.options as string[];
+    const t = tally(votes ?? [], options.length);
+    const mine = (votes ?? []).find((v) => v.player_id === playerId)?.option_index ?? null;
+    const phase = phaseOf(p);
+    if (phase === "upcoming") continue;
+    polls.push({
+      id: p.id,
+      question: p.question,
+      options,
+      percents: t.percents,
+      total: t.total,
+      myVote: mine,
+      phase,
+      closesLabel: DateTime.fromISO(p.closes_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MST'"),
+    });
+  }
+  const pollCopy = { eyebrow: pollEyebrow, closes: pollCloses, closed: pollClosed, votes: pollVotes, change: pollChange, yourVote: pollYourVote };
+
   return (
     <ChatDock
       position={chatPosition}
@@ -183,6 +224,9 @@ export async function TableTalk({
       help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} gifLine={helpGif} />}
     >
     <section aria-label={heading} className="flex h-full min-h-0 flex-col">
+      {polls.map((p) => (
+        <PollCard key={p.id} poll={p} copy={pollCopy} />
+      ))}
       <ul className="chat-list flex min-h-0 flex-1 flex-col-reverse overflow-y-auto overscroll-contain px-4 py-2">
         {list.map((m, i) => {
           const older = list[i + 1];

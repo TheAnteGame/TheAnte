@@ -1112,3 +1112,48 @@ export async function cancelBroadcast(fd: FormData): Promise<ActionResult> {
   revalidatePath("/admin/email");
   return { ok: true };
 }
+
+// ── League polls (D-095) ────────────────────────────────────────────────────────
+
+export async function createPoll(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const question = str(fd, "question");
+  const options = str(fd, "options")
+    .split("\n")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (!question) return fail("A question is required");
+  if (options.length < 2 || options.length > 6) return fail("Two to six options, one per line");
+  if (new Set(options.map((o) => o.toLowerCase())).size !== options.length) return fail("Options must be different from each other");
+  const opensRaw = str(fd, "opensAt");
+  const closesRaw = str(fd, "closesAt");
+  const opens = opensRaw ? DateTime.fromISO(opensRaw, { zone: LEAGUE_TZ }) : DateTime.now();
+  const closes = DateTime.fromISO(closesRaw, { zone: LEAGUE_TZ });
+  if (!opens.isValid) return fail("Bad open time");
+  if (!closesRaw || !closes.isValid) return fail("Pick a close time");
+  if (closes <= opens) return fail("It has to close after it opens");
+  if (closes <= DateTime.now()) return fail("That close time has already passed");
+  const { data: row, error } = await ctx.db
+    .from("polls")
+    .insert({ question, options, opens_at: opens.toISO(), closes_at: closes.toISO(), created_by: ctx.playerId })
+    .select("id")
+    .single();
+  if (error || !row) return fail(error?.message ?? "Could not create the poll");
+  await writeAudit(ctx, "poll.create", "poll", row.id, `${question} — opens ${opens.setZone(LEAGUE_TZ).toFormat("ccc LLL d h:mma")}, closes ${closes.setZone(LEAGUE_TZ).toFormat("ccc LLL d h:mma")} MST`);
+  revalidatePath("/admin/polls");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export async function closePoll(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const id = str(fd, "pollId");
+  const { error } = await ctx.db.from("polls").update({ closed_at: new Date().toISOString() }).eq("id", id).is("closed_at", null);
+  if (error) return fail(error.message);
+  await writeAudit(ctx, "poll.close", "poll", id, "Closed early by the commissioner");
+  revalidatePath("/admin/polls");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}

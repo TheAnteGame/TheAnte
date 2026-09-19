@@ -5,7 +5,8 @@ import { NextResponse } from "next/server";
 // action's own re-check (ANTE-ADMIN §2: middleware is not authorization).
 // /api/jobs/* carries its own CRON_SECRET auth and stays out of Clerk's way.
 
-const isPublic = createRouteMatcher(["/", "/rules(.*)", "/api/jobs(.*)"]);
+// /api/poll/vote is the tap from a poll email (D-095): its signed link is the auth.
+const isPublic = createRouteMatcher(["/", "/rules(.*)", "/api/jobs(.*)", "/api/poll/vote"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublic(req)) {

@@ -251,3 +251,33 @@ export function templateDoc(v: {
     blocks,
   };
 }
+
+/** 7. A league poll (D-095): open, or six hours from closing. One button per option,
+ *  each a signed vote link for THIS player, so a tap in the inbox is the vote. */
+export function pollEmail(v: {
+  kind: "open" | "reminder";
+  firstName: string;
+  question: string;
+  options: Array<{ label: string; href: string }>;
+  closes: string;
+}): EmailDoc {
+  const blocks: Block[] = [
+    {
+      kind: "lead",
+      text:
+        v.kind === "open"
+          ? `${v.firstName}, the Commissioner has a question for the league. Tap an answer below and your vote is in — no sign-in needed.`
+          : `${v.firstName}, this poll closes ${v.closes}. If you have not voted, or want to change it, tap an answer below.`,
+    },
+    { kind: "note", title: "The question", text: v.question },
+    ...v.options.map((o): Block => ({ kind: "cta", label: o.label, href: o.href })),
+    { kind: "para", text: `Voting closes ${v.closes}. Everyone sees the percentages once they have voted; nobody sees who picked what.` },
+    { kind: "cta", label: "See the poll in the room", href: `${SITE}/dashboard`, sub: "Table Talk carries the same poll and the live tally." },
+  ];
+  return {
+    preheader: `${v.question} — voting closes ${v.closes}.`,
+    eyebrow: v.kind === "open" ? "League poll" : "Poll closes soon",
+    headline: v.kind === "open" ? "The Commissioner wants a vote" : "Last call on the poll",
+    blocks,
+  };
+}

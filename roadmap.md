@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-19 (forty-second pass):** **League polls (D-095).** Commissioner-only,
+> named in the record, percentages-only in the room; card pinned in Table Talk; open
+> email + six-hour reminder with signed one-tap vote links; `/admin/polls`. Migration
+> **0029** (tables + `ante-polls` cron) — apply before deploying.
+
 > **2026-09-19 (forty-first pass):** **GIFs in Table Talk (D-094).** GIF button → GIPHY
 > search via `/api/gif` (key server-side, approved players only) → posts the link;
 > provider hosts render inline, one per message. Dormant until `GIPHY_API_KEY` is set

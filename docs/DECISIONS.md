@@ -2591,3 +2591,28 @@ arbitrary image or a tracking pixel. Search is proxied through `/api/gif` so the
 provider key never reaches a browser and only an approved player can search.
 Ships dormant: without `GIPHY_API_KEY` the route answers 503 and the button is not
 rendered at all. Moderation is the existing hide button and mute.
+
+## D-095 — League polls, in the room and in the inbox (2026-09-19)
+
+Owner's spec: only the commissioner creates a poll; a vote is always a player's,
+never anonymous in the record, but the room sees percentages only — bars, no
+names; the tally appears the moment you have voted; an open time and a close time;
+an email at open and one six hours before close.
+
+**Built.** `polls` and `poll_votes` (migration 0029; one row per player per poll,
+changeable until close). Console page `/admin/polls`: create (question, 2–6
+options, open/close in MST), the tally with names — the one place names are ever
+attached — and Close now. In Table Talk the poll is a card pinned above the
+messages: option buttons before voting, percentage bars after, "your vote" marked,
+Change my vote until close; closed polls stay for three days. The `polls.tick` cron
+(every five minutes) sends the open email and the six-hour reminder, deduped per
+player per poll, and closes on time.
+
+**Vote from the inbox.** Each option in the email is a button carrying a link
+signed (HMAC over poll, player, option, keyed on the cron secret) for that player
+alone. `/api/poll/vote` is public — the signature is the authorisation — re-checks
+the poll is open and the player approved, records the vote as via:email, and lands
+on the dashboard where the card shows the tally. An old link cannot vote late.
+
+The Mark award (§11) is a vote by the felt; this system could run it at season
+close. Not wired to it here.
