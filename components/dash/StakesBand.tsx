@@ -90,7 +90,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       .limit(1)
       .maybeSingle();
     const lock = season?.week1_lock_at
-      ? DateTime.fromISO(season.week1_lock_at).setZone(LEAGUE_TZ).toFormat("cccc, LLL d 'at' h:mma 'MT'")
+      ? DateTime.fromISO(season.week1_lock_at).setZone(LEAGUE_TZ).toFormat("cccc, LLL d 'at' h:mma 'MST'")
       : "—";
     const message = await getContent("band.preseason_message", { lock });
     return (
@@ -188,7 +188,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
       ? getContent("band.limit_capped_stack", { stack: ownAfterAnte })
       : getContent("band.limit_capped_room", { median }),
     getContent(week.number === 1 ? "band.deadline_tip_first" : "band.deadline_tip", {
-      deadline: deadline.toFormat("cccc, LLLL d 'at' h:mma 'MT'"),
+      deadline: deadline.toFormat("cccc, LLLL d 'at' h:mma 'MST'"),
       countdown,
     }),
     getContent("band.ring_tip", {
@@ -272,7 +272,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
           </Tip>
         ) : (
           <Tip text={deadlineTip} label={deadlineLabel} align="right">
-            {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'MT'"))}
+            {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'MST'"))}
           </Tip>
         )}
       </span>

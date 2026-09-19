@@ -318,7 +318,7 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
       ? ""
       : `${foldedNames.sort().join(", ")} ${foldedNames.length === 1 ? "was" : "were"} folded automatically.`;
 
-  const deadlineLabel = "Thursday 12:00pm MT";
+  const deadlineLabel = "Thursday 12:00pm MST";
 
   for (const p of players ?? []) {
     if (!p.email) continue;

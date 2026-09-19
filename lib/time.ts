@@ -13,8 +13,8 @@ export function nowLeague(): DateTime {
   return DateTime.now().setZone(LEAGUE_TZ);
 }
 
-/** The weekly anchors (§3, §14): slate opens Tuesday 6:00am MT; deadline Thursday
- *  12:00 noon MT. Derived from the week's FIRST kickoff: its ISO calendar week's
+/** The weekly anchors (§3, §14): slate opens Tuesday 6:00am MST; deadline Thursday
+ *  12:00 noon MST. Derived from the week's FIRST kickoff: its ISO calendar week's
  *  Tuesday. First games are Wednesday or Thursday, never Monday, so the ISO week of
  *  the first kickoff always contains the right Tuesday. */
 export function weekAnchors(firstKickoff: Date): { opensAt: Date; deadlineAt: Date } {

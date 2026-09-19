@@ -42,8 +42,8 @@ export const MAIL_KINDS: MailKind[] = [
   { keyPrefix: "player.approved", label: "Approved — welcome", trigger: "Commissioner approves an application", bodySource: "designed", subjectKey: "mail.approved.subject" },
   { keyPrefix: "notify.slate_open", label: "Week opens", trigger: "slate.open job, Tuesday morning", bodySource: "designed", subjectKey: "mail.slate_open.subject" },
   { keyPrefix: "player.ticket", label: "Ticket locked", trigger: "A player submits a ticket", bodySource: "designed", subjectKey: "mail.ticket.subject" },
-  { keyPrefix: "notify.reminder", label: "Reminder — not yet in", trigger: "notify.reminders job, Wed 6pm MT, unsubmitted only", bodySource: "template", subjectKey: "mail.reminder.subject", bodyKey: "notify.reminder" },
-  { keyPrefix: "notify.final_call", label: "Final call — not yet in", trigger: "notify.reminders job, Thu 9am MT, unsubmitted only", bodySource: "template", subjectKey: "mail.final_call.subject", bodyKey: "notify.final_call" },
+  { keyPrefix: "notify.reminder", label: "Reminder — not yet in", trigger: "notify.reminders job, Wed noon MST, unsubmitted only", bodySource: "template", subjectKey: "mail.reminder.subject", bodyKey: "notify.reminder" },
+  { keyPrefix: "notify.final_call", label: "Final call — not yet in", trigger: "notify.reminders job, Thu 6am MST, unsubmitted only", bodySource: "template", subjectKey: "mail.final_call.subject", bodyKey: "notify.final_call" },
   { keyPrefix: "player.nudge", label: "Manual nudge", trigger: "Commissioner presses Nudge on the roster", bodySource: "template", subjectKey: "mail.nudge.subject", bodyKey: "notify.nudge" },
   { keyPrefix: "player.folded", label: "Auto-folded", trigger: "Deadline passes with no ticket", bodySource: "designed", subjectKey: "mail.folded.subject" },
   { keyPrefix: "notify.reveal", label: "The board is open", trigger: "The reveal fires — last ticket in, or Thursday noon", bodySource: "designed", subjectKey: "mail.reveal.subject" },
@@ -75,7 +75,8 @@ export interface ScheduledJob {
  *  bug in this list. Last-run times on the page come from job_runs, which is live. */
 export const SCHEDULED_JOBS: ScheduledJob[] = [
   { jobKey: "slate.open", cronName: "ante-slate-open", expr: "0 12,13 * * 2", whenET: "Tuesday 6:00am", what: "Opens the week, posts antes, mails the board", sends: true },
-  { jobKey: "notify.reminders", cronName: "ante-reminders", expr: "0 0,1,15,16 * * 4", whenET: "Wed 6:00pm and Thu 9:00am", what: "Reminder and final call — unsubmitted players only", sends: true },
+  { jobKey: "notify.reminders", cronName: "ante-reminder-wed", expr: "0 18,19 * * 3", whenET: "Wednesday noon", what: "Reminder, 24 hours to the wall — unsubmitted players only", sends: true },
+  { jobKey: "notify.reminders", cronName: "ante-final-call-thu", expr: "0 12,13 * * 4", whenET: "Thursday 6:00am", what: "Final call, six hours to the wall — unsubmitted players only", sends: true },
   { jobKey: "reveal.deadline", cronName: "ante-reveal-deadline", expr: "0,5 18,19 * * 4", whenET: "Thursday 12:00pm and 12:05pm", what: "Auto-folds, reveals, mails the open board", sends: true },
   { jobKey: "reveal.check", cronName: "ante-reveal-check", expr: "*/2 * * * 2-4", whenET: "Every 2 min, Tue–Thu", what: "Reveals early once the last ticket is in", sends: true },
   { jobKey: "broadcast.send", cronName: "ante-broadcast", expr: "*/5 * * * *", whenET: "Every 5 min", what: "Sends any league email whose scheduled time has come", sends: true },

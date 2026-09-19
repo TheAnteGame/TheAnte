@@ -1087,7 +1087,7 @@ export async function createBroadcast(fd: FormData): Promise<ActionResult> {
     .select("id")
     .single();
   if (error || !row) return fail(error?.message ?? "Could not queue");
-  await writeAudit(ctx, "broadcast.create", "broadcast", row.id, now ? "Sent now" : `Scheduled ${sendAt.setZone(LEAGUE_TZ).toFormat("ccc LLL d h:mma 'MT'")}`);
+  await writeAudit(ctx, "broadcast.create", "broadcast", row.id, now ? "Sent now" : `Scheduled ${sendAt.setZone(LEAGUE_TZ).toFormat("ccc LLL d h:mma 'MST'")}`);
   if (now) {
     try {
       const n = await sendBroadcast(ctx.db, { ...b, id: row.id });

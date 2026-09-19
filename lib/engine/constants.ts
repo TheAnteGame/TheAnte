@@ -27,7 +27,7 @@ export const MIN_PLAYERS = 8; // §1 — to start, not to survive
 export const DEADWEIGHT_WEEKS = 3;
 
 /** §3 — breathing room between the deadline and the first bettable kickoff. The
- *  deadline itself never moves (Thursday noon MT, "no exceptions"); this only decides
+ *  deadline itself never moves (Thursday noon MST, "no exceptions"); this only decides
  *  what counts as on-slate. A game kicking inside this margin is treated the way the
  *  Wednesday openers already are: simply not on the slate. Zero real games are
  *  affected — the NFL has never scheduled a Thursday noon kickoff — so this is a rail,

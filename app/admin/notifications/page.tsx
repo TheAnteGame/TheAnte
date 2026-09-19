@@ -115,7 +115,7 @@ export default async function Notifications() {
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-[color:var(--color-text-low)]">
                 <th className="py-2 pr-3">Job</th>
-                <th className="py-2 pr-3">Fires (MT)</th>
+                <th className="py-2 pr-3">Fires (MST)</th>
                 <th className="py-2 pr-3">Emails players</th>
                 <th className="py-2 pr-3">Last run</th>
                 <th className="py-2">What it does</th>

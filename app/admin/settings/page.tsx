@@ -40,7 +40,7 @@ export default async function Settings() {
           <Stat label="Approved players" value={`${approvedCount ?? 0} / ${MIN_PLAYERS} to start`} />
           <Stat
             label="Week 1 lock"
-            value={season?.week1_lock_at ? DateTime.fromISO(season.week1_lock_at).setZone(LEAGUE_TZ).toFormat("ccc LLL d, h:mma 'MT'") : "—"}
+            value={season?.week1_lock_at ? DateTime.fromISO(season.week1_lock_at).setZone(LEAGUE_TZ).toFormat("ccc LLL d, h:mma 'MST'") : "—"}
           />
           {season?.status === "preseason" && (
             <AdminForm

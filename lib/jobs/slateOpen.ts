@@ -268,7 +268,7 @@ async function sendWeekOpenMail(
     .eq("status", "approved");
   if (!players || players.length === 0) return;
 
-  const deadline = DateTime.fromJSDate(deadlineAt).setZone(LEAGUE_TZ).toFormat("cccc h:mma 'MT'");
+  const deadline = DateTime.fromJSDate(deadlineAt).setZone(LEAGUE_TZ).toFormat("cccc h:mma 'MST'");
   const ante = anteForWeek(weekNumber);
   const nameOf = new Map(players.map((p) => [p.id, `${p.first_name ?? "?"} ${(p.last_name ?? "").slice(0, 1)}.`.trim()]));
 

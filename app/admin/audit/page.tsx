@@ -37,7 +37,7 @@ export default async function Audit({ searchParams }: { searchParams: Promise<{ 
           <table className="w-full min-w-[760px]">
             <thead>
               <tr className="border-b border-[color:var(--color-border)]">
-                <th className={thCls}>When (MT)</th>
+                <th className={thCls}>When (MST)</th>
                 <th className={thCls}>Actor</th>
                 <th className={thCls}>Action</th>
                 <th className={thCls}>Entity</th>

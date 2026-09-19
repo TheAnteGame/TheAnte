@@ -2551,3 +2551,21 @@ executable by the service role only. The Notifications page now prints a "live"
 line under each declared schedule — matches, differs (with the real value), NOT
 SCHEDULED, or not visible when 0027 is not applied — and any session can verify a
 cron from here with one rpc call. It reads; it cannot change a schedule.
+
+## D-092 — Reminders at Wednesday noon and Thursday 6am; every clock says MST (2026-09-19)
+
+Coast-to-coast check after D-089: the Wednesday 6pm Mountain reminder was 8pm
+Eastern, which helps nobody, and the Thursday 9am final call was three hours from
+the wall. Owner's call: **reminder Wednesday noon MST** (exactly 24 hours to the
+wall; 2pm Eastern, 11am Pacific) and **final call Thursday 6am MST** (the same hour
+the Tuesday opener lands), so the sends stop clustering on Thursday morning.
+Migration 0028 replaces the single `ante-reminders` cron with `ante-reminder-wed`
+and `ante-final-call-thu`; the job's guard moves with them. Also by the owner's
+instruction, every on-screen and emailed clock label reads **MST** rather than MT —
+strictly it is MDT until November, but MST is what the league says, and the
+instants are computed by the tz database regardless of the label.
+
+The Week 2 ante refund (D-089's remedy): +10 to each of the three auto-folded
+players from the Pot, kind `correction`, audited, and by the owner's instruction
+NOT announced in Table Talk. Posted by the commissioner from the SQL editor — the
+session's guard refused a direct production ledger write, correctly.

@@ -110,7 +110,7 @@ export default async function Backup() {
               {rows.map((r) => (
                 <tr key={r.id} className="border-t border-[color:var(--color-border)]">
                   <td className={`${tdCls} nums text-[color:var(--color-text-hi)]`}>
-                    {DateTime.fromISO(r.created_at).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma 'MT'")}
+                    {DateTime.fromISO(r.created_at).setZone(LEAGUE_TZ).toFormat("LLL d, h:mma 'MST'")}
                   </td>
                   <td className={`${tdCls} text-[color:var(--color-text-mid)]`}>{r.reason}</td>
                   <td className={`${tdCls} nums text-[color:var(--color-text-mid)]`}>{r.chip_total ?? "—"}</td>

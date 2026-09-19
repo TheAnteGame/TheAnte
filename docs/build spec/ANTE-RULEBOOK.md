@@ -1,7 +1,7 @@
 # ANTE
 ### The complete rules
 
-*Version 1.3 — frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MT. The hours did not change, the zone did — see D-089.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
+*Version 1.3 — frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MST. The hours did not change, the zone did — see D-089.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
 
 ANTE is a season-long NFL pool where you bet chips instead of making picks. Everyone starts with 500. Each week you spread chips across the games you like but what you get paid depends on how many people agreed with you. Take the side everyone took and you barely get paid. Take the side almost nobody took and you get paid double. Nobody sees a single pick until every player is locked in, so every week you're guessing what your friends are about to do. Biggest stack on the last Sunday wins.
 
@@ -64,9 +64,9 @@ Each week you get the full NFL slate. Pick sides, put chips on them.
 - **You must bet at least 5 games.** More is fine.
 - **You cannot bet both sides of a game.**
 - **The slate is every game that week** — Thursday, Saturday, Sunday, Monday, international, all of it — **except any game that kicks off before the deadline**, or within fifteen minutes of it.
-- **The deadline is Thursday, 12:00 noon MT (Mountain time).** Every week. All season. No exceptions.
+- **The deadline is Thursday, 12:00 noon MST (Mountain time).** Every week. All season. No exceptions.
 
-The NFL occasionally schedules a game before Thursday noon Mountain. The 2026 season has three: the Wednesday opener in Week 1, a Wednesday game the night before Thanksgiving in Week 12, and Thanksgiving's early game that same week (a 12:30 Eastern kickoff is 10:30 in Denver). Those games simply aren't on the slate — a 15-game week instead of 16, 14 in Week 12, and the five-game minimum never notices. **You can never bet a game that has already started**, and never one about to: a kickoff inside fifteen minutes of the deadline drops off the slate the same way. In practice this has never cost anybody a game — the closest the 2026 schedule comes is the Thursday nighter, six and a quarter hours after the wall — it just means the promise holds by margin rather than by a single second.
+The NFL occasionally schedules a game before Thursday noon MST. The 2026 season has three: the Wednesday opener in Week 1, a Wednesday game the night before Thanksgiving in Week 12, and Thanksgiving's early game that same week (a 12:30 Eastern kickoff is 10:30 in Denver). Those games simply aren't on the slate — a 15-game week instead of 16, 14 in Week 12, and the five-game minimum never notices. **You can never bet a game that has already started**, and never one about to: a kickoff inside fifteen minutes of the deadline drops off the slate the same way. In practice this has never cost anybody a game — the closest the 2026 schedule comes is the Thursday nighter, six and a quarter hours after the wall — it just means the promise holds by margin rather than by a single second.
 
 ### Submitting is a commitment
 
@@ -74,7 +74,7 @@ The NFL occasionally schedules a game before Thursday noon Mountain. The 2026 se
 
 **Submit nothing by Thursday noon and you are folded** (§6), and you still owe the ante. No reopening, no "my phone died."
 
-The slate opens **Tuesday at 6:00am MT**, which gives you two days and six hours. Thursday noon lands before Friday's final injury designations, so you're betting on Wednesday's practice report like everyone else. That's deliberate: this is a game about reading the room, not out-researching it.
+The slate opens **Tuesday at 6:00am MST**, which gives you two days and six hours. Thursday noon lands before Friday's final injury designations, so you're betting on Wednesday's practice report like everyone else. That's deliberate: this is a game about reading the room, not out-researching it.
 
 ---
 
@@ -406,10 +406,10 @@ Every one of these came up while stress-testing. None is exciting. All of them a
 
 ### Order of operations, every week
 
-1. **Tuesday, 6:00am MT.** The new slate opens and the point spreads are frozen as shown. **The median is measured now**, before anything moves.
+1. **Tuesday, 6:00am MST.** The new slate opens and the point spreads are frozen as shown. **The median is measured now**, before anything moves.
 2. The ante comes out of every stack and goes into the Pot. Stacks below one full ante skip it (§9).
 3. Players submit, blind. **Each ticket locks on submission, and nothing visible changes** — no stack, no Pot, no count (§6).
-4. **The reveal fires when the last ticket lands, or Thursday noon MT — whichever comes first.** Anyone who hasn't submitted is folded. Everything that was waiting posts at once, including any shove's ante refund (§8).
+4. **The reveal fires when the last ticket lands, or Thursday noon MST — whichever comes first.** Anyone who hasn't submitted is folded. Everything that was waiting posts at once, including any shove's ante refund (§8).
 5. Everyone stares at everyone else's tickets for the next few days.
 6. Games are played. Bets settle.
 7. Whatever the table didn't pay out is swept into the Pot.

@@ -78,7 +78,7 @@ export default async function Ops() {
             <Stat label="Week" value={week.number} />
             <Stat label="Phase" value={week.phase} />
             <Stat label="Ante" value={`${week.ante} (${tierForWeek(week.number)})`} />
-            <Stat label="Deadline" value={DateTime.fromISO(week.deadline_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MT'")} />
+            <Stat label="Deadline" value={DateTime.fromISO(week.deadline_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MST'")} />
             <Stat label="Median" value={week.median_snapshot ?? "—"} />
             <Stat label="Places tier" value={`${week.places_tier_snapshot ?? "—"} (of ${week.active_count_snapshot ?? "—"})`} />
           </div>

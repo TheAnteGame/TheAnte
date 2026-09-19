@@ -157,7 +157,7 @@ export async function TableTalk({
   const muted = !!me?.is_muted && (!me.muted_until || new Date(me.muted_until) > new Date());
   const mutedText = mutedNotice.replace(
     "{expiry}",
-    me?.muted_until ? DateTime.fromISO(me.muted_until).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MT'") : "lifted",
+    me?.muted_until ? DateTime.fromISO(me.muted_until).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MST'") : "lifted",
   );
 
   // The dock's badge (D-086): what was said by others since this player last had

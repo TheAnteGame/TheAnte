@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-19 (thirty-ninth pass):** **Reminder hours + MST labels (D-092).** Wed noon
+> and Thu 6am MST; migration **0028** (two cron names, one job — apply, then verify via
+> the D-091 window). Every clock label says MST. Week 2 ante refund (+10 ×3) handed to
+> the commissioner as SQL; not announced.
+
 > **2026-09-17 (thirty-eighth pass):** **Cron window (D-091).** `ante_cron_jobs()`
 > (migration **0027**, service role only) reads the live pg_cron schedules; the
 > Notifications page shows matches / differs / NOT SCHEDULED per job. Apply 0027 and

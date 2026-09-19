@@ -48,7 +48,7 @@ export default async function EmailAdmin() {
             ctaHref: "Button link",
             whenNow: "Send now",
             whenLater: "Schedule",
-            sendAt: "Send at (MT)",
+            sendAt: "Send at (MST)",
             preview: "Preview",
             test: "Send test to me",
             submitNow: "Send to the league",
