@@ -2569,3 +2569,11 @@ The Week 2 ante refund (D-089's remedy): +10 to each of the three auto-folded
 players from the Pot, kind `correction`, audited, and by the owner's instruction
 NOT announced in Table Talk. Posted by the commissioner from the SQL editor — the
 session's guard refused a direct production ledger write, correctly.
+
+## D-093 — The dock rides along to the board (2026-09-19)
+
+Owner's ask: talk trash while looking at the week's board. The results page now
+renders the same Table Talk dock as the dashboard — same component, same position
+setting, same read tracking — and adopts the dashboard's five-second poll so new
+messages arrive there too. Nothing new was built; the dock was already a page-level
+element. Other pages (guide, FAQ, profile) stay dock-free: they are reading pages.

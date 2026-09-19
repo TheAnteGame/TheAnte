@@ -8,6 +8,9 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-19 (fortieth pass):** **Chat on the board (D-093).** /results/[week] renders
+> the same Table Talk dock as the dashboard, with the five-second poll.
+
 > **2026-09-19 (thirty-ninth pass):** **Reminder hours + MST labels (D-092).** Wed noon
 > and Thu 6am MST; migration **0028** (two cron names, one job — apply, then verify via
 > the D-091 window). Every clock label says MST. Week 2 ante refund (+10 ×3) handed to
