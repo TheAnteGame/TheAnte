@@ -30,6 +30,8 @@ export default async function WeekResults({
   const state = await getPlayerState();
   if (!state?.player) redirect("/");
   if (routeFor(state) !== "/dashboard") redirect(routeFor(state));
+  // Captured by the chrome() closure below, where TS cannot carry the narrowing.
+  const player = state.player;
 
   const { week: weekParam } = await params;
   const { board: skipSequence } = await searchParams;
@@ -85,7 +87,7 @@ export default async function WeekResults({
       {/* The room rides along to the board (D-093): same dock, same position setting,
           same five-second poll as the dashboard, so the trash talk keeps up. */}
       <PollRefresh intervalMs={5000} />
-      <TableTalk playerId={state.player.id} chatPosition={state.player.chatPosition} />
+      <TableTalk playerId={player.id} chatPosition={player.chatPosition} />
     </div>
   );
 
