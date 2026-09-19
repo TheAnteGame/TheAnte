@@ -281,11 +281,13 @@ export function ChatComposer({
                   autoFocus
                   className="w-full bg-[color:var(--color-surface-2)] px-2 py-1.5 text-sm text-[color:var(--color-text-hi)] outline-none placeholder:text-[color:var(--color-text-low)] focus:outline-2 focus:outline-[color:var(--color-chrome)]"
                 />
-                <span className={`grid max-h-[24rem] grid-cols-2 gap-1.5 overflow-y-auto overscroll-contain ${gifBusy ? "opacity-50" : ""}`}>
+                {/* Fixed-height tiles, whole GIF fitted inside on a dark backing: even rows,
+                    and the words on a meme are readable before it is chosen. */}
+                <span className={`grid max-h-[26rem] grid-cols-2 gap-1.5 overflow-y-auto overscroll-contain ${gifBusy ? "opacity-50" : ""}`}>
                   {gifs.map((g) => (
-                    <button key={g.id} type="button" onClick={() => pickGif(g)} className="block overflow-hidden bg-black/30 hover:outline hover:outline-2 hover:outline-[color:var(--color-gold)]">
+                    <button key={g.id} type="button" onClick={() => pickGif(g)} className="block h-40 w-full overflow-hidden bg-black/60 hover:outline hover:outline-2 hover:outline-[color:var(--color-gold)]">
                       {/* eslint-disable-next-line @next/next/no-img-element -- provider-hosted preview, not an optimisable asset */}
-                      <img src={g.preview} alt="" loading="lazy" className="block h-auto w-full" />
+                      <img src={g.preview} alt="" loading="lazy" className="block h-full w-full object-contain" />
                     </button>
                   ))}
                 </span>
