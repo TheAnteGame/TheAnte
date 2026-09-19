@@ -47,7 +47,7 @@ export function ChatComposer({
   showLive: boolean;
   handles: Handle[];
   emojiAria: string;
-  /** False until TENOR_API_KEY is set on the server — the button is simply absent. */
+  /** False until GIPHY_API_KEY is set on the server — the button is simply absent. */
   gifEnabled: boolean;
   gifAria: string;
   gifPlaceholder: string;

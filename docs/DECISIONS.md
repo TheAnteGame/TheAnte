@@ -2581,7 +2581,7 @@ element. Other pages (guide, FAQ, profile) stay dock-free: they are reading page
 ## D-094 — GIFs in Table Talk, links not uploads (2026-09-19)
 
 Players asked for memes. Owner chose the messenger pattern over uploads: a GIF
-button beside the emoji strip opens a search (Tenor, content filter on), picking
+button beside the emoji strip opens a search (GIPHY, rating capped at pg-13), picking
 one posts the message at once with the GIF's link on its own line under whatever
 was typed. Nothing is uploaded and nothing is stored but the link; the record of
 what was said is still just text. Rendering is deliberately narrow
@@ -2589,5 +2589,5 @@ what was said is still just text. Rendering is deliberately narrow
 one per message, everything else stays a link — so a body cannot embed an
 arbitrary image or a tracking pixel. Search is proxied through `/api/gif` so the
 provider key never reaches a browser and only an approved player can search.
-Ships dormant: without `TENOR_API_KEY` the route answers 503 and the button is not
+Ships dormant: without `GIPHY_API_KEY` the route answers 503 and the button is not
 rendered at all. Moderation is the existing hide button and mute.

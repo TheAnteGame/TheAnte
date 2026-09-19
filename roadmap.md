@@ -8,9 +8,9 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
-> **2026-09-19 (forty-first pass):** **GIFs in Table Talk (D-094).** GIF button → Tenor
+> **2026-09-19 (forty-first pass):** **GIFs in Table Talk (D-094).** GIF button → GIPHY
 > search via `/api/gif` (key server-side, approved players only) → posts the link;
-> provider hosts render inline, one per message. Dormant until `TENOR_API_KEY` is set
+> provider hosts render inline, one per message. Dormant until `GIPHY_API_KEY` is set
 > in Vercel (Production + Preview) and `.env.local`.
 
 > **2026-09-19 (fortieth pass):** **Chat on the board (D-093).** /results/[week] renders

@@ -264,7 +264,7 @@ export async function TableTalk({
           showLive={(mine ?? []).length === 0}
           handles={handles}
           emojiAria={emojiAria}
-          gifEnabled={!!process.env.TENOR_API_KEY}
+          gifEnabled={!!process.env.GIPHY_API_KEY}
           gifAria={gifAria}
           gifPlaceholder={gifPlaceholder}
         />

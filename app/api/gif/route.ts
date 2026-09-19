@@ -3,15 +3,15 @@ import { auth } from "@clerk/nextjs/server";
 import { getPlayerState } from "@/lib/player";
 
 // GIF search for Table Talk (D-094), proxied so the provider key never reaches a
-// browser and so only an approved player can search. Tenor v2; the provider's own
-// content filter is on. Results are the small preview for the picker and the full
-// GIF link that goes into the message.
+// browser and so only an approved player can search. GIPHY v1 (the owner set the
+// account up there); rating capped at pg-13. Results are the small preview for the
+// picker and the full GIF link that goes into the message.
 
 export const dynamic = "force-dynamic";
 
-interface TenorResult {
+interface GiphyResult {
   id: string;
-  media_formats: Record<string, { url: string; dims: [number, number] }>;
+  images: Record<string, { url?: string }>;
 }
 
 export async function GET(req: Request) {
@@ -20,27 +20,21 @@ export async function GET(req: Request) {
   const state = await getPlayerState();
   if (!state?.player || state.player.status !== "approved") return new NextResponse(null, { status: 403 });
 
-  const key = process.env.TENOR_API_KEY;
+  const key = process.env.GIPHY_API_KEY;
   if (!key) return NextResponse.json({ error: "gif search is not configured" }, { status: 503 });
 
   const q = new URL(req.url).searchParams.get("q")?.trim().slice(0, 80) ?? "";
-  const params = new URLSearchParams({
-    key,
-    client_key: "ante",
-    limit: "24",
-    contentfilter: "medium",
-    media_filter: "tinygif,gif",
-  });
+  const params = new URLSearchParams({ api_key: key, limit: "24", rating: "pg-13", bundle: "messaging_non_clips" });
   if (q) params.set("q", q);
-  const endpoint = q ? "search" : "featured";
-  const res = await fetch(`https://tenor.googleapis.com/v2/${endpoint}?${params}`, { next: { revalidate: 60 } });
+  const endpoint = q ? "search" : "trending";
+  const res = await fetch(`https://api.giphy.com/v1/gifs/${endpoint}?${params}`, { next: { revalidate: 60 } });
   if (!res.ok) return NextResponse.json({ error: "gif search failed" }, { status: 502 });
-  const data = (await res.json()) as { results?: TenorResult[] };
-  const gifs = (data.results ?? [])
+  const data = (await res.json()) as { data?: GiphyResult[] };
+  const gifs = (data.data ?? [])
     .map((r) => ({
       id: r.id,
-      preview: r.media_formats.tinygif?.url ?? r.media_formats.gif?.url,
-      url: r.media_formats.gif?.url ?? r.media_formats.tinygif?.url,
+      preview: r.images.fixed_width_small?.url ?? r.images.fixed_height_small?.url ?? r.images.fixed_height?.url,
+      url: r.images.fixed_height?.url ?? r.images.original?.url,
     }))
     .filter((g) => g.preview && g.url);
   return NextResponse.json({ gifs });

@@ -6,6 +6,9 @@ describe("gifUrlOf", () => {
     expect(gifUrlOf("https://media.tenor.com/abc/tenor.gif")).toBe("https://media.tenor.com/abc/tenor.gif");
     expect(gifUrlOf("  https://c.tenor.com/x/AAAAC/name.gif  ")).toBe("https://c.tenor.com/x/AAAAC/name.gif");
   });
+  it("accepts a GIPHY media link, query string and all", () => {
+    expect(gifUrlOf("https://media2.giphy.com/media/abc/200.gif?cid=xyz&rid=200.gif")).toContain("media2.giphy.com");
+  });
   it("refuses other hosts, http, and links with words around them", () => {
     expect(gifUrlOf("https://example.com/cat.gif")).toBeNull();
     expect(gifUrlOf("http://media.tenor.com/abc/tenor.gif")).toBeNull();

@@ -3,7 +3,8 @@
 // hosts render as an image — any other link stays a link — so a body cannot embed
 // an arbitrary image, a tracking pixel, or a hotlinked file. One image per message.
 
-const GIF_HOSTS = ["media.tenor.com", "c.tenor.com", "media1.tenor.com", "media.giphy.com", "i.giphy.com"];
+// GIPHY serves from media0–media4 and i.giphy.com; Tenor from media/c.tenor.com.
+const GIF_HOST = /^(?:(?:media\d*|i)\.giphy\.com|(?:media\d*|c)\.tenor\.com)$/;
 
 /** The GIF url when a line is exactly one provider link, else null. */
 export function gifUrlOf(line: string): string | null {
@@ -11,7 +12,7 @@ export function gifUrlOf(line: string): string | null {
   if (!/^https:\/\/\S+$/.test(t)) return null;
   try {
     const u = new URL(t);
-    if (!GIF_HOSTS.includes(u.hostname)) return null;
+    if (!GIF_HOST.test(u.hostname)) return null;
     if (!/\.(gif|webp|mp4)$/i.test(u.pathname) && !u.hostname.endsWith("tenor.com")) return null;
     return u.toString();
   } catch {
