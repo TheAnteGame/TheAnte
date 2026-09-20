@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-20 (forty-eighth pass):** **Ticker speed slider fixed (D-101).** Nothing in
+> the chain was broken — the setting was the wrong QUANTITY. The lap was one item set
+> however wide, so px/s varied 6x with how much news was on the rail and "Fast" on a
+> sparse rail was 60 px/s. `lib/ticker/lap.ts` scales the lap by copy/rail width, so
+> the setting is now a real speed. Admin label corrected.
+
 > **2026-09-20 (forty-seventh pass):** **News box mixes outlets (D-100).** "Not the
 > team only" meant not the CLUB'S feed only — corrected. ESPN/CBS items are matched to
 > the team by nickname (word boundaries, not LIKE — `%Rams%` finds Jalen Ramsey) and

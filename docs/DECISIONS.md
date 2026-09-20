@@ -2796,3 +2796,33 @@ that silently does nothing is worse than no dropdown.
 The club feed rarely escapes; the league desks constantly do, so pulling them in
 surfaced it. `decodeEntities` runs at DISPLAY rather than ingest, so the rows already
 in the table are fixed too and not just the next fetch.
+
+## D-101 — The ticker speed slider was setting the wrong quantity (2026-09-20)
+
+Owner: "the ticker speed isn't working." Every link in the chain checked out — the
+setting saves (15 in `app_settings`), approved players can read it (0009), the
+component passes it, and the browser resolves `--ticker-seconds` to `15s` against a
+`40s` fallback, measured. Nothing was broken. **The number just did not mean what
+the slider said it meant.**
+
+The animation moves the track by one whole copy of the item set, and the setting was
+fed to it as the lap duration. So the lap was always "one item set", however wide
+that happened to be — which makes the SPEED, pixels per second, a function of how
+much news is on the rail rather than of the slider:
+
+| setting | 2 short posts | 6 items | 12 long headlines |
+|---|---|---|---|
+| 15s ("Fast") | 60 px/s | 173 px/s | 373 px/s |
+| 40s | 23 px/s | 65 px/s | 140 px/s |
+
+Six-to-one across the same setting. The owner's rail carries two short posts and a
+deadline, so his "Fast" was 60 px/s — slower than another league's "Steady" — and
+dragging the slider moved him between two crawls that both looked stuck. That is
+exactly "the speed isn't working", and it was a real defect rather than a
+misreading.
+
+**Fixed** by scaling the lap by copy-width over rail-width (`lib/ticker/lap.ts`,
+tested): pixels-per-second is now constant for a given setting, so 15s means a line
+crosses the rail in fifteen seconds on any rail, with any amount of news. The admin
+label says that instead of "one full pass", because one full pass was the misleading
+half. A floor stops a nearly-empty rail becoming a flicker.

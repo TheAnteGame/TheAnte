@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { lapSeconds } from "@/lib/ticker/lap";
 
 // The broadcast crawl (art §7). Pauses on hover; prefers-reduced-motion falls back
 // to a static rotating item (ANTE-PLAYER §4).
@@ -26,6 +27,8 @@ export function TickerMarquee({
   const [reduced, setReduced] = useState(false);
   const [staticIndex, setStaticIndex] = useState(0);
   const [copies, setCopies] = useState(2);
+  // Seconds for ONE LAP, which is not the setting — see lib/ticker/lap.ts (D-101).
+  const [lap, setLapSeconds] = useState(speedSeconds);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const copyRef = useRef<HTMLDivElement | null>(null);
 
@@ -52,11 +55,14 @@ export function TickerMarquee({
       const railW = trackRef.current?.parentElement?.clientWidth ?? 0;
       if (copyW <= 0 || railW <= 0) return;
       setCopies(Math.max(2, Math.ceil(railW / copyW) + 1));
+      // The setting is a SPEED — how long a line takes to cross the rail — and the
+      // lap is one whole item set, so it scales with how wide that set is (D-101).
+      setLapSeconds(lapSeconds(speedSeconds, copyW, railW));
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [reduced, items.length]);
+  }, [reduced, items.length, speedSeconds]);
 
   const render = (item: TickerItem, key: string) => {
     const body = (
@@ -106,7 +112,7 @@ export function TickerMarquee({
     <div
       aria-label="League ticker"
       className="overflow-hidden whitespace-nowrap ticker-rail py-2 text-sm"
-      style={{ ["--ticker-seconds" as string]: `${speedSeconds}s` }}
+      style={{ ["--ticker-seconds" as string]: `${lap.toFixed(2)}s` }}
     >
       {/* Enough copies to fill the rail, measured (D-076).
           The track shifts by exactly ONE copy and then repeats, so the loop is

@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { MAX_SPEED, MIN_SPEED } from "@/lib/ticker/style";
 
-// The slider reads out in seconds-per-pass and in plain words, because "40" means
-// nothing on its own — the commissioner is choosing a reading pace, not a number.
+// The slider reads out in seconds and in plain words, because "40" means nothing on
+// its own — the commissioner is choosing a reading pace, not a number. The seconds
+// are how long a line takes to CROSS THE RAIL (D-101), which is a speed; it used to
+// be how long the whole item set took, which is a speed only if you also fix how
+// much news there is.
 
 export function TickerSpeed({ initial }: { initial: number }) {
   const [value, setValue] = useState(initial);
@@ -12,7 +15,7 @@ export function TickerSpeed({ initial }: { initial: number }) {
   return (
     <label className="flex max-w-xl flex-col gap-2">
       <span className="text-xs uppercase tracking-wider text-[color:var(--color-text-low)]">
-        Crawl speed — one full pass takes {value}s ({word})
+        Crawl speed — a line crosses the rail in {value}s ({word})
       </span>
       <input
         type="range"
