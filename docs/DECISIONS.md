@@ -2742,14 +2742,23 @@ NFL).
   eight on every poll and the fader would jump mid-headline. With one source it is
   a no-op and correct the moment a second is added.
 - **A picker** under the box (`news_source_id`, migration 0031; null = all, the
-  default). It offers whoever carries the player's team **plus the two league
-  desks** — which makes it useful today: a player can read ESPN or CBS instead of
-  the club's own PR feed. It renders only when there is more than one choice, and
-  the chosen id is re-checked server-side against the enabled sources, so the form
-  cannot pin anyone to a feed the console never enabled. `ON DELETE SET NULL`, so
-  removing a source cannot strand a player on it.
+  default). It offers **only the enabled feeds that carry that player's team.** A
+  first cut also offered the two league desks; the owner corrected it the same
+  hour, and he is right — the box is headed "Your team", so picking a source must
+  narrow WHO is reporting, never WHAT they report on. **The team filter is now
+  unconditional**, pinned or not, and the league-wide fallback for a quiet day is
+  gone with it: a silent week shows the empty line, not filler about other teams.
+  The chosen id is re-checked server-side against the same set, so a hand-made
+  request cannot pin somebody to a disabled feed or a league desk.
+  `ON DELETE SET NULL`, so removing a source cannot strand a player on it.
+
+**The picker is therefore invisible today** — it renders only when a team has more
+than one source, and every team has one. That is the honest state, not a bug.
 
 **Left to the owner:** adding a second per-team source is an editorial call about
 which outlets speak for the league, not a call this session should make. The console
-already takes them (Feeds → Add source, with a team code); SB Nation's per-team blogs
-expose `/rss/index.xml` and are the obvious candidate set.
+already takes them (Feeds → Add source, with a team code). SB Nation's per-team blogs
+were **verified through this app's own `parseFeed`** — Mile High Report, Arrowhead
+Pride, Blogging The Boys and Buffalo Rumblings each returned HTTP 200 and 10 parsed
+items from `/rss/index.xml`, and all 32 clubs have one. ESPN's per-team endpoint is
+JSON and parsed to zero items, so it is not a candidate without a second parser.

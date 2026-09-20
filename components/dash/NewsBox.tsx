@@ -4,10 +4,13 @@ import { rotateBySource, type NewsItem } from "@/lib/news/select";
 import { NewsFader } from "./NewsFader";
 import { NewsSourcePicker } from "./NewsSourcePicker";
 
-// Your team's headlines (ANTE-PLAYER §7). Every feed that carries the team feeds this
-// box, and they take turns rather than the busiest one owning it (D-099); a player
-// who prefers one outlet can pin it from the menu underneath. Team news first,
-// league-wide when the team has none. The commissioner curates only by hiding (§0).
+// Your team's headlines (ANTE-PLAYER §7). ALWAYS your team and nothing else — the
+// point is several outlets reporting on the same team, never league-wide filler
+// under a heading that says "Your team" (D-099, owner). Every feed that carries the
+// team feeds this box and they take turns rather than the busiest one owning it; a
+// player who prefers one outlet pins it from the menu underneath, and pinning
+// narrows WHO is reporting, never WHAT they report on. The commissioner curates only
+// by hiding (§0).
 
 const SHOW = 8;
 
@@ -25,15 +28,13 @@ export async function NewsBox({ playerId }: { playerId: string }) {
   const team = me?.favorite_team ?? null;
   const pinned = me?.news_source_id ?? null;
 
-  // What this player may choose between: whoever carries their team, plus the
-  // league-wide desks. Enabled only — a disabled source is not an option.
-  const { data: sourceRows } = await db
-    .from("feed_sources")
-    .select("id, name, kind, team_code")
-    .eq("enabled", true)
-    .order("kind")
-    .order("name");
-  const offered = (sourceRows ?? []).filter((s) => s.kind === "league_ticker" || (team && s.team_code === team));
+  // What this player may choose between: the enabled feeds that carry THEIR team.
+  // The league-wide desks are deliberately not offered — picking one would swap the
+  // box's subject, and its subject is the one thing that never changes.
+  const { data: sourceRows } = team
+    ? await db.from("feed_sources").select("id, name").eq("enabled", true).eq("team_code", team).order("name")
+    : { data: [] as Array<{ id: string; name: string }> };
+  const offered = sourceRows ?? [];
 
   // The source travels with the item so a player can see who wrote it.
   type Row = { id: string; title: string; url: string | null; source_id: string | null; feed_sources: { name: string } | { name: string }[] | null };
@@ -50,19 +51,13 @@ export async function NewsBox({ playerId }: { playerId: string }) {
   const base = () =>
     db.from("feed_items").select("id, title, url, source_id, feed_sources(name)").order("published_at", { ascending: false }).limit(SHOW * 4);
 
+  // The team filter is unconditional, pinned or not: a pinned source narrows the
+  // box to one reporter, it does not widen it past the team.
   let items: NewsItem[] = [];
-  if (pinned) {
-    const { data } = await base().eq("source_id", pinned);
-    items = named(data as Row[] | null).slice(0, SHOW);
-  } else {
-    if (team) {
-      const { data } = await base().eq("team_code", team);
-      items = rotateBySource(named(data as Row[] | null), SHOW);
-    }
-    if (items.length === 0) {
-      const { data } = await base().is("team_code", null);
-      items = rotateBySource(named(data as Row[] | null), SHOW);
-    }
+  if (team) {
+    const q = base().eq("team_code", team);
+    const { data } = await (pinned ? q.eq("source_id", pinned) : q);
+    items = rotateBySource(named(data as Row[] | null), SHOW);
   }
 
   return (
