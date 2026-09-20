@@ -52,6 +52,11 @@
 
   /* Chrome — the interactive material. Hueless, near-white. */
   --color-chrome: #e8e8ec;
+  /* Your own stack, in the header well (D-097). Gold is the HOUSE's colour — the Pot
+     — so the player's own chip count wears the season's purple instead of competing
+     with it. Measured on the well in both themes: 6.3:1 on the dark-mode recess,
+     4.9:1 on the light-mode one. */
+  --color-stack: #a480e8;
   --color-chrome-dim: #c2c2c9;
 
   /* Gold — the house. Hairlines, system messages, the Pot, the felt badge. */
@@ -174,9 +179,6 @@
   --color-tag-leader-fg: #35784f;
   --color-tag-leader-bd: #5f9a78;
 
-  & .chrome-face {
-    border-color: rgba(0, 0, 0, 0.22);
-  }
   & body::before,
   & body::after {
     display: none;
@@ -185,9 +187,32 @@
      type inside it takes the dark theme's text ramp — light on dark, not ink on
      dark. Gold is untouched; it already reads on the recess. */
   & .well {
+    /* A .well is a recess milled into the plane, and its ground is hard-coded black
+       at 42%. Over the dark canvas that reads near-black; over the light one it came
+       out a washed mid-grey, which is why white type on it never popped (D-097). Give
+       it a real dark ground here so the light ramp below has something to sit on. */
+    background-color: #24242a;
+    border-color: rgba(0, 0, 0, 0.55);
     --color-text-hi: #f2f2f4;
     --color-text-mid: #cfcfd8;
     --color-text-low: #b4b4bd;
+  }
+  /* Except inside the stakes band, whose own ground is already dark gem: there the
+     42% wash is what separates a tray from the facets behind it. */
+  & .band-in .well {
+    background-color: rgba(0, 0, 0, 0.42);
+  }
+  /* Chrome buttons need an edge here, not a new colour: near-white on a near-white
+     page is legible and still invisible AS A BUTTON. A hard rim and a lip beneath
+     make it a raised key again. */
+  & .chrome-face,
+  & .btn-chrome {
+    border-color: rgba(0, 0, 0, 0.45);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+      0 2px 0 rgba(0, 0, 0, 0.3),
+      0 7px 16px -9px rgba(0, 0, 0, 0.55);
   }
 }
 /* MIRROR of the block above — identical by test, change both. */
@@ -216,9 +241,6 @@
     --color-tag-leader-fg: #35784f;
     --color-tag-leader-bd: #5f9a78;
 
-    & .chrome-face {
-      border-color: rgba(0, 0, 0, 0.22);
-    }
     & body::before,
     & body::after {
       display: none;
@@ -227,9 +249,32 @@
        type inside it takes the dark theme's text ramp — light on dark, not ink on
        dark. Gold is untouched; it already reads on the recess. */
     & .well {
+      /* A .well is a recess milled into the plane, and its ground is hard-coded black
+         at 42%. Over the dark canvas that reads near-black; over the light one it came
+         out a washed mid-grey, which is why white type on it never popped (D-097). Give
+         it a real dark ground here so the light ramp below has something to sit on. */
+      background-color: #24242a;
+      border-color: rgba(0, 0, 0, 0.55);
       --color-text-hi: #f2f2f4;
       --color-text-mid: #cfcfd8;
       --color-text-low: #b4b4bd;
+    }
+    /* Except inside the stakes band, whose own ground is already dark gem: there the
+       42% wash is what separates a tray from the facets behind it. */
+    & .band-in .well {
+      background-color: rgba(0, 0, 0, 0.42);
+    }
+    /* Chrome buttons need an edge here, not a new colour: near-white on a near-white
+       page is legible and still invisible AS A BUTTON. A hard rim and a lip beneath
+       make it a raised key again. */
+    & .chrome-face,
+    & .btn-chrome {
+      border-color: rgba(0, 0, 0, 0.45);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+        0 2px 0 rgba(0, 0, 0, 0.3),
+        0 7px 16px -9px rgba(0, 0, 0, 0.55);
     }
   }
 }
@@ -379,6 +424,15 @@ td.nums,
 
 /* Chrome is a material, not a text colour (art §3.0): polished steel with a hard
    highlight-to-shadow break across the middle, lit from above-left. */
+/* The flat chrome button (D-097). Seven call sites wrote `bg-[color:var(--color-chrome)]
+   text-[color:var(--color-ink)]` as utilities, which no stylesheet can select — so in
+   light mode a near-white button sat on a near-white page with no edge and read as
+   bare text. Same pixels in dark mode; light mode gives it a rim below. */
+.btn-chrome {
+  background-color: var(--color-chrome);
+  color: var(--color-ink);
+}
+
 .chrome-face {
   background-color: var(--color-chrome);
   background-image:
@@ -679,6 +733,17 @@ textarea {
     transform: scale(0.78);
   }
 }
+/* The rail keeps ONE ground in both themes (D-097). It used .panel-head, whose
+   surface follows the theme — so a commissioner-chosen text colour that read on the
+   dark rail vanished on the light one. The colours on the rail are chosen in the
+   console; the ground under them must not move. */
+.ticker-rail {
+  background-color: #1b1b20;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(0, 0, 0, 0.18));
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+}
+
 /* The Table Talk dock (D-086): the strip glows while something is unread, and the
    open panel slides in from the edge it lives on. Both stop under reduced motion.
    .dock is .panel's look with position: fixed — .panel pins position: relative from

@@ -8,6 +8,13 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-20 (forty-fourth pass):** **Light-mode contrast + the stale theme (D-097).**
+> Help popover lifted above the chat; the rank/chips well made a real dark recess
+> (white 13.8:1) with the stack in a new `--color-stack` purple, not the house gold;
+> `.btn-chrome` + tab borders so buttons stop reading as text; `.ticker-rail` keeps one
+> ground in both themes. **Auto was never broken** — `saveProfile` now revalidates the
+> root layout, which is why any saved theme (and the chat position) looked stuck.
+
 > **2026-09-19 (forty-third pass):** **The fold penalty (D-096, rulebook v1.4).** From
 > Week 3 a fold costs the ante + 50 into the Pot, at settlement, own ledger kind
 > `fold_penalty`; felt exempt, never below 1, gated by week. Migration **0030** widens

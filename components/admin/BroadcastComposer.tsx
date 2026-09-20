@@ -100,7 +100,7 @@ export function BroadcastComposer({
           <button
             type="submit"
             disabled={creating}
-            className="chamfer bg-[color:var(--color-chrome)] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[color:var(--color-ink)] disabled:opacity-40"
+            className="chamfer btn-chrome px-4 py-2 text-xs font-semibold uppercase tracking-wide disabled:opacity-40"
           >
             {creating ? "…" : when === "now" ? labels.submitNow : labels.submitLater}
           </button>

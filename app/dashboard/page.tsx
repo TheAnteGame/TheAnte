@@ -108,7 +108,7 @@ export default async function Dashboard() {
                 {state.player!.firstName ?? "\u2014"}
               </Link>
               <div className="well chamfer flex items-baseline gap-2 px-3 py-1.5">
-                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
+                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
                   {rankLabel}
                 </span>
                 <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-text-hi)]">
@@ -117,10 +117,10 @@ export default async function Dashboard() {
                 <span aria-hidden className="text-[color:var(--color-border)]">
                   /
                 </span>
-                <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-gold)]">
+                <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-stack)]">
                   {standing?.stack ?? "\u2014"}
                 </span>
-                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-low)]">
+                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
                   {chipsLabel}
                 </span>
               </div>

@@ -2641,3 +2641,42 @@ one penalty of 1–50 for the week, felt folders carry none, nobody else does, w
 Copy moved with it: rulebook §3, §7 and §14; the tutorial's Folding card; the guide;
 the FAQ; the band's deadline tips; the final-call email and the auto-folded email.
 The deadweight rule is unchanged: a chosen fold still resets the count.
+
+## D-097 — Light mode: contrast, edges, one rail, and the toggle that looked broken (2026-09-20)
+
+Five findings from the owner, four of them light mode finally being used in anger.
+
+**The help popover sat under the chat.** `ChatHelp`'s panel was `z-30` while the
+player-name tooltips it had to clear are `z-50` and the names themselves are
+positioned. Fixed on the ROOT (`relative z-[70]`), not the panel: the panel's own z
+is then scoped inside that stacking context and clears the lot in one move rather
+than racing each layer.
+
+**The rank/chips well was a washed grey.** A `.well` is a recess whose ground is
+hard-coded black at 42% — near-black over the dark canvas, a mid-grey over the light
+one, which is why white type on it never popped. Light mode now gives it a real dark
+ground (#24242a); measured white 13.8:1 and labels 9.97:1, against ~2.5:1 before. The
+stakes band keeps the wash (`.band-in .well`), where the ground is already dark gem.
+The stack itself leaves gold for a new `--color-stack` purple (#a480e8, 6.8:1 dark /
+5.0:1 light): **gold is the house's colour — the Pot — and the player's own count
+should not compete with it.**
+
+**Buttons read as bare text.** Seven call sites wrote `bg-[color:var(--color-chrome)]`
+as a utility, which no stylesheet can select, so near-white buttons sat on a
+near-white page with no edge. New `.btn-chrome` class (identical in dark mode) lets
+light mode give chrome surfaces a hard rim and a lip beneath — a raised key, not a
+word. Unselected week/view tabs, previously pure text, gain a border in both themes.
+
+**The ticker keeps one ground.** It used `.panel-head`, whose surface follows the
+theme, so a commissioner-chosen text colour that read on the dark rail vanished on
+the light one. New `.ticker-rail` is the same dark band in both themes: the colours
+on the rail are chosen in the console, so the ground under them must not move.
+
+**"Auto seemed buggy" was not Auto.** Measured: Auto follows the OS live with no
+reload, and Light and Dark hold against it — the mechanism is sound. The real bug hit
+all three. The theme attribute is written by the ROOT layout, and Next does not
+re-render a shared layout on the soft navigation that saving the profile performs, so
+a saved choice stayed stale until a hard reload. `saveProfile` now calls
+`revalidatePath("/", "layout")`. Auto is kept because deleting it would not have
+fixed what the owner saw. The same staleness was hiding the chat dock's position
+setting (D-086), which is written from the same layout.

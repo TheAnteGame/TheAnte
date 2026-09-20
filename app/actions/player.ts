@@ -1,6 +1,7 @@
 "use server";
 
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createUserClient } from "@/lib/db/supabase";
@@ -107,6 +108,12 @@ export async function saveProfile(formData: FormData): Promise<void> {
       console.error(`application mail failed for ${me.id}:`, e);
     }
   }
+
+  // The screen mode and the chat dock's position both live on <html>, written by the
+  // ROOT layout — and Next does not re-render a shared layout on the soft navigation
+  // this redirect performs, so a saved theme sat stale until a hard reload and read
+  // as "the toggle is broken" (D-097). Invalidate the layout, not just the page.
+  revalidatePath("/", "layout");
 
   const state = await getPlayerState();
   redirect(state ? routeFor(state) : "/");

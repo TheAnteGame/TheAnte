@@ -66,8 +66,8 @@ export default async function WeekResults({
                   aria-current={w.number === requested ? "page" : undefined}
                   className={`chamfer px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
                     w.number === requested
-                      ? "bg-[color:var(--color-chrome)] text-[color:var(--color-ink)]"
-                      : "text-[color:var(--color-text-mid)] hover:bg-[color:var(--color-surface-2)]"
+                      ? "btn-chrome"
+                      : "border border-[color:var(--color-border)] text-[color:var(--color-text-mid)] hover:bg-[color:var(--color-surface-2)] hover:text-[color:var(--color-text-hi)]"
                   }`}
                 >
                   Wk {w.number}

@@ -96,7 +96,7 @@ export function TickerMarquee({
 
   if (reduced) {
     return (
-      <div className="panel-head px-4 py-2 text-sm">
+      <div className="ticker-rail px-4 py-2 text-sm">
         {render(items[staticIndex], items[staticIndex].id)}
       </div>
     );
@@ -105,7 +105,7 @@ export function TickerMarquee({
   return (
     <div
       aria-label="League ticker"
-      className="overflow-hidden whitespace-nowrap panel-head py-2 text-sm"
+      className="overflow-hidden whitespace-nowrap ticker-rail py-2 text-sm"
       style={{ ["--ticker-seconds" as string]: `${speedSeconds}s` }}
     >
       {/* Enough copies to fill the rail, measured (D-076).
