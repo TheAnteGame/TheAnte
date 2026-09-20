@@ -2762,3 +2762,37 @@ were **verified through this app's own `parseFeed`** — Mile High Report, Arrow
 Pride, Blogging The Boys and Buffalo Rumblings each returned HTTP 200 and 10 parsed
 items from `/rss/index.xml`, and all 32 clubs have one. ESPN's per-team endpoint is
 JSON and parsed to zero items, so it is not a candidate without a second parser.
+
+## D-100 — "Different sources on your team" meant the other outlets, not the league (2026-09-20)
+
+D-099 read the owner's "not the team only" as "not league-wide news" and locked the
+box to feeds tagged with the team. He meant the opposite of what I built: **not the
+CLUB's own feed only.** He wants several outlets reporting on his team.
+
+**The data was there the whole time.** The club feed tags its items with a team
+code; ESPN NFL and CBS Sports NFL tag nothing, so their Broncos coverage looked
+identical to their Packers coverage and was filtered out as "league-wide". Of the
+most recent 200 league items, 26 are about Denver.
+
+**So the box now draws from both shapes,** and rotates them. Measured against
+production for DEN, the eight it shows are ESPN → Denver Broncos → CBS → ESPN →
+Denver Broncos → CBS → ESPN → Denver Broncos: three outlets, every story about the
+one team. The subject never widens — a league item only qualifies if it names the
+team.
+
+**Nickname, not city, and word boundaries, not LIKE.** All 32 nicknames are unique
+across the league; cities are not ("New York" is two teams, "Los Angeles" two more).
+The database prefilters with a cheap `ilike`, but `%Rams%` also finds *Jalen Ramsey*
+and *proGRAMS*, so `mentionsTeam` decides with word boundaries and handles the
+possessives and singulars the feeds are full of. Tested, including those traps.
+
+**The picker offers all sources** — the club feed and the league desks. Pinning a
+desk is legitimate now: its items are filtered down to the player's team before they
+reach the box, so the pick changes who is reporting, never what about. It renders
+only when the pin can actually be saved (migration 0031 present), because a dropdown
+that silently does nothing is worse than no dropdown.
+
+**Also fixed:** headlines showed raw HTML entities ("Chiefs&#039; Travis Kelce").
+The club feed rarely escapes; the league desks constantly do, so pulling them in
+surfaced it. `decodeEntities` runs at DISPLAY rather than ingest, so the rows already
+in the table are fixed too and not just the next fetch.

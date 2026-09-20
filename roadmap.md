@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-20 (forty-seventh pass):** **News box mixes outlets (D-100).** "Not the
+> team only" meant not the CLUB'S feed only — corrected. ESPN/CBS items are matched to
+> the team by nickname (word boundaries, not LIKE — `%Rams%` finds Jalen Ramsey) and
+> rotated with the club feed: verified 3 outlets across 8 slots for DEN. Picker offers
+> all sources; renders only once migration **0031** is applied. HTML entities decoded.
+
 > **2026-09-20 (forty-sixth pass):** **News box rotation + source picker (D-099).**
 > Sources now take turns instead of the busiest owning the box (rotation, not shuffle —
 > the 5s poll would reshuffle a random pick). New picker underneath offers the team's

@@ -21,12 +21,13 @@ export async function setNewsSource(sourceId: string): Promise<void> {
     if (!me?.favorite_team) return;
     const { data: ok } = await db
       .from("feed_sources")
-      .select("id")
+      .select("id, kind, team_code")
       .eq("id", sourceId)
       .eq("enabled", true)
-      .eq("team_code", me.favorite_team)
       .maybeSingle();
-    if (!ok) return;
+    // The same set the box offers: this player's club feed, or a league desk (whose
+    // items are filtered down to their team before they ever reach the box).
+    if (!ok || !(ok.team_code === me.favorite_team || ok.kind === "league_ticker")) return;
     next = sourceId;
   }
   const { error } = await db.from("players").update({ news_source_id: next }).eq("clerk_user_id", userId);

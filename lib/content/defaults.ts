@@ -450,7 +450,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.news.heading": "Your team",
   "dash.news.source_label": "Source",
   "dash.news.pick_label": "Read from",
-  "dash.news.all_sources": "Every source covering my team",
+  "dash.news.all_sources": "All sources",
   "dash.news.empty": "Quiet day. Nothing worth reading.",
   "dash.promo.fallback_heading": "ANTE",
   "dash.stats.heading": "League stats",
