@@ -17,8 +17,14 @@ const SHOW = 8;
 export async function NewsBox({ playerId }: { playerId: string }) {
   const db = createUserClient();
 
-  const [{ data: me }, heading, empty, sourceLabel, pickLabel, allLabel] = await Promise.all([
-    db.from("players").select("favorite_team, news_source_id").eq("id", playerId).maybeSingle(),
+  // The pinned source is read SEPARATELY, and on purpose. Asking for it in the same
+  // select as favorite_team meant that on a database without migration 0031 the whole
+  // row read failed and the box went blank — the team came back with it. Split, the
+  // pin degrades to "no pin" and the box keeps working, which is what a preference
+  // column should ever cost. (Collapse into one select once 0031 is everywhere.)
+  const [{ data: me }, pin, heading, empty, sourceLabel, pickLabel, allLabel] = await Promise.all([
+    db.from("players").select("favorite_team").eq("id", playerId).maybeSingle(),
+    db.from("players").select("news_source_id").eq("id", playerId).maybeSingle(),
     getContent("dash.news.heading"),
     getContent("dash.news.empty"),
     getContent("dash.news.source_label"),
@@ -26,7 +32,7 @@ export async function NewsBox({ playerId }: { playerId: string }) {
     getContent("dash.news.all_sources"),
   ]);
   const team = me?.favorite_team ?? null;
-  const pinned = me?.news_source_id ?? null;
+  const pinned = (pin.data as { news_source_id?: string | null } | null)?.news_source_id ?? null;
 
   // What this player may choose between: the enabled feeds that carry THEIR team.
   // The league-wide desks are deliberately not offered — picking one would swap the

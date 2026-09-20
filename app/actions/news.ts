@@ -29,6 +29,9 @@ export async function setNewsSource(sourceId: string): Promise<void> {
     if (!ok) return;
     next = sourceId;
   }
-  await db.from("players").update({ news_source_id: next }).eq("clerk_user_id", userId);
+  const { error } = await db.from("players").update({ news_source_id: next }).eq("clerk_user_id", userId);
+  // Without migration 0031 the column is absent; the picker is not rendered in that
+  // case, so this only guards a hand-made request. Never let it throw at the player.
+  if (error) return;
   revalidatePath("/dashboard");
 }
