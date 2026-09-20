@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-20 (forty-sixth pass):** **News box rotation + source picker (D-099).**
+> Sources now take turns instead of the busiest owning the box (rotation, not shuffle —
+> the 5s poll would reshuffle a random pick). New picker underneath offers the team's
+> sources plus the two league desks; `news_source_id`, migration **0031**. NOTE: every
+> team still has exactly ONE source, so rotation is inert until more are added.
+
 > **2026-09-20 (forty-fifth pass):** **D-098, second pass on D-097.** Help panel now
 > PORTALLED to `<body>` (z-100) instead of re-layered — the dock is one stacking
 > context at z-40, so this is structural. Light-mode chrome buttons go graphite

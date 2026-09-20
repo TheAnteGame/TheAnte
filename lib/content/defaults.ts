@@ -449,6 +449,8 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.yesterday": "Yesterday",
   "dash.news.heading": "Your team",
   "dash.news.source_label": "Source",
+  "dash.news.pick_label": "Read from",
+  "dash.news.all_sources": "All sources for my team",
   "dash.news.empty": "Quiet day. Nothing worth reading.",
   "dash.promo.fallback_heading": "ANTE",
   "dash.stats.heading": "League stats",

@@ -2720,3 +2720,36 @@ redirect back to the dashboard instead of after a hard reload — which is what
 `revalidatePath("/", "layout")` changed, and it applied to Light and Dark equally.
 Whether Auto tracks an overnight OS switch is a separate question the owner can only
 answer overnight; the CSS for it was measured live in both directions.
+
+## D-099 — The news box rotates its sources, and a player can pin one (2026-09-20)
+
+Owner: the box always shows the same source, and players should be able to pick
+their own.
+
+**The premise was right and the cause was not.** The box took the eight most recent
+items for the team, so the busiest feed owns it — but the reason a Broncos fan only
+ever sees "Denver Broncos" is simpler: **every team has exactly one source.** All 32
+`team_news` rows are the club's own site feed, and all 85 Denver items come from it.
+There is nothing to rotate between yet. The "several different sources" on the
+console's Feeds page are those 32 plus two league-wide desks (ESPN NFL, CBS Sports
+NFL).
+
+**Built anyway, because both halves are now real:**
+
+- **Rotation** (`lib/news/select.ts`, tested): one item from each source in turn,
+  newest first, then the next from each. A **rotation, not a shuffle** — the
+  dashboard re-renders every five seconds, so a random pick would deal a different
+  eight on every poll and the fader would jump mid-headline. With one source it is
+  a no-op and correct the moment a second is added.
+- **A picker** under the box (`news_source_id`, migration 0031; null = all, the
+  default). It offers whoever carries the player's team **plus the two league
+  desks** — which makes it useful today: a player can read ESPN or CBS instead of
+  the club's own PR feed. It renders only when there is more than one choice, and
+  the chosen id is re-checked server-side against the enabled sources, so the form
+  cannot pin anyone to a feed the console never enabled. `ON DELETE SET NULL`, so
+  removing a source cannot strand a player on it.
+
+**Left to the owner:** adding a second per-team source is an editorial call about
+which outlets speak for the league, not a call this session should make. The console
+already takes them (Feeds → Add source, with a team code); SB Nation's per-team blogs
+expose `/rss/index.xml` and are the obvious candidate set.
