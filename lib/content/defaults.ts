@@ -120,7 +120,7 @@ export const contentDefaults: Record<string, string> = {
     "Once a season you can push your entire stack onto one game. One team, everything you have. A shove always pays even money: win and you double, lose and you're on the felt.",
   "howto.fold_title": "Folding",
   "howto.fold_body":
-    "Don't like the slate? Fold. You sit the week out, pay only the ante, and keep the rest of your stack. A fold never wins the Pot \u2014 but it never loses big either.",
+    "Don't like the slate? Fold. You sit the week out and pay the ante plus a 50-chip fold penalty, both into the Pot, and keep the rest of your stack. A fold never wins the Pot \u2014 but it caps what you can lose.",
   "howto.learn_more": "Learn more",
   "howto.link_rules": "Gamebook \u2014 the rules",
   "howto.link_guide": "How to Play \u2014 plain English",
@@ -146,7 +146,7 @@ export const contentDefaults: Record<string, string> = {
   "guide.pick_title": "Pick games and put chips on them",
   "guide.pick_body": "The slate opens Tuesday at 6:00am MST. Pick the team you like in each game, then put chips on it. You bet in tens: at least 10 chips on a game, and no more than 50. You have to bet at least 5 games. You cannot bet both teams in the same game. The deadline is Thursday at 12:00 noon MST, every single week.",
   "guide.lock_title": "Once you send it in, it is locked",
-  "guide.lock_body": "When you submit your picks, you cannot change them. Neither can the Commissioner. So take your time before you press the button. If you send nothing by Thursday noon, you folded for the week \u2014 and you still pay the ante.",
+  "guide.lock_body": "When you submit your picks, you cannot change them. Neither can the Commissioner. So take your time before you press the button. If you send nothing by Thursday noon, you folded for the week \u2014 and you pay the ante plus the 50-chip fold penalty.",
   "guide.limit_title": "The house limit keeps you safe",
   "guide.limit_body": "There is a cap on how many chips you can bet in one week. It is one third of your own stack, or one third of the league's middle stack \u2014 whichever is smaller. So you can never lose everything in a single week. It also stops a big leader from running away from everyone else.",
   "guide.blackout_title": "Nobody sees anything until everyone is in",
@@ -229,9 +229,9 @@ export const contentDefaults: Record<string, string> = {
   "mail.support_reply.subject": "ANTE: The Commissioner Answered",
   "mail.backup_reminder.subject": "ANTE: Your League Backup Is Due",
   "notify.reminder": "Week {week}: {hours_left} hours to the wall, and your name is on the waiting list.",
-  "notify.final_call": "Final call for Week {week}. Submit by noon MST or you're folded — and you still owe the ante.",
+  "notify.final_call": "Final call for Week {week}. Submit by noon MST or you're folded — the ante plus the 50-chip fold penalty.",
   "notify.nudge":
-    "{first_name} — every player who has already put a ticket in can see your name sitting on the waiting list.\n\nThursday noon is the wall. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot.",
+    "{first_name} — every player who has already put a ticket in can see your name sitting on the waiting list.\n\nThursday noon is the wall. Miss it and you are folded automatically: you pay the ante plus a 50-chip fold penalty, and a fold can never win the Pot.",
 
   // Stakes band (art §3 — the one big colored plane)
   "band.week_label": "Week",
@@ -265,9 +265,9 @@ export const contentDefaults: Record<string, string> = {
   "band.limit_capped_stack": "Right now yours is set by your own stack of {stack}.",
   "band.limit_capped_room": "Right now yours is set by the league's middle stack of {median}, not by your own.",
   "band.deadline_tip":
-    "{deadline} — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first.",
+    "{deadline} — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you pay the ante plus a 50-chip fold penalty, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first.",
   "band.deadline_tip_first":
-    "The season starts here. {deadline} is the first deadline — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first. The roster locks at this moment too, so it is last call for anyone still deciding.",
+    "The season starts here. {deadline} is the first deadline — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you pay the ante plus a 50-chip fold penalty, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first. The roster locks at this moment too, so it is last call for anyone still deciding.",
   "band.ring_tip":
     "Week {week} of 18. The ring tracks the four ante tiers a season passes through — purple, red, teal, gold. You are in {tier}, weeks {range}. The ante rises with each one, so the cost of sitting out rises too.",
 
@@ -305,7 +305,7 @@ export const contentDefaults: Record<string, string> = {
   "faq.a6": "No. Not you, not the Commissioner, not for any reason. Submitted is stone.",
   "faq.q7": "What happens if I skip a week?",
   "faq.a7":
-    "You're folded automatically at the deadline. You still pay the ante, and a fold can never win the Pot. Miss three weeks running with no ticket at all and the Commissioner may remove you under the deadweight rule \u2014 your chips are then split evenly across everyone still playing. Submitting anything, even a fold you chose, resets that count to zero.",
+    "You're folded automatically at the deadline. You pay the ante plus a 50-chip fold penalty, both into the Pot, and a fold can never win the Pot. Miss three weeks running with no ticket at all and the Commissioner may remove you under the deadweight rule \u2014 your chips are then split evenly across everyone still playing. Submitting anything, even a fold you chose, resets that count to zero.",
   "faq.q8": "Who wins the weekly Pot?",
   "faq.a8":
     "Whoever GAINS the most chips that week, ante included \u2014 not the biggest stack. Every ante in the league is in it, and in bigger leagues it pays more places.",

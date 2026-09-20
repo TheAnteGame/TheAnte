@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-19 (forty-third pass):** **The fold penalty (D-096, rulebook v1.4).** From
+> Week 3 a fold costs the ante + 50 into the Pot, at settlement, own ledger kind
+> `fold_penalty`; felt exempt, never below 1, gated by week. Migration **0030** widens
+> the kind check — apply and verify the constraint by hand. Torture asserts it.
+
 > **2026-09-19 (forty-second pass):** **League polls (D-095).** Commissioner-only,
 > named in the record, percentages-only in the room; card pinned in Table Talk; open
 > email + six-hour reminder with signed one-tap vote links; `/admin/polls`. Migration

@@ -1,7 +1,7 @@
 # ANTE
 ### The complete rules
 
-*Version 1.3 — frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MST. The hours did not change, the zone did — see D-089.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
+*Version 1.4 — frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MST — D-089. 1.4, from Week 3 by league vote: a fold costs the ante plus a 50-chip fold penalty — D-096.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
 
 ANTE is a season-long NFL pool where you bet chips instead of making picks. Everyone starts with 500. Each week you spread chips across the games you like but what you get paid depends on how many people agreed with you. Take the side everyone took and you barely get paid. Take the side almost nobody took and you get paid double. Nobody sees a single pick until every player is locked in, so every week you're guessing what your friends are about to do. Biggest stack on the last Sunday wins.
 
@@ -72,7 +72,7 @@ The NFL occasionally schedules a game before Thursday noon MST. The 2026 season 
 
 **The moment you submit, your ticket is locked.** You cannot change it, and neither can the Commissioner. Take all week to decide if you want — but pushing your chips in is an act, not a draft.
 
-**Submit nothing by Thursday noon and you are folded** (§6), and you still owe the ante. No reopening, no "my phone died."
+**Submit nothing by Thursday noon and you are folded** (§6). A fold costs the ante **plus a 50-chip fold penalty** — five games at the 10-chip minimum, the least anyone at the table risked — both into the Pot, posted at settlement with everything else. A chosen fold and a missed deadline cost the same. A stack on the felt is exempt, as it is from the ante, and the penalty never takes your last chip (§9). No reopening, no "my phone died."
 
 The slate opens **Tuesday at 6:00am MST**, which gives you two days and six hours. Thursday noon lands before Friday's final injury designations, so you're betting on Wednesday's practice report like everyone else. That's deliberate: this is a game about reading the room, not out-researching it.
 
@@ -249,7 +249,7 @@ The weighting stays steep on purpose. Spreading the Pot evenly across the top th
 
 ### Rules of the Pot
 
-- **You must have submitted a live ticket to be eligible.** Folders are out. This is the real cost of folding.
+- **You must have submitted a live ticket to be eligible.** Folders are out — and their fold penalty is in the Pot they cannot win.
 - **A ticket whose games all got returned still counts.** You submitted; the schedule didn't cooperate. Cancellation isn't folding.
 - If everyone lost chips that week, it pays out by who **lost the least.**
 - **If every single player folded, nothing is awarded and the whole Pot rolls into next week.** Two quiet weeks in a row makes the third one enormous.
@@ -471,7 +471,7 @@ The season is **Weeks 1 through 18.** Playoff games do not count, do not settle,
 
 ### Players who disappear
 
-A player who stops submitting is folded automatically every week and keeps paying antes into other people's Pots until they land on the felt. For the first two weeks nothing else happens to them: they stay in the standings, they keep their chips, and they remain eligible for the tiebreaker they will not need. Going quiet for a week is not a crime. Life happens.
+A player who stops submitting is folded automatically every week and keeps paying antes and fold penalties into other people's Pots until they land on the felt. For the first two weeks nothing else happens to them: they stay in the standings, they keep their chips, and they remain eligible for the tiebreaker they will not need. Going quiet for a week is not a crime. Life happens.
 
 **Deactivation is a different thing and requires them to say so** (§13). A player who has actually quit stops anteing, drops out of the median, and keeps their chips — but forfeits the championship and every season award (§11). A player who has merely gone dark keeps all three, and keeps paying.
 

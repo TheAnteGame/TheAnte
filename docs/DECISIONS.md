@@ -2616,3 +2616,28 @@ on the dashboard where the card shows the tally. An old link cannot vote late.
 
 The Mark award (§11) is a vote by the felt; this system could run it at season
 close. Not wired to it here.
+
+## D-096 — The fold penalty (2026-09-19, rulebook v1.4)
+
+The league voted: folding should cost more than the ante. Owner confirmed the four
+defaults from the assessment: **a flat 50** on top of the tiered ante (five games at
+the 10-chip minimum — the least anyone risked); **into the Pot**, like the ante, so
+folders fund that week's winners; **the felt is exempt** (as from the ante) and the
+penalty never takes the last chip (§9); **a chosen fold and a missed deadline pay
+the same.** Effective **Week 3** — the vote landed during Week 2, whose tickets were
+placed under the old rule.
+
+**Where it moves.** At settlement, in `settleWeek`, as its own ledger kind
+`fold_penalty` (migration 0030 widens the check list — the schema check cannot see
+that; verify the constraint by hand). Not at submission and not at the deadline: a
+chip that moved when a fold was chosen would be a pick told during the blackout.
+Gated on `FOLD_PENALTY_FROM_WEEK` so a re-settlement of Week 1 or 2 can never
+apply it backwards; the cascade test re-settles weeks 5–8 and proves a no-op.
+
+**Proved by the torture season:** from Week 3 every non-felt folder carries exactly
+one penalty of 1–50 for the week, felt folders carry none, nobody else does, weeks
+1–2 carry none, conservation holds, and the standings view agrees with the ledger.
+
+Copy moved with it: rulebook §3, §7 and §14; the tutorial's Folding card; the guide;
+the FAQ; the band's deadline tips; the final-call email and the auto-folded email.
+The deadweight rule is unchanged: a chosen fold still resets the count.

@@ -22,6 +22,14 @@ export function tierForWeek(week: number): "purple" | "red" | "teal" | "gold" {
 }
 
 export const STARTING_STACK = 500; // §1
+/** §3 (v1.4, league vote) — a fold costs the ante AND this, into the Pot: the least
+ *  action anyone at the table risked (five games at the 10-chip minimum). Never
+ *  below one chip (§9), and a stack on the felt is exempt like it is from the ante. */
+export const FOLD_PENALTY = 50;
+/** The vote came in Week 2, after that week's tickets were placed under the old
+ *  rule. The engine gates on this so a re-settlement of an earlier week can never
+ *  apply the penalty backwards. */
+export const FOLD_PENALTY_FROM_WEEK = 3;
 export const MIN_PLAYERS = 8; // §1 — to start, not to survive
 /** §14 — the deadweight rule: straight weeks with no ticket before a seat may be removed. */
 export const DEADWEIGHT_WEEKS = 3;

@@ -89,11 +89,12 @@ export function ticket(v: {
 }): EmailDoc {
   if (v.folded) {
     return {
-      preheader: `You were folded for Week ${v.week}. The ante still came out.`,
+      preheader: `You were folded for Week ${v.week}. The ante and the fold penalty come out at settlement.`,
       eyebrow: `Week ${v.week}`,
       headline: "You folded",
       blocks: [
         { kind: "lead", text: `${v.firstName}, the Week ${v.week} deadline passed without a ticket from you, so you were folded automatically.` },
+        { kind: "para", text: "A fold costs the ante plus a 50-chip fold penalty (rulebook §3, by league vote), both into the Pot at settlement. Submitting anything next week, even a fold you choose, keeps you clear of the deadweight rule." },
         {
           kind: "note",
           title: "What that means",

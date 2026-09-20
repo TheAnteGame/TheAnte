@@ -568,6 +568,33 @@ async function main() {
       check(mailed.size === 3, `mail reached ${mailed.size} players, expected the 3 with an address`);
     }
 
+    // ── The fold penalty (D-096, v1.4): from Week 3, every non-felt folder pays
+    // 1–50 into the Pot at settlement; felt folders pay nothing; earlier weeks never.
+    {
+      const { data: wkRow } = await service.from("weeks").select("id").eq("number", week).single();
+      const { data: pen } = await service
+        .from("ledger_entries")
+        .select("player_id, amount")
+        .eq("week_id", wkRow!.id)
+        .eq("kind", "fold_penalty")
+        .not("player_id", "is", null);
+      const paid = new Map((pen ?? []).map((e) => [e.player_id as string, e.amount]));
+      if (week < 3) {
+        check(paid.size === 0, `week ${week} FOLD PENALTY posted before Week 3 (${paid.size})`);
+      } else {
+        for (const i of folded) {
+          const pid = playerIds[i];
+          if (removedIds.has(pid)) continue;
+          const felt = snapOf.get(pid)?.felt ?? false;
+          const amt = paid.get(pid);
+          if (felt) check(amt === undefined, `week ${week} FOLD PENALTY charged on the felt (${pid})`);
+          else check(amt !== undefined && amt <= -1 && amt >= -50, `week ${week} FOLD PENALTY missing or wrong for folder ${pid}: ${amt}`);
+        }
+        const folderIds = new Set(folded.map((i) => playerIds[i]));
+        for (const pid of paid.keys()) check(folderIds.has(pid), `week ${week} FOLD PENALTY charged to a non-folder ${pid}`);
+      }
+    }
+
     // ── Weekly conservation, straight SQL truth ────────────────────────────────
     const b = await balances();
     check(b.total === playerIds.length * 500, `week ${week} CONSERVATION: ${b.total} ≠ ${playerIds.length * 500}`);
