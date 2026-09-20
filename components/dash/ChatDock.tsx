@@ -95,7 +95,7 @@ export function ChatDock({
       {dot}
       <span className="font-[family-name:var(--font-display)] text-[15px] font-bold uppercase tracking-[0.14em] sm:text-sm">{label}</span>
       {shown && (
-        <span className="chamfer bg-[color:var(--color-gold)] px-2 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{newLabel}</span>
+        <span className="chamfer bg-[color:var(--color-gold)] px-2 py-0.5 text-[12px] font-bold text-[#14141a]">{newLabel}</span>
       )}
     </>
   );
@@ -148,7 +148,7 @@ export function ChatDock({
           >
             {dot}
             <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em]">{label}</span>
-            {shown && <span className="chamfer bg-[color:var(--color-gold)] px-1.5 py-0.5 text-[12px] font-bold text-[color:var(--color-canvas)]">{shown}</span>}
+            {shown && <span className="chamfer bg-[color:var(--color-gold)] px-1.5 py-0.5 text-[12px] font-bold text-[#14141a]">{shown}</span>}
           </button>
         )}
         {open && (

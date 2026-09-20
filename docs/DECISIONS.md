@@ -2680,3 +2680,43 @@ a saved choice stayed stale until a hard reload. `saveProfile` now calls
 `revalidatePath("/", "layout")`. Auto is kept because deleting it would not have
 fixed what the owner saw. The same staleness was hiding the chat dock's position
 setting (D-086), which is written from the same layout.
+
+## D-098 — Second pass: portal the help panel, graphite buttons, the rail back (2026-09-20)
+
+Three of D-097's five did not land. Reported, and correct on all three.
+
+**The help panel is portalled to `<body>`, not re-layered.** D-097 raised its
+z-index and a faithful DOM repro showed the panel winning — in isolation. In the
+room it still lost, so the layering argument is abandoned rather than tuned again:
+the panel now renders through `createPortal` into `<body>` as `position: fixed`,
+`z-100`, placed from the trigger's measured rectangle (and flipped upward when the
+strip is near the bottom of a phone). The dock is one stacking context at `z-40`;
+nothing inside it can escape that context to paint over a sibling of the dock
+itself. This is structural, not a tuned number — which is the point, because a
+tuned number is what failed.
+
+**Chrome buttons go graphite in light mode, not merely edged.** D-097 gave them a
+rim and they still read as a line of text, which is exactly what the owner had said
+to fix. The machined object is what must survive the theme, and on a light ground
+that object is dark: `#2a2a31` with `#f7f7f9` type, 13.3:1. `--color-ink` is
+re-declared inside the `.chrome-face` / `.btn-chrome` rules only, so gold buttons —
+which carry neither class — keep the dark ink they need on gold. Dark mode is
+byte-identical (measured: `#e8e8ec` on `#0b0b0d`, unchanged). The dock's gold "N
+new" badge stops using `--color-canvas` for its text, which is light in light mode
+and put light type on gold.
+
+**The rail gets its gradient back and stops being black.** D-097 pinned it to
+`#1b1b20` in both themes, which is right in dark and far too heavy on a light page.
+It is `.panel-head`'s treatment again — surface gradient plus the gold hairline —
+with light mode a single step under the page at `#d6d6dc`. Dark mode is what it
+always was. **The tradeoff the owner originally raised is back and is now explicit:**
+the ground differs per theme, so a ticker text colour chosen for one is chosen
+against the other. His current mid-tone picks read on both; a fixed ground is a
+one-line change if that ever stops being true.
+
+**On Auto (D-097):** the claim stands and is now checkable without waiting for
+nightfall. The observable fix is that a saved screen mode takes effect on the
+redirect back to the dashboard instead of after a hard reload — which is what
+`revalidatePath("/", "layout")` changed, and it applied to Light and Dark equally.
+Whether Auto tracks an overnight OS switch is a separate question the owner can only
+answer overnight; the CSS for it was measured live in both directions.

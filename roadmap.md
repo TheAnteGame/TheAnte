@@ -8,6 +8,13 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-20 (forty-fifth pass):** **D-098, second pass on D-097.** Help panel now
+> PORTALLED to `<body>` (z-100) instead of re-layered — the dock is one stacking
+> context at z-40, so this is structural. Light-mode chrome buttons go graphite
+> (13.3:1) rather than merely edged; gold badge text un-inverted. Ticker gets its
+> gradient + gold hairline back, light mode one step under the page (#d6d6dc), dark
+> mode byte-identical to before.
+
 > **2026-09-20 (forty-fourth pass):** **Light-mode contrast + the stale theme (D-097).**
 > Help popover lifted above the chat; the rank/chips well made a real dark recess
 > (white 13.8:1) with the stack in a new `--color-stack` purple, not the house gold;

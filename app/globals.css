@@ -205,14 +205,29 @@
   /* Chrome buttons need an edge here, not a new colour: near-white on a near-white
      page is legible and still invisible AS A BUTTON. A hard rim and a lip beneath
      make it a raised key again. */
+  /* Chrome goes DARK here, not merely edged (D-098). A near-white key on a
+     near-white page is legible and still reads as a line of text, rim or no rim;
+     the machined object is what has to survive the theme, and on a light ground
+     that object is graphite. --color-ink is re-declared inside the rule, so the
+     button's own `color: var(--color-ink)` turns light while gold buttons — which
+     carry neither class — keep the dark ink they need. */
   & .chrome-face,
   & .btn-chrome {
-    border-color: rgba(0, 0, 0, 0.45);
+    --color-ink: #f7f7f9;
+    background-color: #2a2a31;
+    background-image:
+      linear-gradient(180deg, #45454f 0%, #34343c 46%, #26262d 54%, #1a1a1f 100%),
+      var(--tex-metal);
+    border-color: rgba(0, 0, 0, 0.62);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-      0 2px 0 rgba(0, 0, 0, 0.3),
-      0 7px 16px -9px rgba(0, 0, 0, 0.55);
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+      0 2px 0 rgba(0, 0, 0, 0.16),
+      0 8px 18px -10px rgba(0, 0, 0, 0.5);
+  }
+  /* The rail keeps its gradient and sits a step under the page, not at black. */
+  & .ticker-rail {
+    background-color: #d6d6dc;
   }
 }
 /* MIRROR of the block above — identical by test, change both. */
@@ -267,14 +282,29 @@
     /* Chrome buttons need an edge here, not a new colour: near-white on a near-white
        page is legible and still invisible AS A BUTTON. A hard rim and a lip beneath
        make it a raised key again. */
+    /* Chrome goes DARK here, not merely edged (D-098). A near-white key on a
+       near-white page is legible and still reads as a line of text, rim or no rim;
+       the machined object is what has to survive the theme, and on a light ground
+       that object is graphite. --color-ink is re-declared inside the rule, so the
+       button's own `color: var(--color-ink)` turns light while gold buttons — which
+       carry neither class — keep the dark ink they need. */
     & .chrome-face,
     & .btn-chrome {
-      border-color: rgba(0, 0, 0, 0.45);
+      --color-ink: #f7f7f9;
+      background-color: #2a2a31;
+      background-image:
+        linear-gradient(180deg, #45454f 0%, #34343c 46%, #26262d 54%, #1a1a1f 100%),
+        var(--tex-metal);
+      border-color: rgba(0, 0, 0, 0.62);
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.9),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-        0 2px 0 rgba(0, 0, 0, 0.3),
-        0 7px 16px -9px rgba(0, 0, 0, 0.55);
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+        0 2px 0 rgba(0, 0, 0, 0.16),
+        0 8px 18px -10px rgba(0, 0, 0, 0.5);
+    }
+    /* The rail keeps its gradient and sits a step under the page, not at black. */
+    & .ticker-rail {
+      background-color: #d6d6dc;
     }
   }
 }
@@ -738,10 +768,25 @@ textarea {
    dark rail vanished on the light one. The colours on the rail are chosen in the
    console; the ground under them must not move. */
 .ticker-rail {
-  background-color: #1b1b20;
+  position: relative;
+  background-color: var(--color-surface-2);
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(0, 0, 0, 0.18));
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.ticker-rail::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-gold-dim) 8%,
+    var(--color-gold) 42%,
+    var(--color-gold-dim) 76%,
+    transparent
+  );
+  opacity: 0.65;
 }
 
 /* The Table Talk dock (D-086): the strip glows while something is unread, and the
