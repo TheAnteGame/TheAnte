@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-22 (fiftieth pass):** **Past Weeks now on the open board (D-103).** D-102
+> added it to `Titled` only; BetSlip (open week) and SettledResults render their own
+> header, so the door was missing from the one state that needed it. New shared
+> `BoardHeader` used by all three, with a test asserting none of them grows its own
+> header again.
+
 > **2026-09-22 (forty-ninth pass):** **Past Weeks button (D-102).** The week archive
 > already existed at `/results/[week]`; its only door was "See the board", which shows
 > only once a week is revealed — so an open board had no way back. A Past Weeks button

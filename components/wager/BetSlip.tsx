@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { BoardHeader } from "./BoardHeader";
 import { useRouter } from "next/navigation";
 import { submitWager } from "@/app/actions/wager";
 import { tierForWeek } from "@/lib/engine";
@@ -65,11 +66,14 @@ interface Props {
   medianSnapshot: number;
   shoveUsedWeek: number | null;
   copy: SlipCopy;
+  /** Newest revealed week for the Past Weeks door (D-103). */
+  pastWeek: number | null;
+  pastLabel: string;
 }
 
 type Side = "away" | "home";
 
-export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnapshot, shoveUsedWeek, copy }: Props) {
+export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnapshot, shoveUsedWeek, copy, pastWeek, pastLabel }: Props) {
   const router = useRouter();
   const { felt, houseLimit, stackPreAnte } = snapshot;
   const chipTone = tierForWeek(weekNumber);
@@ -201,9 +205,7 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
 
   return (
     <section aria-label={copy.heading} className="panel">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
-        {copy.heading}
-      </h2>
+      <BoardHeader heading={copy.heading} pastWeek={pastWeek} pastLabel={pastLabel} />
       {/* The running tally (§5.2). Ante, limit and deadline live on the stakes band
           above, so this bar carries only what changes as you bet — and it is the one
           thing worth keeping in view, so it alone sticks (D-054). It used to sit under

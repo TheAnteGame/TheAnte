@@ -2849,3 +2849,31 @@ The larger "Strategize" page brainstormed alongside this is NOT built: the owner
 settled on tabs (board archive + a stats page in the dashboard's two-column shape),
 and the useful finding was that the archive half already exists, so the real work
 there is the stats tab alone.
+
+## D-103 — The door was on the three states that did not need it (2026-09-22)
+
+D-102 put the Past Weeks button in `Titled`, WagerArea's panel wrapper, and I called
+it done because all four `<Titled>` call sites had it. **Three components render the
+Game Board under the same heading, and Titled is only one of them.** An open week
+returns `<BetSlip>` and a settled week returns `<SettledResults>`, each with its own
+copy of the header markup. So the door appeared in the waiting states and was absent
+from the open week — the single state where the archive has no other entrance, and
+the state the owner was looking at.
+
+The fix is not a third copy of the button. `components/wager/BoardHeader.tsx` is the
+header, once, and all three states render it; the duplication that let a change reach
+one state and miss two is gone. It carries no `"use client"` and no server-only
+import, so it compiles into whichever side imports it — BetSlip is a client
+component, the other two are server components.
+
+`tests/board/BoardHeader.test.tsx` guards the shape of the mistake rather than the
+symptom: it asserts each of the three files renders `<BoardHeader>` and contains no
+raw `panel-head` heading of its own, so a state that grows its own header again fails
+the build.
+
+**Process note worth keeping.** I shipped D-102 without seeing it rendered — the
+preview harness sits behind the same Clerk gate as the dashboard — and said so, but
+said it after pushing. Grepping for the call sites of the component I edited found
+four; grepping for the *markup* would have found seven. When a change must appear on
+a surface I cannot open, the search should be for the rendered thing, not the
+abstraction I happen to be holding.

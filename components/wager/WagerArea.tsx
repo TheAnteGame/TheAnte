@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { BoardHeader } from "./BoardHeader";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { LEAGUE_TZ } from "@/lib/time";
@@ -21,30 +22,13 @@ function Titled({
   children,
 }: {
   heading: string;
-  /** Most recent REVEALED week, or null when none has opened yet (D-102). */
   pastWeek: number | null;
   pastLabel: string;
   children: React.ReactNode;
 }) {
   return (
     <section aria-label={heading} className="panel">
-      <div className="panel-head flex items-center justify-between gap-3 px-4 py-3">
-        <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
-          {heading}
-        </h2>
-        {/* The archive was only ever reachable through "See the board", which appears
-            once a week is revealed — so with a week open there was no door to the
-            past at all (D-102). It lands on the newest revealed week, which carries
-            the week buttons for every earlier one. */}
-        {pastWeek !== null && (
-          <Link
-            href={`/results/${pastWeek}`}
-            className="chamfer shrink-0 border border-[color:var(--color-border)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-mid)] hover:border-[color:var(--color-gold)] hover:text-[color:var(--color-gold)]"
-          >
-            {pastLabel}
-          </Link>
-        )}
-      </div>
+      <BoardHeader heading={heading} pastWeek={pastWeek} pastLabel={pastLabel} />
       <div className="p-6">{children}</div>
     </section>
   );
@@ -122,7 +106,7 @@ export async function WagerArea({
     // the first always provokes ("how did they win it?").
     return (
       <div className="flex flex-col gap-4">
-        <SettledResults week={week} playerId={playerId} dbOverride={dbOverride} />
+        <SettledResults week={week} playerId={playerId} dbOverride={dbOverride} pastWeek={pastWeek} pastLabel={pastLabel} />
         <PotMath week={week} playerId={playerId} dbOverride={dbOverride} />
       </div>
     );
@@ -239,6 +223,8 @@ export async function WagerArea({
       medianSnapshot={week.median_snapshot ?? 0}
       shoveUsedWeek={me?.shove_used_week ?? null}
       copy={copy}
+      pastWeek={pastWeek}
+      pastLabel={pastLabel}
     />
   );
 }

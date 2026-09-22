@@ -1,4 +1,5 @@
 import { createUserClient } from "@/lib/db/supabase";
+import { BoardHeader } from "./BoardHeader";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
@@ -12,9 +13,14 @@ export async function SettledResults({
   week,
   playerId,
   dbOverride,
+  pastWeek,
+  pastLabel,
 }: {
   week: { id: string; number: number; pot_awarded: number | null; marker: number };
   playerId: string;
+  /** Newest revealed week for the Past Weeks door (D-103). */
+  pastWeek: number | null;
+  pastLabel: string;
   /** LOCAL PREVIEW ONLY — dev harness injects a service client. Never set in app code. */
   dbOverride?: ReturnType<typeof createUserClient>;
 }) {
@@ -101,9 +107,7 @@ export async function SettledResults({
 
   return (
     <section aria-label={heading} className="panel">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
-        {heading}
-      </h2>
+      <BoardHeader heading={heading} pastWeek={pastWeek} pastLabel={pastLabel} />
 
       {bets.length > 0 && (
         <ul>

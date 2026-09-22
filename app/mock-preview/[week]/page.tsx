@@ -151,6 +151,8 @@ export default async function MockPreview({
             week={{ id: week.id, number: week.number, pot_awarded: week.pot_awarded, marker: week.marker }}
             playerId={playerId}
             dbOverride={asMe}
+            pastWeek={null}
+            pastLabel=""
           />
         </section>
 
