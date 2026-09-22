@@ -166,6 +166,7 @@ export const contentDefaults: Record<string, string> = {
   "guide.win_title": "How you win the season",
   "guide.win_body": "Biggest stack after Week 18 wins. If two players tie, we look at who had the most winning bets. Still tied? Most Pots won, then fewest weeks folded, then one public card draw.",
   "dash.wager.heading": "Game Board",
+  "dash.wager.past_weeks": "Past Weeks",
   "dash.wager.closed_message": "The slate opens Tuesday at 6:00am MST.",
   "dash.wager.submitted_message": "Your ticket is in. Locked. No edits — not by you, not by anyone.",
   "dash.wager.blackout_notice": "Nobody sees a pick until everyone is in.",

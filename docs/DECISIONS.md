@@ -2826,3 +2826,26 @@ tested): pixels-per-second is now constant for a given setting, so 15s means a l
 crosses the rail in fifteen seconds on any rail, with any amount of news. The admin
 label says that instead of "one full pass", because one full pass was the misleading
 half. A floor stops a nearly-empty rail becoming a flicker.
+
+## D-102 — A door to the past weeks (2026-09-22)
+
+Owner could not reach any earlier week from an open board. The archive already
+existed — `/results/[week]` lists every week as buttons across the top and browses
+any of them — but the only way in was the "See the board" button, which appears once
+a week is REVEALED. With a week open, there was no door at all.
+
+So this is a door, not a feature: a **Past Weeks** button in the Game Board panel
+header, pointing at the newest revealed week, which carries the week buttons for
+every earlier one. It sits in all four states of the board because it lives in the
+panel's own header component.
+
+**The blackout is untouched, and not by care taken here.** The archive's source
+(`gatherLeagueStats`) filters on `revealed_at is not null`, so an open week can
+never appear in the week list; and the button itself targets the newest revealed
+week, which is null before any reveal — in which case it does not render. Two
+independent reasons an unrevealed ticket cannot be reached through it.
+
+The larger "Strategize" page brainstormed alongside this is NOT built: the owner
+settled on tabs (board archive + a stats page in the dashboard's two-column shape),
+and the useful finding was that the archive half already exists, so the real work
+there is the stats tab alone.

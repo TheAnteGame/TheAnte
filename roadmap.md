@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-22 (forty-ninth pass):** **Past Weeks button (D-102).** The week archive
+> already existed at `/results/[week]`; its only door was "See the board", which shows
+> only once a week is revealed — so an open board had no way back. A Past Weeks button
+> now sits in the Game Board header. Blackout safe twice over: the archive filters on
+> `revealed_at`, and the button is absent until a week has revealed.
+
 > **2026-09-20 (forty-eighth pass):** **Ticker speed slider fixed (D-101).** Nothing in
 > the chain was broken — the setting was the wrong QUANTITY. The lap was one item set
 > however wide, so px/s varied 6x with how much news was on the rail and "Fast" on a

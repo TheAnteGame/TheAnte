@@ -14,12 +14,37 @@ import Link from "next/link";
 
 /** Every state of this slot wears the same section title, so the game board reads
  *  as a named surface like Table Talk rather than an unlabelled slab. */
-function Titled({ heading, children }: { heading: string; children: React.ReactNode }) {
+function Titled({
+  heading,
+  pastWeek,
+  pastLabel,
+  children,
+}: {
+  heading: string;
+  /** Most recent REVEALED week, or null when none has opened yet (D-102). */
+  pastWeek: number | null;
+  pastLabel: string;
+  children: React.ReactNode;
+}) {
   return (
     <section aria-label={heading} className="panel">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
-        {heading}
-      </h2>
+      <div className="panel-head flex items-center justify-between gap-3 px-4 py-3">
+        <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
+          {heading}
+        </h2>
+        {/* The archive was only ever reachable through "See the board", which appears
+            once a week is revealed — so with a week open there was no door to the
+            past at all (D-102). It lands on the newest revealed week, which carries
+            the week buttons for every earlier one. */}
+        {pastWeek !== null && (
+          <Link
+            href={`/results/${pastWeek}`}
+            className="chamfer shrink-0 border border-[color:var(--color-border)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-mid)] hover:border-[color:var(--color-gold)] hover:text-[color:var(--color-gold)]"
+          >
+            {pastLabel}
+          </Link>
+        )}
+      </div>
       <div className="p-6">{children}</div>
     </section>
   );
@@ -44,11 +69,18 @@ export async function WagerArea({
     .maybeSingle();
 
   const heading = await getContent("dash.wager.heading");
+  // Only REVEALED weeks are ever listed — the archive's own source filters on
+  // revealed_at, so an open week cannot appear in it and the blackout is untouched.
+  const [{ data: lastRevealed }, pastLabel] = await Promise.all([
+    db.from("weeks").select("number").not("revealed_at", "is", null).order("number", { ascending: false }).limit(1).maybeSingle(),
+    getContent("dash.wager.past_weeks"),
+  ]);
+  const pastWeek = (lastRevealed?.number as number | undefined) ?? null;
 
   if (!week) {
     const closed = await getContent("dash.wager.closed_message");
     return (
-      <Titled heading={heading}>
+      <Titled heading={heading} pastWeek={pastWeek} pastLabel={pastLabel}>
         <p className="text-[color:var(--color-text-mid)]">{closed}</p>
       </Titled>
     );
@@ -63,7 +95,7 @@ export async function WagerArea({
       getContent("dash.wager.revealed_cta"),
     ]);
     return (
-      <Titled heading={heading}>
+      <Titled heading={heading} pastWeek={pastWeek} pastLabel={pastLabel}>
         <div className="flex flex-col items-start gap-3">
           <h3 className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase italic leading-none tracking-tight text-[color:var(--color-gold)] sm:text-4xl">
             {title}
@@ -113,7 +145,7 @@ export async function WagerArea({
     const out = (waiting ?? []).filter((w) => !w.submitted);
     const inCount = (waiting ?? []).length - out.length;
     return (
-      <Titled heading={heading}>
+      <Titled heading={heading} pastWeek={pastWeek} pastLabel={pastLabel}>
         {/* The waiting-on list is the ONE thing allowed to move during the blackout (§6). */}
         <PollRefresh intervalMs={15000} />
         <p className="text-[color:var(--color-text-hi)]">{submittedMessage}</p>
@@ -142,7 +174,7 @@ export async function WagerArea({
   if (!snap || !games || games.length === 0) {
     const closed = await getContent("dash.wager.closed_message");
     return (
-      <Titled heading={heading}>
+      <Titled heading={heading} pastWeek={pastWeek} pastLabel={pastLabel}>
         <p className="text-[color:var(--color-text-mid)]">{closed}</p>
       </Titled>
     );
