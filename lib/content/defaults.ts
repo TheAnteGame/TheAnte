@@ -38,6 +38,7 @@ export const contentDefaults: Record<string, string> = {
   "player.folded_label": "Folded",
   "player.shoved_label": "Shoved",
   "player.none_yet": "No bets on this one.",
+  "player.switch_label": "Look at another player",
   "profile.heading": "Take your seat",
   "profile.intro_body": "Five questions and you're in the room.",
   "profile.first_name_label": "First name",

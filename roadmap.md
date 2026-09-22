@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-22 (fifty-second pass):** **Player switcher (D-105).** Dropdown beside the
+> name on `/player/[id]`, ordered by rank and labelled with it; one standings read now
+> serves both the profile figures and the roster.
+
 > **2026-09-22 (fifty-first pass):** **Player profiles (D-104).** `/player/[id]` —
 > rank/stack/Pots, three dials (games per week, chips per game, chip-weighted average
 > price), and every revealed week expandable to each bet. Every player name on the

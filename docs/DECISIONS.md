@@ -2913,3 +2913,17 @@ without an id it stays the old tray. All nine name sites — leaderboard, chat, 
 stats, pot math, settled results and four in the reveal — now pass an id, including
 the head-to-head list, which keys on `opponentId` rather than `playerId` and would
 have silently linked to the wrong person.
+
+## D-105 — Switch players without going back (2026-09-22)
+
+A dropdown beside the name on `/player/[id]`. **Ordered by rank and labelled with
+it** ("5 · Frank M."), because the question this answers is nearly always "how is
+the person above me betting" — so the list should read as the standings rather than
+as an address book. Ties render honestly: the view's `rank()` gives two players the
+same number, and the list shows it.
+
+**One read serves both.** The page previously fetched this player's standings row on
+its own; it now fetches the whole table ordered by rank and picks its own row out of
+it, so the switcher costs nothing extra. Removed seats are absent for free — D-041
+takes them out of `standings` entirely — and the control only renders when there is
+more than one player to switch to.

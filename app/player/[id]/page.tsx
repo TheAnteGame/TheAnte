@@ -6,6 +6,7 @@ import { getContent } from "@/lib/content/getContent";
 import { getPlayerState } from "@/lib/player";
 import { getTeamNames } from "@/lib/teams";
 import { playerDials, type ProfileTicket } from "@/lib/stats/player";
+import { PlayerSwitcher } from "@/components/player/PlayerSwitcher";
 
 // One player's season (D-104). Reachable from any name on the site, because the
 // rulebook makes every past ticket public (§11) and the room should be able to see
@@ -41,7 +42,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
   const db = createUserClient();
   const [
     { data: who },
-    { data: standing },
+    { data: allStandings },
     { data: weekRows },
     teamNames,
     logoAlt,
@@ -60,9 +61,12 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     foldedLabel,
     shovedLabel,
     noneYet,
+    switchLabel,
   ] = await Promise.all([
     db.from("players").select("id, first_name, last_name, favorite_team").eq("id", id).maybeSingle(),
-    db.from("standings").select("rank, stack, pots_won").eq("player_id", id).maybeSingle(),
+    // The whole table in one read: this player's own figures, and the roster the
+    // switcher offers. Ordered by rank so the dropdown reads as the standings.
+    db.from("standings").select("player_id, first_name, last_name, rank, stack, pots_won").order("rank"),
     db.from("weeks").select("id, number").not("revealed_at", "is", null).order("number", { ascending: false }),
     getTeamNames(),
     getContent("home.logo_alt"),
@@ -81,8 +85,17 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     getContent("player.folded_label"),
     getContent("player.shoved_label"),
     getContent("player.none_yet"),
+    getContent("player.switch_label"),
   ]);
   if (!who) notFound();
+
+  type StandingRow = { player_id: string; first_name: string | null; last_name: string | null; rank: number; stack: number; pots_won: number };
+  const standings = (allStandings ?? []) as StandingRow[];
+  const standing = standings.find((r) => r.player_id === id) ?? null;
+  const roster = standings.map((r) => ({
+    id: r.player_id,
+    label: `${r.rank} \u00b7 ${`${r.first_name ?? ""} ${(r.last_name ?? "").slice(0, 1)}`.trim()}${r.last_name ? "." : ""}`,
+  }));
 
   const weeks = (weekRows ?? []) as Array<{ id: string; number: number }>;
   const weekNumber = new Map(weeks.map((w) => [w.id, w.number]));
@@ -146,9 +159,12 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
 
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6">
         <div className="flex flex-col gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase italic tracking-tight text-[color:var(--color-heading)] sm:text-4xl">
-            {fullName}
-          </h1>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+            <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase italic tracking-tight text-[color:var(--color-heading)] sm:text-4xl">
+              {fullName}
+            </h1>
+            {roster.length > 1 && <PlayerSwitcher label={switchLabel} current={id} players={roster} />}
+          </div>
           <hr className="gold-rule w-40" />
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-[color:var(--color-text-mid)]">
             {team && <span>{team}</span>}
