@@ -94,7 +94,7 @@ export async function SettledResults({
       getContent("settled.won_label"),
       getContent("settled.lost_label"),
       getContent("settled.returned_label"),
-    ]);
+      ]);
 
   const resultLabel = (r: string | null) => (r === "won" ? wonLabel : r === "lost" ? lostLabel : returnedLabel);
   const resultClass = (r: string | null) =>
@@ -171,7 +171,7 @@ export async function SettledResults({
               {potWinners.map((w, i) => (
                 <span key={w.playerId}>
                   {i > 0 && ", "}
-                  <PlayerTip fullName={w.fullName} team={w.team}>
+                  <PlayerTip fullName={w.fullName} team={w.team} playerId={w.playerId}>
                     <span>
                       {w.name} +{w.amount}
                     </span>

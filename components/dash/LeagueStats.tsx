@@ -79,7 +79,7 @@ export async function LeagueStats() {
               </span>
               {r.who && r.whoPlayerId ? (
                 <span className="ml-auto">
-                  <PlayerTip fullName={fullNameOf(r.whoPlayerId)} team={teamOf(r.whoPlayerId)}>
+                  <PlayerTip fullName={fullNameOf(r.whoPlayerId)} team={teamOf(r.whoPlayerId)} playerId={r.whoPlayerId}>
                     <span className="text-xs text-[color:var(--color-text-mid)]">{r.who}</span>
                   </PlayerTip>
                 </span>

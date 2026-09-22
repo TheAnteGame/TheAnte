@@ -24,6 +24,20 @@ export const contentDefaults: Record<string, string> = {
   "home.signed_in_cta": "You're already in \u2014 take me to my seat",
 
   // Onboarding / profile
+  // A player's season, reachable from any name on the site (D-104).
+  "player.back_cta": "Back to the dashboard",
+  "player.empty": "Nothing to show yet \u2014 no week has revealed.",
+  "player.pots_label": "Pots",
+  "player.dials_heading": "How they play",
+  "player.width_label": "Games per week",
+  "player.weight_label": "Chips per game",
+  "player.price_label": "Average price",
+  "player.record_label": "Won\u2013lost",
+  "player.weeks_heading": "Every week",
+  "player.week_label": "Week",
+  "player.folded_label": "Folded",
+  "player.shoved_label": "Shoved",
+  "player.none_yet": "No bets on this one.",
   "profile.heading": "Take your seat",
   "profile.intro_body": "Five questions and you're in the room.",
   "profile.first_name_label": "First name",

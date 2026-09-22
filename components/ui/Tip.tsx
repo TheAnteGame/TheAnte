@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useState, type ReactNode } from "react";
 
 // One tooltip for surfaces that need to explain themselves. Desktop: hover, as
@@ -21,6 +22,7 @@ export function Tip({
   align = "left",
   className,
   marker = "info",
+  href,
 }: {
   /** The explanation. */
   text: string;
@@ -33,6 +35,11 @@ export function Tip({
   className?: string;
   /** How the trigger shows it can be tapped: a small ⓘ, a dotted underline, or nothing. */
   marker?: "info" | "underline" | "none";
+  /** Makes the trigger a LINK rather than a toggle: the click navigates and the
+   *  tray becomes hover-only explanation (D-104). Used for player names, where the
+   *  destination carries everything the tray says and more, so a phone tap is
+   *  better spent going there than opening a card. */
+  href?: string;
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -67,6 +74,17 @@ export function Tip({
 
   return (
     <span id={id} className={`group relative inline-flex ${className ?? ""}`}>
+      {href ? (
+        <Link
+          href={href}
+          aria-label={`${label}. ${text}`}
+          className={`relative rounded-none text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-chrome)] ${
+            marker === "underline" ? "underline decoration-dotted decoration-[color:var(--color-text-low)] underline-offset-4" : ""
+          }`}
+        >
+          {children}
+        </Link>
+      ) : (
       <button
         type="button"
         onClick={toggle}
@@ -85,6 +103,7 @@ export function Tip({
           </span>
         )}
       </button>
+      )}
       {/* Never wider than the viewport it has to fit inside. */}
       <span
         role="tooltip"

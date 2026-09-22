@@ -262,7 +262,7 @@ export async function TableTalk({
                     const fullName = a ? `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "—" : nameOf(m.player_id);
                     const team = a?.favorite_team ? (teamNames.get(a.favorite_team) ?? null) : null;
                     return (
-                      <PlayerTip fullName={fullName} team={team}>
+                      <PlayerTip fullName={fullName} team={team} playerId={m.player_id}>
                         <span className="mr-2 font-semibold text-[color:var(--color-text-hi)]">{nameOf(m.player_id)}</span>
                       </PlayerTip>
                     );

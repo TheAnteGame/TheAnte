@@ -78,7 +78,7 @@ export interface RevealData {
     weeks: number;
   }>;
   copy: {
-    interstitialTitle: string;
+      interstitialTitle: string;
     interstitialSub: string;
     enterCta: string;
     shoveBeatTitle: string;
@@ -212,7 +212,7 @@ export function RevealExperience({ data, straightToBoard = false }: { data: Reve
                 key={r.opponentId}
                 className="flex flex-wrap items-baseline gap-x-3 border-b border-[color:var(--color-border)] px-4 py-2.5 last:border-b-0"
               >
-                <PlayerTip fullName={r.fullName} team={r.favTeam}>
+                <PlayerTip fullName={r.fullName} team={r.favTeam} playerId={r.opponentId}>
                   <span className="font-semibold text-[color:var(--color-text-hi)]">{r.name}</span>
                 </PlayerTip>
                 <span className="nums ml-auto font-[family-name:var(--font-display)] font-bold">
@@ -252,7 +252,7 @@ export function RevealExperience({ data, straightToBoard = false }: { data: Reve
                   className={`border-t border-[color:var(--color-border)] ${r.isMe ? "bg-[color:var(--color-surface-1)]" : ""}`}
                 >
                   <td className="px-4 py-2 font-semibold text-[color:var(--color-text-hi)]">
-                    <PlayerTip fullName={r.fullName} team={r.favTeam}>
+                    <PlayerTip fullName={r.fullName} team={r.favTeam} playerId={r.playerId}>
                       <span>{r.name}</span>
                     </PlayerTip>
                     {r.isMe && <span className="ml-1 text-[12px] uppercase text-[color:var(--color-text-low)]">{copy.youLabel}</span>}
@@ -321,7 +321,7 @@ export function RevealExperience({ data, straightToBoard = false }: { data: Reve
                         <ul className="mt-1 space-y-0.5">
                           {side.entries.map((e) => (
                             <li key={e.playerId} className="flex justify-between text-sm">
-                              <PlayerTip fullName={e.fullName} team={e.favTeam}>
+                              <PlayerTip fullName={e.fullName} team={e.favTeam} playerId={e.playerId}>
                                 <span className={e.isShove ? "font-semibold text-[color:var(--color-gold)]" : "text-[color:var(--color-text-mid)]"}>
                                   {e.name}
                                   {e.isShove && <span className="ml-1 text-[12px] uppercase">{copy.shoveLabel}</span>}
@@ -344,7 +344,7 @@ export function RevealExperience({ data, straightToBoard = false }: { data: Reve
           {data.players.map((p, i) => (
             <li key={p.playerId} className="card-in border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0" style={{ animationDelay: `${i * 60}ms` }}>
               <div className="flex items-baseline gap-3">
-                <PlayerTip fullName={p.fullName} team={p.favTeam}>
+                <PlayerTip fullName={p.fullName} team={p.favTeam} playerId={p.playerId}>
                   <span className={`font-[family-name:var(--font-display)] font-semibold ${p.isShove ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-hi)]"}`}>
                     {p.name}
                   </span>

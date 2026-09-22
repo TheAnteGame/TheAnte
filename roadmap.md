@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-22 (fifty-first pass):** **Player profiles (D-104).** `/player/[id]` —
+> rank/stack/Pots, three dials (games per week, chips per game, chip-weighted average
+> price), and every revealed week expandable to each bet. Every player name on the
+> site now links there. Revealed weeks only, including your own — proved on the local
+> stack by flipping a week unrevealed. No migration.
+
 > **2026-09-22 (fiftieth pass):** **Past Weeks now on the open board (D-103).** D-102
 > added it to `Titled` only; BetSlip (open week) and SettledResults render their own
 > header, so the door was missing from the one state that needed it. New shared

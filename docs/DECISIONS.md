@@ -2877,3 +2877,39 @@ said it after pushing. Grepping for the call sites of the component I edited fou
 four; grepping for the *markup* would have found seven. When a change must appear on
 a surface I cannot open, the search should be for the rendered thing, not the
 abstraction I happen to be holding.
+
+## D-104 — Every player name is a door to their season (2026-09-22)
+
+Owner: clicking a name should show how that player bets — chips, teams, past weeks —
+so the room can read the leader rather than guess at them. The rulebook already
+makes it public: every past ticket is (§11), and the reveal board shows it a week at
+a time. This just gathers one person's into one place.
+
+**`/player/[id]`**: name, team, rank, stack and Pots; **how they play** — games per
+week against the five-game minimum, chips per game against the 10–50 range, and the
+average price they earn, which is the contrarian reading (0.25× riding the crowd,
+2.50× alone against it); then every revealed week, expandable to each bet — who they
+backed, against whom, for how many chips, at what price, and what it paid.
+
+**The dials exclude folds and shoves from width and weight** (`lib/stats/player.ts`,
+tested). A fold has no bets and would drag width to zero; a shove is one forced
+all-in at even money (§8) and would drag weight to the ceiling. Both are still
+counted and shown. The average price is **chip-weighted**, so a big contrarian bet
+outweighs a token one.
+
+**Revealed weeks only, including your own profile.** RLS already refuses another
+player's unrevealed ticket, but it lets you read your OWN at any time — so a page
+anyone can link to would otherwise show the author their live ticket on a shared
+surface. Proved on the local stack rather than asserted: with week 18 flipped to
+unrevealed, the page's week list drops it, another player's ticket for it returns
+zero rows, and the author's own remains RLS-readable but never queried.
+
+**The name itself is the link, not a card with a link in it.** A first cut put "See
+their season" inside the hover tray; the owner's correction is better, and the reason
+is the phone: tapping a name already opens that tray (D-090), so a two-step door
+costs a tap to open and a tap to close, while the destination carries everything the
+tray says and more. `Tip` takes an `href` and renders a link instead of the toggle;
+without an id it stays the old tray. All nine name sites — leaderboard, chat, league
+stats, pot math, settled results and four in the reveal — now pass an id, including
+the head-to-head list, which keys on `opponentId` rather than `playerId` and would
+have silently linked to the wrong person.

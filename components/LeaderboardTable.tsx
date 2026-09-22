@@ -120,7 +120,7 @@ export function LeaderboardTable({ rows, copy }: { rows: LbRow[]; copy: LbCopy }
               >
                 <td className="nums px-2 py-2 text-left text-[color:var(--color-text-low)]">{i + 1}</td>
                 <td className="px-2 py-2 text-left">
-                  <PlayerTip fullName={r.fullName} team={r.team}>
+                  <PlayerTip fullName={r.fullName} team={r.team} playerId={r.playerId}>
                     <span className="font-medium text-[color:var(--color-text-hi)]">{r.name}</span>
                   </PlayerTip>
                   {r.felt && (

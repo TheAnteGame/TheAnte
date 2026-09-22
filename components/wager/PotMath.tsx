@@ -139,7 +139,7 @@ export async function PotMath({
       getContent("potmath.split_note"),
       getContent("potmath.you"),
       getContent("potmath.room_label"),
-    ]);
+      ]);
 
   // Correct English ordinals all the way down the room — a 25-seat league renders
   // 21st/22nd/23rd, not "21th".
@@ -189,7 +189,7 @@ export async function PotMath({
               </span>
 
               <span className={isMe ? "font-semibold text-[color:var(--color-text-hi)]" : "text-[color:var(--color-text-hi)]"}>
-                <PlayerTip fullName={fullNameOf(s.playerId)} team={teamOf(s.playerId)}>
+                <PlayerTip fullName={fullNameOf(s.playerId)} team={teamOf(s.playerId)} playerId={s.playerId}>
                   <span>{nameOf(s.playerId)}</span>
                 </PlayerTip>
                 {isMe && <span className="ml-2 text-[12px] uppercase tracking-wider text-[color:var(--color-gold)]">{youLabel}</span>}
