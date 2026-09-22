@@ -267,11 +267,11 @@ export async function StakesBand({ playerId }: { playerId: string }) {
           // The wall is behind us — a deadline that has already passed is the least
           // useful thing on the band, and what the player actually put in is one of
           // the most (D-071). Same swap, same reason, as the limit tray.
-          <Tip text={yourWagerTip} label={yourWagerLabel} align="right">
+          <Tip text={yourWagerTip} label={yourWagerLabel} align="right" marker="corner">
             {stat(yourWagerLabel, String(myWager))}
           </Tip>
         ) : (
-          <Tip text={deadlineTip} label={deadlineLabel} align="right">
+          <Tip text={deadlineTip} label={deadlineLabel} align="right" marker="corner">
             {stat(deadlineLabel, deadline.toFormat("ccc h:mma 'MST'"))}
           </Tip>
         )}
@@ -280,12 +280,12 @@ export async function StakesBand({ playerId }: { playerId: string }) {
 
       {/* Phone rows two and three: every tray fills its cell and matches heights. */}
       <div className="grid grid-cols-2 gap-2 sm:contents max-sm:[&>span]:flex max-sm:[&>span>button]:w-full max-sm:[&>span>button>span]:h-full">
-      <Tip text={anteTip} label={anteLabel}>
+      <Tip text={anteTip} label={anteLabel} marker="corner">
         {stat(anteLabel, String(week.ante))}
       </Tip>
 
       {/* The Pot is the house's money, so it is the one thing here wearing gold. */}
-      <Tip text={potTip} label={potLabel} className="max-sm:order-first max-sm:col-span-2">
+      <Tip text={potTip} label={potLabel} className="max-sm:order-first max-sm:col-span-2" marker="corner">
         <span className="well well-gold chamfer flex items-center gap-3 px-3.5 py-2">
           <PokerChip tone="gold" size={30} className="gold-pulse shrink-0" />
           <span className="flex flex-col">
@@ -304,12 +304,12 @@ export async function StakesBand({ playerId }: { playerId: string }) {
         // Present tense only while the games are actually being played; once the week
         // settles the same figure is history, and "in play" would be a small lie for
         // the day and a half before Tuesday's slate opens.
-        <Tip text={inPlayTip} label={week.phase === "settled" ? wageredLabel : inPlayLabel}>
+        <Tip text={inPlayTip} label={week.phase === "settled" ? wageredLabel : inPlayLabel} marker="corner">
           {stat(week.phase === "settled" ? wageredLabel : inPlayLabel, String(wagered))}
         </Tip>
       ) : (
         snap && (
-          <Tip text={limitTip} label={limitLabel}>
+          <Tip text={limitTip} label={limitLabel} marker="corner">
             {stat(limitLabel, String(snap.house_limit))}
           </Tip>
         )

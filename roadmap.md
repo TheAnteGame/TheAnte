@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-22 (fifty-fourth pass):** **D-107, second pass on D-106.** The week
+> breakdown moved out of `<details>` onto the visible row (`Bets +61 · Ante −10 ·
+> Pot +180 = +231`), and the ⓘ marker — white since D-097, for the dark band — split
+> into an inline token-coloured `info` for panels and a white `corner` for the band.
+> Both checked in the browser in both themes.
+
 > **2026-09-22 (fifty-third pass):** **Profiles explain themselves (D-106).** A week
 > showed the ledger total over bet rows only, so a Pot-winning week read "+231" over
 > bets summing to +61. Each week now shows its parts (Bets · Ante · Pot · Adjustments

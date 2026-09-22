@@ -2952,3 +2952,25 @@ that needed it most: *average price* is what a winning bet pays — at 1.00× a 
 pays what you risked, and the price is set by how many people picked the same side,
 so above 1.00× means they tend to back the less popular team. That is the whole
 contrarian mechanic (§5) in a sentence, on the number it describes.
+
+## D-107 — The answer was inside the fold, and the mark was white on white (2026-09-22)
+
+D-106 shipped both halves of the explanation where nobody could see them.
+
+**The week breakdown was inside `<details>`.** So the number people were puzzled BY
+(`+231`, on the collapsed row) was visible and the answer was not. It now sits on
+the row itself, under the week: `Bets +61 · Ante −10 · Pot +180 = +231`. No expanding
+required, and expanding still shows the individual bets. Zero parts are omitted and
+anything rarer shows as Adjustments.
+
+**The ⓘ was invisible on a panel.** D-097 had restyled it `text-white/55` and pinned
+it to a corner, which is right for the stakes band's trays — dark gem in both themes
+— and wrong everywhere else. On the profile's light panel it was white on near-white,
+so the owner correctly reported there was no mark at all and no way to reach the
+explanations by touch. Split in two: `marker="info"` trails the label inline in the
+theme's own low ink, for labels on panels; `marker="corner"` keeps the white corner
+mark, and the band's six trays now ask for it explicitly.
+
+Verified in the browser this time, in both themes, rather than shipped on a green
+typecheck — the profile page sits behind the Clerk gate, so the check was a faithful
+repro of its markup against the real compiled CSS.

@@ -72,7 +72,6 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     partsAnte,
     partsPot,
     partsOther,
-    partsTotal,
   ] = await Promise.all([
     db.from("players").select("id, first_name, last_name, favorite_team").eq("id", id).maybeSingle(),
     // The whole table in one read: this player's own figures, and the roster the
@@ -105,7 +104,6 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     getContent("player.parts_ante"),
     getContent("player.parts_pot"),
     getContent("player.parts_other"),
-    getContent("player.parts_total"),
   ]);
   if (!who) notFound();
 
@@ -240,29 +238,55 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                 return (
                   <li key={w.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
                     <details className="group">
-                      <summary className="flex cursor-pointer list-none items-baseline gap-3 px-4 py-3 text-sm hover:bg-[color:var(--color-surface-2)] [&::-webkit-details-marker]:hidden">
-                        <span aria-hidden className="shrink-0 text-[color:var(--color-gold)] transition-transform group-open:rotate-90">
-                          &#9656;
+                      <summary className="cursor-pointer list-none px-4 py-3 text-sm hover:bg-[color:var(--color-surface-2)] [&::-webkit-details-marker]:hidden">
+                        <span className="flex items-baseline gap-3">
+                          <span aria-hidden className="shrink-0 text-[color:var(--color-gold)] transition-transform group-open:rotate-90">
+                            &#9656;
+                          </span>
+                          <span className="font-semibold text-[color:var(--color-text-hi)]">
+                            {weekLabel} {w.number}
+                          </span>
+                          {t?.is_fold && <span className="text-[11px] uppercase tracking-wider text-[color:var(--color-text-low)]">{foldedLabel}</span>}
+                          {t?.is_shove && <span className="text-[11px] uppercase tracking-wider text-[color:var(--color-gold)]">{shovedLabel}</span>}
+                          <span className={`nums ml-auto font-semibold ${gain >= 0 ? "text-[color:var(--color-win)]" : "text-[color:var(--color-loss)]"}`}>
+                            {signed(gain)}
+                          </span>
+                          <span aria-hidden className="hidden h-1.5 w-24 shrink-0 bg-[color:var(--color-surface-3)] sm:block">
+                            <span
+                              className={`block h-full ${gain >= 0 ? "bg-[color:var(--color-win)]" : "bg-[color:var(--color-loss)]"}`}
+                              style={{ width: `${Math.round((Math.abs(gain) / widest) * 100)}%` }}
+                            />
+                          </span>
                         </span>
-                        <span className="font-semibold text-[color:var(--color-text-hi)]">
-                          {weekLabel} {w.number}
-                        </span>
-                        {t?.is_fold && <span className="text-[11px] uppercase tracking-wider text-[color:var(--color-text-low)]">{foldedLabel}</span>}
-                        {t?.is_shove && <span className="text-[11px] uppercase tracking-wider text-[color:var(--color-gold)]">{shovedLabel}</span>}
-                        <span className={`nums ml-auto font-semibold ${gain >= 0 ? "text-[color:var(--color-win)]" : "text-[color:var(--color-loss)]"}`}>
-                          {signed(gain)}
-                        </span>
-                        <span aria-hidden className="hidden h-1.5 w-24 shrink-0 bg-[color:var(--color-surface-3)] sm:block">
-                          <span
-                            className={`block h-full ${gain >= 0 ? "bg-[color:var(--color-win)]" : "bg-[color:var(--color-loss)]"}`}
-                            style={{ width: `${Math.round((Math.abs(gain) / widest) * 100)}%` }}
-                          />
-                        </span>
+                        {/* The sum, on the row itself (D-107). It lived inside the fold
+                            before, so the number people were puzzled BY was visible and
+                            the answer was not. A week is the ante, the bets and any Pot;
+                            none of those had a row, so the column never added up. */}
+                        {parts && (
+                          <span className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pl-6 text-[12px] text-[color:var(--color-text-low)]">
+                            {([
+                              [partsBets, parts.bets, false],
+                              [partsAnte, parts.ante, false],
+                              [partsPot, parts.pot, true],
+                              [partsOther, parts.other, false],
+                            ] as Array<[string, number, boolean]>)
+                              .filter(([, v]) => v !== 0)
+                              .map(([label, v, gold], i) => (
+                                <span key={label}>
+                                  {i > 0 && <span aria-hidden className="mr-2">&#183;</span>}
+                                  {label}{" "}
+                                  <span className={`nums ${gold ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-mid)]"}`}>{signed(v)}</span>
+                                </span>
+                              ))}
+                            <span aria-hidden className="mx-1">&#61;</span>
+                            <span className="nums font-semibold text-[color:var(--color-text-mid)]">{signed(parts.total)}</span>
+                          </span>
+                        )}
                       </summary>
                       {bets.length === 0 ? (
                         <p className="px-4 pb-4 pl-10 text-sm text-[color:var(--color-text-low)]">{noneYet}</p>
                       ) : (
-                        <ul className="px-4 pl-10">
+                        <ul className="px-4 pb-4 pl-10">
                           {bets.map((b, i) => {
                             const g = one(b.games);
                             const backed = b.side === "away" ? g?.away_team : g?.home_team;
@@ -290,36 +314,6 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                             );
                           })}
                         </ul>
-                      )}
-                      {/* Where the week's number came from. The rows above are only the
-                          bets; the ante and any Pot never appeared, so the total looked
-                          wrong to anyone who added the column up (D-106). */}
-                      {parts && (
-                        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pb-4 pl-10 pt-2 text-[12px] text-[color:var(--color-text-low)]">
-                          {parts.bets !== 0 && (
-                            <span>
-                              {partsBets} <span className="nums text-[color:var(--color-text-mid)]">{signed(parts.bets)}</span>
-                            </span>
-                          )}
-                          {parts.ante !== 0 && (
-                            <span>
-                              {partsAnte} <span className="nums text-[color:var(--color-text-mid)]">{signed(parts.ante)}</span>
-                            </span>
-                          )}
-                          {parts.pot !== 0 && (
-                            <span>
-                              {partsPot} <span className="nums text-[color:var(--color-gold)]">{signed(parts.pot)}</span>
-                            </span>
-                          )}
-                          {parts.other !== 0 && (
-                            <span>
-                              {partsOther} <span className="nums text-[color:var(--color-text-mid)]">{signed(parts.other)}</span>
-                            </span>
-                          )}
-                          <span className="ml-auto font-semibold text-[color:var(--color-text-mid)]">
-                            {partsTotal} <span className="nums">{signed(parts.total)}</span>
-                          </span>
-                        </p>
                       )}
                     </details>
                   </li>

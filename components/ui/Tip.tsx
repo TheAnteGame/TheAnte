@@ -33,8 +33,14 @@ export function Tip({
   align?: "left" | "right";
   /** Extra classes on the root, for grid placement (D-087). */
   className?: string;
-  /** How the trigger shows it can be tapped: a small ⓘ, a dotted underline, or nothing. */
-  marker?: "info" | "underline" | "none";
+  /** How the trigger shows it can be tapped (D-107):
+   *   info    a small ⓘ trailing the label, in the theme's own low ink — for labels
+   *           sitting on a panel, where white would be invisible in light mode
+   *   corner  the same mark pinned to the top-right, white — for the stakes band's
+   *           block trays, whose ground is dark gem in BOTH themes
+   *   underline  a dotted rule, for names
+   *   none */
+  marker?: "info" | "corner" | "underline" | "none";
   /** Makes the trigger a LINK rather than a toggle: the click navigates and the
    *  tray becomes hover-only explanation (D-104). Used for player names, where the
    *  destination carries everything the tray says and more, so a phone tap is
@@ -98,6 +104,11 @@ export function Tip({
         {/* The trays are block-level wells, so the mark pins to the corner rather
             than trailing the content onto a second line. */}
         {marker === "info" && (
+          <span aria-hidden className="ml-1 align-super text-[9px] leading-none text-[color:var(--color-text-low)]">
+            ⓘ
+          </span>
+        )}
+        {marker === "corner" && (
           <span aria-hidden className="pointer-events-none absolute right-1.5 top-1 text-[10px] leading-none text-white/55">
             ⓘ
           </span>

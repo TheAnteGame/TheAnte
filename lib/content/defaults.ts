@@ -51,7 +51,6 @@ export const contentDefaults: Record<string, string> = {
   "player.parts_ante": "Ante",
   "player.parts_pot": "Pot",
   "player.parts_other": "Adjustments",
-  "player.parts_total": "Week",
   "profile.heading": "Take your seat",
   "profile.intro_body": "Five questions and you're in the room.",
   "profile.first_name_label": "First name",
