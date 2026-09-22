@@ -7,6 +7,8 @@ import { getPlayerState } from "@/lib/player";
 import { getTeamNames } from "@/lib/teams";
 import { playerDials, type ProfileTicket } from "@/lib/stats/player";
 import { PlayerSwitcher } from "@/components/player/PlayerSwitcher";
+import { weekParts } from "@/lib/stats/weekParts";
+import { Tip } from "@/components/ui/Tip";
 
 // One player's season (D-104). Reachable from any name on the site, because the
 // rulebook makes every past ticket public (§11) and the room should be able to see
@@ -62,6 +64,15 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     shovedLabel,
     noneYet,
     switchLabel,
+    widthTip,
+    weightTip,
+    priceTip,
+    recordTip,
+    partsBets,
+    partsAnte,
+    partsPot,
+    partsOther,
+    partsTotal,
   ] = await Promise.all([
     db.from("players").select("id, first_name, last_name, favorite_team").eq("id", id).maybeSingle(),
     // The whole table in one read: this player's own figures, and the roster the
@@ -86,6 +97,15 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     getContent("player.shoved_label"),
     getContent("player.none_yet"),
     getContent("player.switch_label"),
+    getContent("player.width_tip"),
+    getContent("player.weight_tip"),
+    getContent("player.price_tip"),
+    getContent("player.record_tip"),
+    getContent("player.parts_bets"),
+    getContent("player.parts_ante"),
+    getContent("player.parts_pot"),
+    getContent("player.parts_other"),
+    getContent("player.parts_total"),
   ]);
   if (!who) notFound();
 
@@ -110,15 +130,21 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
           .in("week_id", revealedIds)
       : Promise.resolve({ data: [] as TicketRow[] }),
     revealedIds.length
-      ? db.from("ledger_entries").select("week_id, amount").eq("player_id", id).in("week_id", revealedIds)
-      : Promise.resolve({ data: [] as Array<{ week_id: string | null; amount: number }> }),
+      ? db.from("ledger_entries").select("week_id, kind, amount").eq("player_id", id).in("week_id", revealedIds)
+      : Promise.resolve({ data: [] as Array<{ week_id: string | null; kind: string; amount: number }> }),
   ]);
 
-  const gainByWeek = new Map<number, number>();
-  for (const e of (ledger ?? []) as Array<{ week_id: string | null; amount: number }>) {
+  // Kept as entries rather than a running total so each week can show WHERE its
+  // number came from — a Pot is the difference between "+61 of bets" and "+231".
+  const entriesByWeek = new Map<number, Array<{ kind: string; amount: number }>>();
+  for (const e of (ledger ?? []) as Array<{ week_id: string | null; kind: string; amount: number }>) {
     const n = e.week_id ? weekNumber.get(e.week_id) : undefined;
-    if (n !== undefined) gainByWeek.set(n, (gainByWeek.get(n) ?? 0) + e.amount);
+    if (n === undefined) continue;
+    const list = entriesByWeek.get(n);
+    if (list) list.push(e);
+    else entriesByWeek.set(n, [e]);
   }
+  const partsByWeek = new Map([...entriesByWeek].map(([n, rows]) => [n, weekParts(rows)]));
 
   const tickets = (ticketRows ?? []) as TicketRow[];
   const byWeek = new Map(tickets.map((t) => [weekNumber.get(t.week_id) ?? 0, t]));
@@ -135,13 +161,13 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
   const fullName = `${who.first_name ?? ""} ${who.last_name ?? ""}`.trim() || "—";
   const team = who.favorite_team ? (teamNames.get(who.favorite_team) ?? who.favorite_team) : null;
   const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
-  const widest = Math.max(1, ...[...gainByWeek.values()].map((v) => Math.abs(v)));
+  const widest = Math.max(1, ...[...partsByWeek.values()].map((p) => Math.abs(p.total)));
 
-  const dialCells: Array<[string, string]> = [
-    [widthLabel, dials.avgGames === null ? "—" : String(dials.avgGames)],
-    [weightLabel, dials.avgChips === null ? "—" : String(dials.avgChips)],
-    [priceLabel, dials.avgMultiplier === null ? "—" : `${dials.avgMultiplier.toFixed(2)}×`],
-    [recordLabel, `${dials.betsWon}–${dials.betsLost}`],
+  const dialCells: Array<[string, string, string]> = [
+    [widthLabel, dials.avgGames === null ? "—" : String(dials.avgGames), widthTip],
+    [weightLabel, dials.avgChips === null ? "—" : String(dials.avgChips), weightTip],
+    [priceLabel, dials.avgMultiplier === null ? "—" : `${dials.avgMultiplier.toFixed(2)}×`, priceTip],
+    [recordLabel, `${dials.betsWon}–${dials.betsLost}`, recordTip],
   ];
 
   return (
@@ -185,9 +211,13 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
             {dialsHeading}
           </h2>
           <dl className="grid grid-cols-2 gap-px bg-[color:var(--color-border)] sm:grid-cols-4">
-            {dialCells.map(([label, value]) => (
+            {dialCells.map(([label, value, tip]) => (
               <div key={label} className="bg-[color:var(--color-surface-1)] px-4 py-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-low)]">{label}</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-low)]">
+                  <Tip text={tip} label={label}>
+                    <span>{label}</span>
+                  </Tip>
+                </dt>
                 <dd className="nums mt-1 font-[family-name:var(--font-display)] text-xl font-bold text-[color:var(--color-text-hi)]">{value}</dd>
               </div>
             ))}
@@ -204,7 +234,8 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
             <ul>
               {weeks.map((w) => {
                 const t = byWeek.get(w.number);
-                const gain = gainByWeek.get(w.number) ?? 0;
+                const parts = partsByWeek.get(w.number);
+                const gain = parts?.total ?? 0;
                 const bets = (t?.bets ?? []).slice().sort((a, b) => b.chips - a.chips);
                 return (
                   <li key={w.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
@@ -231,7 +262,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                       {bets.length === 0 ? (
                         <p className="px-4 pb-4 pl-10 text-sm text-[color:var(--color-text-low)]">{noneYet}</p>
                       ) : (
-                        <ul className="px-4 pb-4 pl-10">
+                        <ul className="px-4 pl-10">
                           {bets.map((b, i) => {
                             const g = one(b.games);
                             const backed = b.side === "away" ? g?.away_team : g?.home_team;
@@ -259,6 +290,36 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                             );
                           })}
                         </ul>
+                      )}
+                      {/* Where the week's number came from. The rows above are only the
+                          bets; the ante and any Pot never appeared, so the total looked
+                          wrong to anyone who added the column up (D-106). */}
+                      {parts && (
+                        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pb-4 pl-10 pt-2 text-[12px] text-[color:var(--color-text-low)]">
+                          {parts.bets !== 0 && (
+                            <span>
+                              {partsBets} <span className="nums text-[color:var(--color-text-mid)]">{signed(parts.bets)}</span>
+                            </span>
+                          )}
+                          {parts.ante !== 0 && (
+                            <span>
+                              {partsAnte} <span className="nums text-[color:var(--color-text-mid)]">{signed(parts.ante)}</span>
+                            </span>
+                          )}
+                          {parts.pot !== 0 && (
+                            <span>
+                              {partsPot} <span className="nums text-[color:var(--color-gold)]">{signed(parts.pot)}</span>
+                            </span>
+                          )}
+                          {parts.other !== 0 && (
+                            <span>
+                              {partsOther} <span className="nums text-[color:var(--color-text-mid)]">{signed(parts.other)}</span>
+                            </span>
+                          )}
+                          <span className="ml-auto font-semibold text-[color:var(--color-text-mid)]">
+                            {partsTotal} <span className="nums">{signed(parts.total)}</span>
+                          </span>
+                        </p>
                       )}
                     </details>
                   </li>

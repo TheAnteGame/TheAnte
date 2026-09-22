@@ -2927,3 +2927,28 @@ its own; it now fetches the whole table ordered by rank and picks its own row ou
 it, so the switcher costs nothing extra. Removed seats are absent for free — D-041
 takes them out of `standings` entirely — and the control only renders when there is
 more than one player to switch to.
+
+## D-106 — The week total did not add up on screen (2026-09-22)
+
+Owner, reading a profile: Week 1 says **+231**, the bets under it plainly sum to far
+less, and "average price 1.21×" means nothing on its own. Both are clarity failures,
+not arithmetic ones.
+
+**Where +231 came from.** The week line is the ledger's total for that week; the rows
+under it are only the bets. Real numbers from that week: ante **−10**, bets **+61**
+(80 staked, 60 returned on winners, 81 profit), Pot **+180**. The ante and the Pot
+had no row, so anyone adding the column up got a different answer and reasonably
+concluded the screen was wrong.
+
+Each week now closes its own books underneath: `Bets +61 · Ante −10 · Pot +180 ·
+Week +231`, with zero parts omitted and anything rarer — a correction, the §9 floor
+chip, a fold penalty — surfacing as "Adjustments" rather than being quietly folded
+into bets. `lib/stats/weekParts.ts` groups the ledger the way a player thinks about
+it (a bet is three entries; a shove week's ante is charged and refunded) and is
+tested against that exact +231 week.
+
+**And the dials explain themselves.** All four carry a tap-or-hover note. The one
+that needed it most: *average price* is what a winning bet pays — at 1.00× a win
+pays what you risked, and the price is set by how many people picked the same side,
+so above 1.00× means they tend to back the less popular team. That is the whole
+contrarian mechanic (§5) in a sentence, on the number it describes.

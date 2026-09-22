@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-22 (fifty-third pass):** **Profiles explain themselves (D-106).** A week
+> showed the ledger total over bet rows only, so a Pot-winning week read "+231" over
+> bets summing to +61. Each week now shows its parts (Bets · Ante · Pot · Adjustments
+> · Week), tested against that real week. All four dials gained plain-language notes,
+> chiefly "average price".
+
 > **2026-09-22 (fifty-second pass):** **Player switcher (D-105).** Dropdown beside the
 > name on `/player/[id]`, ordered by rank and labelled with it; one standings read now
 > serves both the profile figures and the roster.

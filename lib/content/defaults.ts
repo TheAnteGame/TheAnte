@@ -39,6 +39,19 @@ export const contentDefaults: Record<string, string> = {
   "player.shoved_label": "Shoved",
   "player.none_yet": "No bets on this one.",
   "player.switch_label": "Look at another player",
+  "player.width_tip":
+    "How many games they bet in a normal week. Five is the fewest anyone is allowed to bet; a full slate is sixteen. Weeks they folded or shoved are left out, because neither says anything about how wide they play.",
+  "player.weight_tip":
+    "How many chips they put on a typical game. Ten is the smallest bet allowed and fifty is the largest. Weeks they folded or shoved are left out.",
+  "player.price_tip":
+    "What a winning bet pays them, on average. At 1.00\u00d7 a win pays what you risked: put 10 chips on a game and win, and you get your 10 back plus 10 more. The price is set by how many people picked the same side \u2014 standing alone against the room pays up to 2.50\u00d7, and going with the crowd pays as little as 0.25\u00d7. So above 1.00\u00d7 means they tend to back the less popular side.",
+  "player.record_tip":
+    "Bets won and bets lost, all season. A bet returned because the game tied or was cancelled counts as neither.",
+  "player.parts_bets": "Bets",
+  "player.parts_ante": "Ante",
+  "player.parts_pot": "Pot",
+  "player.parts_other": "Adjustments",
+  "player.parts_total": "Week",
   "profile.heading": "Take your seat",
   "profile.intro_body": "Five questions and you're in the room.",
   "profile.first_name_label": "First name",
