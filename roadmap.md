@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-27 (fifty-sixth pass):** **Live game data on profiles (D-109).** Each pick
+> now shows the score from its own side, a gold pulse while live, and Won/Lost/Ahead/
+> Behind where the payout will sit. Found on the way: a week still being played read as
+> a flat loss, because settlement posts nothing back until the last game is final. An
+> unsettled week is now neutral and tagged "In play", its stake labelled "Staked".
+
 > **2026-09-22 (fifty-fifth pass):** **Scores and game state on the board (D-108).**
 > Live / upcoming / final / void, each marked; live games carry a gold rule and the
 > pulsing dot, finished ones dim with the winner in bold. Order follows attention —

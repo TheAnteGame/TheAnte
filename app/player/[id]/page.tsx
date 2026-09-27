@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { DateTime } from "luxon";
+import { LEAGUE_TZ } from "@/lib/time";
 import { notFound, redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { createUserClient } from "@/lib/db/supabase";
@@ -8,6 +10,7 @@ import { getTeamNames } from "@/lib/teams";
 import { playerDials, type ProfileTicket } from "@/lib/stats/player";
 import { PlayerSwitcher } from "@/components/player/PlayerSwitcher";
 import { weekParts } from "@/lib/stats/weekParts";
+import { pickStanding, stateOf } from "@/lib/board/gameState";
 import { Tip } from "@/components/ui/Tip";
 
 // One player's season (D-104). Reachable from any name on the site, because the
@@ -24,7 +27,15 @@ export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
-type Game = { away_team: string; home_team: string };
+type Game = {
+  away_team: string;
+  home_team: string;
+  status: string;
+  away_score: number | null;
+  home_score: number | null;
+  void_reason: string | null;
+  kickoff_at: string;
+};
 type BetRow = {
   chips: number;
   side: string;
@@ -64,6 +75,14 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     shovedLabel,
     noneYet,
     switchLabel,
+    inPlayLabel,
+    partsStaked,
+    standWon,
+    standLost,
+    standAhead,
+    standBehind,
+    standLevel,
+    standPush,
     widthTip,
     weightTip,
     priceTip,
@@ -77,7 +96,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     // The whole table in one read: this player's own figures, and the roster the
     // switcher offers. Ordered by rank so the dropdown reads as the standings.
     db.from("standings").select("player_id, first_name, last_name, rank, stack, pots_won").order("rank"),
-    db.from("weeks").select("id, number").not("revealed_at", "is", null).order("number", { ascending: false }),
+    db.from("weeks").select("id, number, settled_at").not("revealed_at", "is", null).order("number", { ascending: false }),
     getTeamNames(),
     getContent("home.logo_alt"),
     getContent("player.back_cta"),
@@ -96,6 +115,14 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     getContent("player.shoved_label"),
     getContent("player.none_yet"),
     getContent("player.switch_label"),
+    getContent("player.in_play"),
+    getContent("player.parts_staked"),
+    getContent("player.stand_won"),
+    getContent("player.stand_lost"),
+    getContent("player.stand_ahead"),
+    getContent("player.stand_behind"),
+    getContent("player.stand_level"),
+    getContent("player.stand_push"),
     getContent("player.width_tip"),
     getContent("player.weight_tip"),
     getContent("player.price_tip"),
@@ -115,7 +142,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     label: `${r.rank} \u00b7 ${`${r.first_name ?? ""} ${(r.last_name ?? "").slice(0, 1)}`.trim()}${r.last_name ? "." : ""}`,
   }));
 
-  const weeks = (weekRows ?? []) as Array<{ id: string; number: number }>;
+  const weeks = (weekRows ?? []) as Array<{ id: string; number: number; settled_at: string | null }>;
   const weekNumber = new Map(weeks.map((w) => [w.id, w.number]));
   const revealedIds = weeks.map((w) => w.id);
 
@@ -123,7 +150,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     revealedIds.length
       ? db
           .from("tickets")
-          .select("id, week_id, is_fold, is_shove, bets(chips, side, multiplier, result, payout, games(away_team, home_team))")
+          .select("id, week_id, is_fold, is_shove, bets(chips, side, multiplier, result, payout, games(away_team, home_team, status, away_score, home_score, void_reason, kickoff_at))")
           .eq("player_id", id)
           .in("week_id", revealedIds)
       : Promise.resolve({ data: [] as TicketRow[] }),
@@ -233,6 +260,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
               {weeks.map((w) => {
                 const t = byWeek.get(w.number);
                 const parts = partsByWeek.get(w.number);
+                const settled = !!w.settled_at;
                 const gain = parts?.total ?? 0;
                 const bets = (t?.bets ?? []).slice().sort((a, b) => b.chips - a.chips);
                 return (
@@ -248,12 +276,27 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                           </span>
                           {t?.is_fold && <span className="text-[11px] uppercase tracking-wider text-[color:var(--color-text-low)]">{foldedLabel}</span>}
                           {t?.is_shove && <span className="text-[11px] uppercase tracking-wider text-[color:var(--color-gold)]">{shovedLabel}</span>}
-                          <span className={`nums ml-auto font-semibold ${gain >= 0 ? "text-[color:var(--color-win)]" : "text-[color:var(--color-loss)]"}`}>
+                          {!settled && (
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold)]">{inPlayLabel}</span>
+                          )}
+                          {/* Mid-week the ledger has taken the stake and posted nothing
+                              back, so a week with games already won reads as a flat
+                              loss. Until it settles the figure is a position, not a
+                              result — neutral, and the games below say how it is going. */}
+                          <span
+                            className={`nums ml-auto font-semibold ${
+                              !settled
+                                ? "text-[color:var(--color-text-mid)]"
+                                : gain >= 0
+                                  ? "text-[color:var(--color-win)]"
+                                  : "text-[color:var(--color-loss)]"
+                            }`}
+                          >
                             {signed(gain)}
                           </span>
                           <span aria-hidden className="hidden h-1.5 w-24 shrink-0 bg-[color:var(--color-surface-3)] sm:block">
                             <span
-                              className={`block h-full ${gain >= 0 ? "bg-[color:var(--color-win)]" : "bg-[color:var(--color-loss)]"}`}
+                              className={`block h-full ${!settled ? "bg-[color:var(--color-text-low)]" : gain >= 0 ? "bg-[color:var(--color-win)]" : "bg-[color:var(--color-loss)]"}`}
                               style={{ width: `${Math.round((Math.abs(gain) / widest) * 100)}%` }}
                             />
                           </span>
@@ -265,7 +308,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                         {parts && (
                           <span className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pl-6 text-[12px] text-[color:var(--color-text-low)]">
                             {([
-                              [partsBets, parts.bets, false],
+                              [settled ? partsBets : partsStaked, parts.bets, false],
                               [partsAnte, parts.ante, false],
                               [partsPot, parts.pot, true],
                               [partsOther, parts.other, false],
@@ -291,24 +334,71 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                             const g = one(b.games);
                             const backed = b.side === "away" ? g?.away_team : g?.home_team;
                             const against = b.side === "away" ? g?.home_team : g?.away_team;
+                            const gameState = g ? stateOf({ status: g.status, voidReason: g.void_reason }) : null;
+                            const standing = g
+                              ? pickStanding(b.side as "away" | "home", {
+                                  status: g.status,
+                                  awayScore: g.away_score,
+                                  homeScore: g.home_score,
+                                  voidReason: g.void_reason,
+                                })
+                              : "pending";
+                            const standingWord =
+                              standing === "won"
+                                ? standWon
+                                : standing === "lost"
+                                  ? standLost
+                                  : standing === "ahead"
+                                    ? standAhead
+                                    : standing === "behind"
+                                      ? standBehind
+                                      : standing === "level"
+                                        ? standLevel
+                                        : standing === "push"
+                                          ? standPush
+                                          : "";
                             return (
                               <li key={i} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-[color:var(--color-border)] py-1.5 text-sm last:border-b-0">
                                 <span className="font-semibold text-[color:var(--color-text-hi)]">{backed ?? "—"}</span>
                                 <span className="text-xs text-[color:var(--color-text-low)]">{against ?? ""}</span>
+                                {/* The scoreboard, not the ledger (D-109): a settled bet
+                                    shows what it paid, an unsettled one shows how the
+                                    game is actually going. */}
+                                {gameState && gameState !== "upcoming" && g && g.away_score !== null && g.home_score !== null && (
+                                  <span className={`nums text-xs ${gameState === "live" ? "text-[color:var(--color-gold)]" : "text-[color:var(--color-text-low)]"}`}>
+                                    {gameState === "live" && (
+                                      <span aria-hidden className="live-dot mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--color-gold)]" />
+                                    )}
+                                    {b.side === "away" ? g.away_score : g.home_score}
+                                    <span aria-hidden className="mx-1 text-[color:var(--color-text-low)]">&#8211;</span>
+                                    {b.side === "away" ? g.home_score : g.away_score}
+                                  </span>
+                                )}
+                                {gameState === "upcoming" && (
+                                  <span className="nums text-xs text-[color:var(--color-text-low)]">
+                                    {DateTime.fromISO(g!.kickoff_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma")}
+                                  </span>
+                                )}
                                 <span className="nums ml-auto text-[color:var(--color-text-mid)]">{b.chips}</span>
                                 <span className="nums w-14 text-right text-[color:var(--color-text-low)]">
                                   {b.multiplier === null ? "—" : `${Number(b.multiplier).toFixed(2)}×`}
                                 </span>
                                 <span
                                   className={`nums w-16 text-right font-semibold ${
-                                    b.result === "won"
+                                    b.result === "won" || standing === "won" || standing === "ahead"
                                       ? "text-[color:var(--color-win)]"
-                                      : b.result === "lost"
+                                      : b.result === "lost" || standing === "lost" || standing === "behind"
                                         ? "text-[color:var(--color-loss)]"
                                         : "text-[color:var(--color-text-low)]"
                                   }`}
                                 >
-                                  {b.result === "won" ? signed(b.payout ?? 0) : b.result === "lost" ? signed(-b.chips) : "0"}
+                                  {b.result === "won"
+                                    ? signed(b.payout ?? 0)
+                                    : b.result === "lost"
+                                      ? signed(-b.chips)
+                                      : b.result
+                                        ? "0"
+                                        : standingWord}
                                 </span>
                               </li>
                             );

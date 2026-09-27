@@ -53,3 +53,28 @@ export function orderBoard<T extends BoardGame>(games: T[]): T[] {
     return a.kickoffAt.localeCompare(b.kickoffAt);
   });
 }
+
+/** How a player's pick is doing right now (D-109).
+ *
+ *  Only ever read off the SCOREBOARD, never off the ledger: mid-week the ledger has
+ *  taken the stake and posted nothing back, so a week with ten games already won
+ *  reads as a flat loss until settlement runs. This says what the games say.
+ *
+ *  Deliberately not a provisional payout. The multiplier is settlement's to compute
+ *  from head counts, and a number here that later differed by a chip would be worse
+ *  than no number at all. */
+export type PickStanding = "won" | "lost" | "push" | "ahead" | "behind" | "level" | "pending";
+
+export function pickStanding(
+  side: "away" | "home",
+  g: Pick<BoardGame, "status" | "awayScore" | "homeScore" | "voidReason">,
+): PickStanding {
+  const state = stateOf(g);
+  if (state === "void") return "push";
+  if (g.awayScore === null || g.homeScore === null) return "pending";
+  const mine = side === "away" ? g.awayScore : g.homeScore;
+  const theirs = side === "away" ? g.homeScore : g.awayScore;
+  if (state === "final") return mine > theirs ? "won" : mine < theirs ? "lost" : "push";
+  if (state === "live") return mine > theirs ? "ahead" : mine < theirs ? "behind" : "level";
+  return "pending";
+}

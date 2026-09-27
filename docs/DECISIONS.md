@@ -2998,3 +2998,30 @@ have one.
 
 The results page already polls every five seconds (D-093), so scores move on their
 own while a player watches. Checked in the browser in both themes.
+
+## D-109 — A week still being played is a position, not a loss (2026-09-27)
+
+Owner asked for the board's live data on the profiles. Building it surfaced a
+worse problem than a missing score.
+
+**Mid-week the ledger has taken the stake and posted nothing back.** Settlement runs
+once, after the last game of the week goes final (§10) — so during Sunday a player
+who has staked 90 chips reads `Bets −90 · Ante −10 = −100` on their profile, as
+though they had lost every game. Checked against production while Week 3 was live:
+ten of its games were already final, several of that player's picks had won, and the
+page said −100 with no hint that anything was still to come.
+
+**So an unsettled week reads as a position.** The figure stays truthful — those
+chips really are out of the stack — but it is neutral rather than loss-red, tagged
+**In play**, and the stake is labelled "Staked" rather than "Bets", because it has
+not become bets-won-or-lost yet.
+
+**And each pick says what the scoreboard says**, never what the ledger says: the
+score from the player's own side first, a gold pulse on a game still being played,
+and Won / Lost / Ahead / Behind / Level / Push where the payout will later sit.
+Settled weeks are unchanged and now carry final scores too.
+
+**Deliberately not a provisional payout.** The multiplier is settlement's to compute
+from head counts (§5), and a number here that later differed by a chip would be worse
+than no number. `pickStanding` reads the scoreboard alone and is tested on every
+state, including a cancelled game whose scoreboard still shows points.

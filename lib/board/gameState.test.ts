@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { marginOf, orderBoard, stateOf, type BoardGame } from "./gameState";
+import { marginOf, orderBoard, pickStanding, stateOf, type BoardGame } from "./gameState";
 
 const g = (
   id: string,
@@ -85,5 +85,36 @@ describe("orderBoard", () => {
     const out = orderBoard(input);
     expect(out.map((x) => x.id)).toEqual(["done", "void"]);
     expect(input.map((x) => x.id)).toEqual(["void", "done"]);
+  });
+});
+
+describe("pickStanding", () => {
+  const game = (status: string, a: number | null, h: number | null, voidReason: string | null = null) => ({
+    status,
+    awayScore: a,
+    homeScore: h,
+    voidReason,
+  });
+
+  it("reads a finished game from the scoreboard, both sides", () => {
+    expect(pickStanding("away", game("final", 24, 17))).toBe("won");
+    expect(pickStanding("home", game("final", 24, 17))).toBe("lost");
+    expect(pickStanding("away", game("final", 21, 21))).toBe("push");
+  });
+
+  it("says ahead or behind while the game is still being played", () => {
+    expect(pickStanding("home", game("in_progress", 10, 14))).toBe("ahead");
+    expect(pickStanding("away", game("in_progress", 10, 14))).toBe("behind");
+    expect(pickStanding("away", game("in_progress", 7, 7))).toBe("level");
+  });
+
+  it("is pending before kickoff and on a live game with no score yet", () => {
+    expect(pickStanding("away", game("scheduled", null, null))).toBe("pending");
+    expect(pickStanding("away", game("in_progress", null, null))).toBe("pending");
+  });
+
+  it("is a push on a cancelled game, whatever the scoreboard says", () => {
+    expect(pickStanding("away", game("cancelled", 3, 0))).toBe("push");
+    expect(pickStanding("away", game("final", 30, 0, "kicked_pre_deadline"))).toBe("push");
   });
 });
