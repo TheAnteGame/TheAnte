@@ -366,6 +366,12 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.total_label": "Total",
   "reveal.you_label": "you",
 
+  "reveal.state_live": "Live",
+
+  "reveal.state_final": "Final",
+
+  "reveal.state_void": "No game",
+
   "reveal.interstitial_title": "The room is open",
   "reveal.interstitial_sub": "Every ticket. Every chip. Nothing can change now.",
   "reveal.enter_cta": "See the board",

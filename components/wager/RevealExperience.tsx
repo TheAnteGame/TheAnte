@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PlayerTip } from "../ui/PlayerTip";
+import { marginOf, orderBoard, stateOf } from "@/lib/board/gameState";
 
 // The reveal is the product's peak moment — spend the budget here (art §7).
 // Sequence: full-width interstitial → the shove beat, if the week has one (nobody
@@ -16,6 +17,11 @@ export interface RevealData {
     home: string;
     spread: number | null;
     kickoff: string;
+    kickoffAt: string;
+    status: string;
+    awayScore: number | null;
+    homeScore: number | null;
+    voidReason: string | null;
     sides: Record<
       "away" | "home",
       {
@@ -78,6 +84,9 @@ export interface RevealData {
     weeks: number;
   }>;
   copy: {
+    stateLive: string;
+    stateFinal: string;
+    stateVoid: string;
       interstitialTitle: string;
     interstitialSub: string;
     enterCta: string;
@@ -290,13 +299,44 @@ export function RevealExperience({ data, straightToBoard = false }: { data: Reve
         </div>
       ) : view === "game" ? (
         <ul>
-          {data.games.map((g, i) => (
-            <li key={g.id} className="card-in border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0" style={{ animationDelay: `${i * 60}ms` }}>
-              <div className="mb-2 flex items-baseline gap-3">
-                <span className="nums text-xs text-[color:var(--color-text-low)]">{g.kickoff}</span>
+          {orderBoard(data.games).map((g, i) => {
+            const state = stateOf(g);
+            const scored = g.awayScore !== null && g.homeScore !== null;
+            const winner =
+              state !== "final" || !scored || marginOf(g) === 0 ? null : g.awayScore! > g.homeScore! ? "away" : "home";
+            return (
+            <li
+              key={g.id}
+              className={`card-in border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0 ${
+                state === "final" || state === "void" ? "opacity-70" : ""
+              } ${state === "live" ? "border-l-2 border-l-[color:var(--color-gold)]" : ""}`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                {/* Where the game stands, first — once the week is under way that is
+                    what the row is read for before anything else (D-108). */}
+                {state === "live" ? (
+                  <span className="flex items-baseline gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold)]">
+                    <span aria-hidden className="live-dot inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-gold)]" />
+                    {copy.stateLive}
+                  </span>
+                ) : state === "final" ? (
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{copy.stateFinal}</span>
+                ) : state === "void" ? (
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-loss)]">{copy.stateVoid}</span>
+                ) : (
+                  <span className="nums text-xs text-[color:var(--color-text-low)]">{g.kickoff}</span>
+                )}
                 <span className="font-[family-name:var(--font-display)] font-semibold text-[color:var(--color-text-hi)]">
                   {g.away} @ {g.home}
                 </span>
+                {scored && state !== "void" && (
+                  <span className="nums ml-auto text-sm text-[color:var(--color-text-mid)]">
+                    <span className={winner === "away" ? "font-bold text-[color:var(--color-text-hi)]" : undefined}>{g.awayScore}</span>
+                    <span aria-hidden className="mx-1.5 text-[color:var(--color-text-low)]">&#8211;</span>
+                    <span className={winner === "home" ? "font-bold text-[color:var(--color-text-hi)]" : undefined}>{g.homeScore}</span>
+                  </span>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {(["away", "home"] as const).map((sideKey) => {
@@ -337,7 +377,8 @@ export function RevealExperience({ data, straightToBoard = false }: { data: Reve
                 })}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       ) : (
         <ul>

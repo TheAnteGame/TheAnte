@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-22 (fifty-fifth pass):** **Scores and game state on the board (D-108).**
+> Live / upcoming / final / void, each marked; live games carry a gold rule and the
+> pulsing dot, finished ones dim with the winner in bold. Order follows attention —
+> live (closest first), upcoming, final, void — so finished games fall to the bottom.
+> `lib/board/gameState.ts`, 10 tests. Scores already poll every 5s.
+
 > **2026-09-22 (fifty-fourth pass):** **D-107, second pass on D-106.** The week
 > breakdown moved out of `<details>` onto the visible row (`Bets +61 · Ante −10 ·
 > Pot +180 = +231`), and the ⓘ marker — white since D-097, for the dark band — split

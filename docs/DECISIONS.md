@@ -2974,3 +2974,27 @@ mark, and the band's six trays now ask for it explicitly.
 Verified in the browser this time, in both themes, rather than shipped on a green
 typecheck — the profile page sits behind the Clerk gate, so the check was a faithful
 repro of its markup against the real compiled CSS.
+
+## D-108 — The board says where each game stands (2026-09-22)
+
+The board listed every game by kickoff whatever had happened to it, and carried no
+score, so a finished blowout sat above a one-score game still being played and
+nothing on the row said which was which. The data was already there — `scores.sync`
+writes `status` and both scores every five minutes — the board simply never read it.
+
+**Four states, each visible at a glance.** Live carries a gold rule down the left,
+the pulsing dot the composer already uses, and the score. Upcoming keeps its kickoff
+time and nothing else. Final dims to 70% with the winning score in bold. A cancelled
+or postponed game reads "No game" in the loss colour, with no score, because there
+is nothing to report and the chips came back (§10).
+
+**The order follows attention, not the clock** (`lib/board/gameState.ts`, tested):
+live, then upcoming, then final, then void. Within the live block the closest game
+leads — a one-point game is the one worth looking at, which is what the owner meant
+by "most competitive". Competitiveness sorts only inside that block: **a close
+finished game does not outrank a kickoff that has not happened yet**, because the
+week is still ahead of it. A live game with no score yet sits behind live games that
+have one.
+
+The results page already polls every five seconds (D-093), so scores move on their
+own while a player watches. Checked in the browser in both themes.

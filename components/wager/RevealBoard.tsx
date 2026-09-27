@@ -38,7 +38,7 @@ export async function RevealBoard({
       .eq("week_id", week.id),
     db
       .from("games")
-      .select("id, away_team, home_team, spread_frozen, kickoff_at, on_slate")
+      .select("id, away_team, home_team, spread_frozen, kickoff_at, on_slate, status, away_score, home_score, void_reason")
       .eq("week_id", week.id)
       .eq("on_slate", true)
       .order("kickoff_at"),
@@ -92,6 +92,13 @@ export async function RevealBoard({
       home: g.home_team,
       spread: g.spread_frozen,
       kickoff: DateTime.fromISO(g.kickoff_at).setZone(LEAGUE_TZ).toFormat("ccc h:mma"),
+      // Live status and score, so the board can say whether a game is on, over or
+      // still to come, and order itself by what deserves attention (D-108).
+      kickoffAt: g.kickoff_at as string,
+      status: (g.status as string) ?? "scheduled",
+      awayScore: (g.away_score as number | null) ?? null,
+      homeScore: (g.home_score as number | null) ?? null,
+      voidReason: (g.void_reason as string | null) ?? null,
       sides: {
         away: { count: away.length, pays: price(away.length, home.length), entries: away },
         home: { count: home.length, pays: price(home.length, away.length), entries: home },
@@ -160,6 +167,9 @@ export async function RevealBoard({
   const copyEntries = await Promise.all(
     (
       [
+        ["stateLive", "reveal.state_live"],
+        ["stateFinal", "reveal.state_final"],
+        ["stateVoid", "reveal.state_void"],
         ["interstitialTitle", "reveal.interstitial_title"],
         ["interstitialSub", "reveal.interstitial_sub"],
         ["enterCta", "reveal.enter_cta"],
