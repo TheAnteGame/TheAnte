@@ -4,7 +4,7 @@ import { createUserClient } from "@/lib/db/supabase";
 import { tierForWeek } from "@/lib/engine";
 import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
-import { nudgePlayer } from "./actions";
+import { nudgePlayer, sendTestAlert } from "./actions";
 import { Section, Stat } from "@/components/admin/ui";
 import { potBalance as truePotBalance } from "@/lib/stats/pot";
 
@@ -49,8 +49,15 @@ export default async function Ops() {
   let unsettledFinals = 0;
   let staleGames = 0;
   if (week) {
-    const { data: games } = await db.from("games").select("status, settled, kickoff_at").eq("week_id", week.id);
-    unsettledFinals = (games ?? []).filter((g) => g.status === "final" && !g.settled).length;
+    const { data: games } = await db.from("games").select("status, kickoff_at, on_slate, void_reason").eq("week_id", week.id);
+    // The alarm that matters is Monday night's (D-110): every on-slate game is done
+    // and the week is STILL revealed, i.e. settlement should have run and has not.
+    // It used to read games.settled, which nothing ever writes (settlement marks the
+    // week, not each game), so it warned through every weekend and after every clean
+    // settlement — noise that would have hidden the one real failure.
+    const slate = (games ?? []).filter((g) => g.on_slate);
+    const done = slate.every((g) => g.void_reason || ["final", "cancelled", "postponed"].includes(g.status));
+    unsettledFinals = week.phase === "revealed" && slate.length > 0 && done ? slate.length : 0;
     staleGames = (games ?? []).filter(
       (g) => g.status !== "final" && new Date(g.kickoff_at).getTime() + 6 * 3600_000 < Date.now(),
     ).length;
@@ -154,7 +161,7 @@ export default async function Ops() {
                   ✕ {f.job_key} failed {DateTime.fromISO(f.started_at).toRelative()}
                 </li>
               ))}
-              {unsettledFinals > 0 && <li className="text-[color:var(--color-gold)]">⚠ {unsettledFinals} final game(s) not yet settled</li>}
+              {unsettledFinals > 0 && <li className="text-[color:var(--color-gold)]">⚠ Every game is final but Week {week?.number} has not settled — see Week control</li>}
               {staleGames > 0 && <li className="text-[color:var(--color-gold)]">⚠ {staleGames} game(s) with no result 6h+ past kickoff</li>}
               {(noEmail ?? []).map((p) => (
                 <li key={p.id} className="text-[color:var(--color-gold)]">
@@ -164,6 +171,12 @@ export default async function Ops() {
             </>
           )}
         </ul>
+        <div className="mt-4 border-t border-[color:var(--color-border)] pt-3">
+          <p className="mb-2 text-xs text-[color:var(--color-text-low)]">
+            A failed settlement or a week that cannot open emails you (D-110). Send yourself a test to confirm it arrives.
+          </p>
+          <AdminForm action={sendTestAlert} submitLabel="Send test alert" inline />
+        </div>
       </Section>
     </div>
   );

@@ -58,6 +58,7 @@ const { admitToOpenWeek } = await import("../lib/jobs/admit");
 const { houseLimit } = await import("../lib/engine/core");
 const { SLATE_MARGIN_MINUTES } = await import("../lib/engine/constants");
 const { computeRemoval } = await import("../lib/engine/removal");
+const { removeSeat } = await import("../lib/jobs/removeSeat");
 const { assertInvariants } = await import("../lib/engine/invariants");
 type EngineRow = Parameters<typeof assertInvariants>[0][number];
 const { leaderFrom } = await import("../lib/ticker/leader");
@@ -343,6 +344,17 @@ async function main() {
     check(rerun.status === "skipped", `week ${week} double slate-open skipped`);
     check((await balances()).total === before.total, `week ${week} double-open moved no chips`);
 
+    // ── The Remove button refuses mid-blackout (§6) — the reason Kegan waits ────
+    if (week === 10) {
+      const bq = await balances();
+      const early = await removeSeat(service, deadweightId, "torture: mid-blackout attempt");
+      check(!early.ok && /blackout/.test(early.ok ? "" : early.error), `removal was NOT refused mid-blackout (${JSON.stringify(early)})`);
+      const ba = await balances();
+      check(ba.pot === bq.pot && [...bq.stacks].every(([id, v]) => ba.stacks.get(id) === v), "refused mid-blackout removal moved chips");
+      const { data: st } = await service.from("players").select("status").eq("id", deadweightId).single();
+      check(st?.status === "approved", `refused removal changed status to ${st?.status}`);
+    }
+
     // ── Rehearsal of the D-110 repair: re-settle the previous week while this one
     // is OPEN, then recompute this week's figures. Production did exactly this on
     // 2026-09-29 (Week 3 re-settled under Week 4). With no input changed it must be a
@@ -613,11 +625,10 @@ async function main() {
 
       const recipients = (await service.from("players").select("id").eq("status", "approved").neq("id", dw)).data!.map((r) => r.id);
       const plan = computeRemoval({ playerId: dw, stack: dwStack - 50, recipientIds: recipients, who: "Late D." });
-      const { error: remErr } = await service.from("ledger_entries").insert(
-        plan.entries.map((e) => ({ player_id: e.account, kind: e.kind, amount: e.amount, reason: e.reason, idempotency_key: `removal:${dw}:${e.account ?? "pot"}` })),
-      );
-      check(!remErr, `D-110 mid-week removal insert failed: ${remErr?.message}`);
-      await service.from("players").update({ status: "removed", removed_at: new Date().toISOString(), removal_reason: "torture: D-110 mid-week" }).eq("id", dw);
+      // The console's own removal code, exactly as Thursday runs it.
+      const removed = await removeSeat(service, dw, "torture: D-110 mid-week");
+      check(removed.ok, `D-110 mid-week removal refused: ${removed.ok ? "" : removed.error}`);
+      if (removed.ok) check(removed.stack === dwStack - 50 && removed.share === plan.share, `D-110 removeSeat split ${JSON.stringify(removed)}`);
       removedIds.add(dw);
 
       const b2 = await balances();
@@ -791,21 +802,18 @@ async function main() {
         who: "Deadweight D.",
       });
 
-      const { error: remErr } = await service.from("ledger_entries").insert(
-        plan.entries.map((e) => ({
-          player_id: e.account,
-          kind: e.kind,
-          amount: e.amount,
-          reason: e.reason,
-          idempotency_key: `removal:${deadweightId}:${e.account ?? "pot"}`,
-        })),
-      );
-      check(!remErr, `removal ledger insert failed: ${remErr?.message}`);
-      await service
-        .from("players")
-        .update({ status: "removed", removed_at: new Date().toISOString(), removal_reason: "torture: deadweight" })
-        .eq("id", deadweightId);
+      // The REAL removal — the same function the console's Remove button calls
+      // (D-110). `plan` above is the engine's answer, computed independently, so the
+      // two must agree.
+      const removed = await removeSeat(service, deadweightId, "torture: deadweight");
+      check(removed.ok, `removal refused: ${removed.ok ? "" : removed.error}`);
+      if (removed.ok) {
+        check(removed.share === plan.share && removed.remainder === plan.remainder && removed.stack === deadStack,
+          `removeSeat disagrees with the engine: ${JSON.stringify(removed)} vs share ${plan.share} rem ${plan.remainder}`);
+      }
       removedIds.add(deadweightId);
+      const again = await removeSeat(service, deadweightId, "torture: second press");
+      check(!again.ok, "a second Remove on a removed seat was NOT refused");
 
       const bAfter = await balances();
 

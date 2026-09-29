@@ -12,13 +12,10 @@ import { takeSnapshot } from "@/lib/backup/snapshot";
 import { admitToOpenWeek, syncLeagueSizeWhileAdmissionOpen } from "@/lib/jobs/admit";
 import { emailDoc } from "@/lib/notify/templates";
 import { approved as approvedEmail } from "@/lib/notify/docs";
-import { fetchAllRows } from "@/lib/db/fetchAll";
-import { RemovalError, computeRemoval } from "@/lib/engine/removal";
 import { DateTime } from "luxon";
 import { LEAGUE_TZ } from "@/lib/time";
 import { render } from "@/lib/notify/render";
 import { broadcastDoc, sendBroadcast, type BroadcastRow } from "@/lib/jobs/broadcast";
-import { DEADWEIGHT_WEEKS } from "@/lib/engine/constants";
 import { titleCase } from "@/lib/name";
 
 // Every mutating admin action re-checks the commissioner (ANTE-ADMIN §2), writes
@@ -274,30 +271,9 @@ export async function reactivatePlayer(fd: FormData): Promise<ActionResult> {
 }
 
 // ── Roster: the deadweight rule (§13/§14, D-041) ──────────────────────────────
-
-/** Consecutive most-recent REVEALED weeks the player auto-folded. A submitted ticket
- *  — even a fold they chose — resets the count to zero, because they showed up. */
-async function missedWeekStreak(db: ReturnType<typeof serviceDb>, playerId: string): Promise<number> {
-  const { data: weeks } = await db
-    .from("weeks")
-    .select("id, number")
-    .not("revealed_at", "is", null)
-    .order("number", { ascending: false });
-  if (!weeks || weeks.length === 0) return 0;
-
-  const { data: tickets } = await db.from("tickets").select("week_id, is_fold").eq("player_id", playerId);
-  const byWeek = new Map((tickets ?? []).map((t) => [t.week_id, t.is_fold]));
-
-  let streak = 0;
-  for (const w of weeks) {
-    // No row at all means the reveal never even auto-folded them (they were not on
-    // the week's roster yet) — that is not a missed week, and it ends the streak.
-    if (!byWeek.has(w.id)) break;
-    if (byWeek.get(w.id) !== true) break;
-    streak++;
-  }
-  return streak;
-}
+// The gates, the split and the ledger writes live in lib/jobs/removeSeat.ts, which
+// the season torture test drives directly (D-110). This action adds only what needs a
+// signed-in commissioner: the typed reason, the audit row and the public line.
 
 export async function removePlayer(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
@@ -306,96 +282,15 @@ export async function removePlayer(fd: FormData): Promise<ActionResult> {
   const reason = str(fd, "reason");
   if (!reason) return fail("Removal requires a reason (§13).");
 
-  const { data: p } = await ctx.db
-    .from("players")
-    .select("id, first_name, last_name, email, status")
-    .eq("id", playerId)
-    .maybeSingle();
-  if (!p) return fail("No such player");
-  if (p.status !== "approved" && p.status !== "deactivated")
-    return fail("Only a seated player can be removed");
-
-  // Gate 1 — the rule is objective, and the code is where it becomes binding. A
-  // commissioner cannot remove a player who is still showing up, for any reason.
-  const missed = await missedWeekStreak(ctx.db, playerId);
-  if (missed < DEADWEIGHT_WEEKS) {
-    return fail(
-      `${p.first_name ?? "That player"} has missed ${missed} straight week${missed === 1 ? "" : "s"}. The deadweight rule needs ${DEADWEIGHT_WEEKS} (§14). Silence is only grounds once it is this long.`,
-    );
-  }
-
-  // Gate 2 — never mid-blackout. Redistribution moves every remaining stack, and the
-  // blackout's whole promise is that no stack moves between the ante and the reveal.
-  const { data: openWeek } = await ctx.db
-    .from("weeks")
-    .select("number")
-    .in("phase", ["open", "locked"])
-    .is("revealed_at", null)
-    .maybeSingle();
-  if (openWeek) {
-    return fail(
-      `Week ${openWeek.number} is mid-blackout. Removal moves every stack in the league — wait for the reveal (§6).`,
-    );
-  }
-
-  // The stack to redistribute, read the same way every other stack is: a SUM
-  // projection of the append-only ledger. Paged, because a truncated read here would
-  // silently redistribute the wrong number.
-  const rows = await fetchAllRows<{ amount: number }>((from, to) =>
-    ctx.db.from("ledger_entries").select("amount").eq("player_id", playerId).order("id").range(from, to),
-  );
-  const stack = (rows ?? []).reduce((sum, r) => sum + r.amount, 0);
-  if (stack < 0)
-    return fail(
-      `${p.first_name ?? "That player"} holds ${stack} chips. Refusing to redistribute a negative stack.`,
-    );
-
-  // Recipients are the seats still IN the game. A deactivated player stopped anteing
-  // and left the median; they do not collect from a removal either.
-  const { data: others } = await ctx.db
-    .from("players")
-    .select("id")
-    .eq("status", "approved")
-    .neq("id", playerId);
-  const recipients = (others ?? []).map((r) => r.id);
-  if (recipients.length === 0) return fail("Nobody left to take the chips. Removal would destroy them.");
-
-  // The split is the engine's, not this action's (lib/engine/removal.ts) — the same
-  // function the season torture test drives, so the console cannot drift from it.
-  const who = `${p.first_name ?? "a player"} ${(p.last_name ?? "").slice(0, 1)}.`.trim();
-  let plan;
-  try {
-    plan = computeRemoval({ playerId, stack, recipientIds: recipients, who });
-  } catch (e) {
-    if (e instanceof RemovalError) return fail(e.message);
-    throw e;
-  }
-  const { share, remainder } = plan;
-
-  // Idempotency keys are per-account so a double-submit cannot pay anybody twice.
-  const entries = plan.entries.map((e) => ({
-    player_id: e.account,
-    kind: e.kind,
-    amount: e.amount,
-    reason: e.reason,
-    idempotency_key: `removal:${playerId}:${e.account ?? "pot"}`,
-  }));
-
-  const { error: ledgerErr } = await ctx.db.from("ledger_entries").insert(entries);
-  if (ledgerErr && !ledgerErr.message.includes("duplicate key")) return fail(ledgerErr.message);
-
-  const { error } = await ctx.db
-    .from("players")
-    .update({ status: "removed", removed_at: new Date().toISOString(), removal_reason: reason })
-    .eq("id", playerId);
-  if (error) return fail(error.message);
-
-  await syncLeagueSizeWhileAdmissionOpen(ctx.db);
+  const { removeSeat } = await import("@/lib/jobs/removeSeat");
+  const r = await removeSeat(ctx.db, playerId, reason);
+  if (!r.ok) return fail(r.error);
+  const { who, stack, share, remainder, recipients, missed } = r;
 
   await writeAudit(ctx, "player.remove", "player", playerId, reason, {
-    after: { stack, share, remainder, recipients: recipients.length, missedWeeks: missed },
+    after: { stack, share, remainder, recipients, missedWeeks: missed },
     isPublic: true,
-    publicLine: `${who} has been removed under the deadweight rule after ${missed} straight weeks without a ticket. Their ${stack} chips were split evenly across the ${recipients.length} players still in — ${share} each${remainder > 0 ? `, with ${remainder} to the Pot` : ""}.`,
+    publicLine: `${who} has been removed under the deadweight rule after ${missed} straight weeks without a ticket. Their ${stack} chips were split evenly across the ${recipients} players still in — ${share} each${remainder > 0 ? `, with ${remainder} to the Pot` : ""}.`,
   });
   revalidatePath("/admin/players");
   return { ok: true };
@@ -619,6 +514,23 @@ export async function runSettlement(): Promise<ActionResult> {
   await writeAudit(ctx, "week.settle", "week", "current", `Manual settlement run: ${outcome.status}`);
   revalidatePath("/admin/week");
   return outcome.status === "failed" ? fail("Settlement failed or halted — see job runs") : { ok: true };
+}
+
+/** D-110 — prove the failure alert reaches the commissioner's inbox. Sends the real
+ *  "did not settle" email through the real template and transport, marked [TEST]. */
+export async function sendTestAlert(): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const { alertCommissioner } = await import("@/lib/jobs/alert");
+  const sent = await alertCommissioner(
+    ctx.db,
+    "settlement_failed",
+    0,
+    "This is a test from the console. Nothing is wrong; no week was touched.",
+    { test: true },
+  );
+  await writeAudit(ctx, "alert.test", "alert", "settlement_failed", "Test alert from the console", { after: { sent } });
+  return sent ? { ok: true } : fail("Not sent — check that the commissioner seat has an email, and the notification log");
 }
 
 /** D-110 — put an open week's median, house limits and Pot figure right when it

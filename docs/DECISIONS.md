@@ -3125,3 +3125,27 @@ refusal (with the guard disabled the cascade writes 86 reversals and moves chips
 and rehearses the owner's sequence in week 16 — refund, then removal after the
 reveal and before settlement, then a clean settlement with the removed seat still
 at exactly 0.
+
+**Addendum 2 (same day) — the stability pass.** Four follow-ups, all proven locally
+and none touching a chip in production:
+
+- **The Remove button's code is now what the torture season runs.** Its gates,
+  split and writes moved from the console action into `lib/jobs/removeSeat.ts`;
+  the action keeps only the reason, audit row and public line. Torture drives it
+  after a settlement (week 12), after a reveal with the refund first (week 16 — the
+  Kegan sequence), mid-blackout (week 10, must refuse and move nothing), and on a
+  second press (must refuse).
+- **`schema:check` verifies allowed-value lists** via `ante_check_constraints()`
+  (migration 0032, read-only). Proven by recreating Monday's drift locally — the
+  ledger kind list without `fold_penalty` — which it reports as drift.
+- **"Send test alert"** on the Ops page sends the real failure email, marked
+  [TEST], so delivery is proven by the commissioner rather than assumed.
+- **Found in the sweep:** `games.settled` is never written — settlement marks the
+  week, not each game. The only live effect was an Ops alarm that fired every
+  weekend and after every clean settlement; it now fires only when every on-slate
+  game is done and the week is still unsettled (Monday night's actual failure).
+  The flag is deliberately NOT switched on mid-season: the Week page hides score
+  corrections for settled games, so enabling it would change the correction flow.
+  Seventeen other places read "the newest week"; left alone, because the D-110
+  guard makes that the only unsettled week again. And CI's production schema job has
+  never run — `SCHEMA_CHECK_KEY` is not a repo secret — which is the owner's call.

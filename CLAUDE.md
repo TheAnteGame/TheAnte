@@ -74,13 +74,15 @@ shipped against a database that had never been migrated and nothing in the pipel
 could see it; it was harmless only because the surface it powers was unreachable for
 weeks. Add `--local` to check the local stack instead.
 
-**Known gap — it verifies columns, not check constraints.** A migration that only widens
-a `check (... in (...))` list, without adding a column, passes this silently. Say so when
-that is the shape of the change, and verify the constraint by hand:
+**It also verifies allowed-value lists** (`check (col in (...))`) since D-110, through
+`ante_check_constraints()` (migration 0032). That was the gap that stopped Week 3's
+settlement: 0030 only widened `ledger_entries_kind_check` to admit `fold_penalty`, was
+never applied, and every check stayed green. If it prints `ante_check_constraints()
+unavailable`, 0032 itself is missing and the lists are UNVERIFIED. It still does not
+check other constraint shapes (numeric ranges, foreign keys, triggers, RLS policies).
 
-```sql
-select conname, pg_get_constraintdef(oid) from pg_constraint where conname = '<name>';
-```
+**CI does not run it against production yet**: `SCHEMA_CHECK_KEY` is not set in the
+repo's secrets, so CI's "schema" job only prints "inactive". Run it by hand.
 
 ## The order a release goes in
 

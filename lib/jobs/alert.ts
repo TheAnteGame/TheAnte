@@ -22,24 +22,38 @@ export async function alertCommissioner(
   kind: AlertKind,
   weekNumber: number,
   detail: string,
-): Promise<void> {
+  opts?: { test?: boolean },
+): Promise<boolean> {
   try {
     const { data: seat } = await db.from("commissioner").select("player_id").maybeSingle();
-    if (!seat?.player_id) return;
+    if (!seat?.player_id) return false;
     const { data: commish } = await db.from("players").select("id, email").eq("id", seat.player_id).maybeSingle();
-    if (!commish?.email) return;
+    if (!commish?.email) return false;
 
     const today = DateTime.now().setZone(LEAGUE_TZ).toFormat("yyyy-LL-dd");
+    const subject = await mailSubject(db, `mail.${kind}.subject`, { week: weekNumber });
+    // A test (the console's "Send test alert") goes through the identical template,
+    // transport and log, marked in the subject, and is never deduped away.
+    const dedupe = opts?.test ? `alert-test-${kind}-${Date.now()}` : `alert-${kind}-w${weekNumber}-${today}`;
     await emailPlayer(
       db,
       commish,
       `notify.${kind}`,
-      await mailSubject(db, `mail.${kind}.subject`, { week: weekNumber }),
+      opts?.test ? `[TEST] ${subject}` : subject,
       { week: weekNumber, detail },
-      `alert-${kind}-w${weekNumber}-${today}`,
+      dedupe,
       { allowFreeText: true },
     );
+    const { data: logged } = await db
+      .from("notification_log")
+      .select("status")
+      .eq("template_key", dedupe)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return logged?.status === "sent" || logged?.status === "queued";
   } catch (e) {
     console.error(`commissioner alert (${kind}, week ${weekNumber}) failed:`, e);
+    return false;
   }
 }

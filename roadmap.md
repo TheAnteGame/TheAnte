@@ -15,7 +15,9 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 > verified. Code: retry on every tick, no week opens on an unpaid one, email alerts,
 > board/console read the oldest unpaid week, and a console tool to recompute an open
 > week's figures. **OPEN (Thu after reveal):** 50 chips Kegan → Marquis, then remove Kegan (370 → 26 each,
-> 6 to the Pot). Week 4 figures: recompute now. Week 3 can never be re-settled (guarded).
+> 6 to the Pot). Week 4 figures recomputed (verified). Week 3 can never be re-settled
+> (guarded). Stability pass: Remove button now torture-tested, schema:check sees
+> allowed-value lists (needs 0032 applied), test-alert button, Ops alarm fixed.
 
 > **2026-09-27 (fifty-sixth pass):** **Live game data on profiles (D-109).** Each pick
 > now shows the score from its own side, a gold pulse while live, and Won/Lost/Ahead/

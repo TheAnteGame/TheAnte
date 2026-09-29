@@ -48,7 +48,7 @@ export default async function Players() {
   const lastSubmit = (id: string) => (tickets ?? []).find((t) => t.player_id === id)?.submitted_at ?? null;
 
   // Consecutive most-recent revealed weeks auto-folded. Mirrors missedWeekStreak in
-  // the action exactly; shown here so the button's availability is never a surprise.
+  // lib/jobs/removeSeat.ts exactly; shown here so the button's availability is never a surprise.
   const missedStreak = (id: string) => {
     const byWeek = new Map(
       (tickets ?? []).filter((t) => t.player_id === id).map((t) => [t.week_id, t.is_fold]),

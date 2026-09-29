@@ -53,6 +53,11 @@ if (!URL_ || !KEY) {
 // view's columns are derived, so a stale view is a different check).
 const expected = new Map<string, Set<string>>();
 const views = new Set<string>();
+// Allowed-value lists: constraint name → the quoted values its `col in (...)` admits.
+// The latest migration to define a name wins; a drop removes it (D-110).
+const checks = new Map<string, { table: string; values: Set<string> }>();
+const quoted = (list: string) => new Set([...list.matchAll(/'([^']*)'/g)].map((q) => q[1]));
+const IN_LIST = /check\s*\(\s*\(?\s*([a-z_][a-z0-9_]*)\s+in\s*\(([^)]*)\)/i;
 const add = (t: string, c: string) => {
   if (!expected.has(t)) expected.set(t, new Set());
   expected.get(t)!.add(c);
@@ -88,6 +93,14 @@ for (const file of readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sor
     for (const p of parts) {
       const name = p.trim().split(/\s+/)[0]?.toLowerCase();
       if (name && /^[a-z_][a-z0-9_]*$/.test(name) && !RESERVED.has(name)) add(table, name);
+      // A column's own check takes Postgres's default name, <table>_<column>_check;
+      // a table-level one is named explicitly.
+      const named = p.trim().match(/^constraint\s+([a-z0-9_]+)\s+/i);
+      const inList = p.match(IN_LIST);
+      if (inList && quoted(inList[2]).size > 0) {
+        if (named) checks.set(named[1].toLowerCase(), { table, values: quoted(inList[2]) });
+        else if (name && !RESERVED.has(name)) checks.set(`${table}_${name}_check`, { table, values: quoted(inList[2]) });
+      }
     }
   }
 
@@ -95,6 +108,18 @@ for (const file of readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sor
     /alter\s+table\s+(?:if\s+exists\s+)?([a-z0-9_.]+)\s+add\s+column\s+(?:if\s+not\s+exists\s+)?([a-z0-9_]+)/gi,
   )) {
     add(m[1].toLowerCase().replace(/^public\./, ""), m[2].toLowerCase());
+  }
+
+  // Constraints in file order, so a drop-then-add in one migration lands on the add.
+  for (const m of sql.matchAll(
+    /alter\s+table\s+(?:if\s+exists\s+)?([a-z0-9_.]+)\s+(drop\s+constraint\s+(?:if\s+exists\s+)?([a-z0-9_]+)|add\s+constraint\s+([a-z0-9_]+)\s+(check\s*\([\s\S]*?\)\s*\)))\s*;/gi,
+  )) {
+    const table = m[1].toLowerCase().replace(/^public\./, "");
+    if (m[3]) checks.delete(m[3].toLowerCase());
+    else if (m[4]) {
+      const inList = m[5].match(IN_LIST);
+      if (inList && quoted(inList[2]).size > 0) checks.set(m[4].toLowerCase(), { table, values: quoted(inList[2]) });
+    }
   }
 
   for (const m of sql.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?([a-z0-9_.]+)\s+drop\s+column\s+(?:if\s+exists\s+)?([a-z0-9_]+)/gi)) {
@@ -137,12 +162,48 @@ for (const [table, cols] of [...expected].sort()) {
   missing += gone.length;
 }
 
-if (missing === 0 && unreachable === 0) {
-  console.log("✅ SCHEMA IN SYNC — every declared column exists on the target.");
+// ── Allowed-value lists (D-110) ──────────────────────────────────────────────────
+// A migration that only widens a `check (kind in (...))` adds no column, so the probe
+// above cannot see it. 0030 was one, never applied, and it stopped Week 3's
+// settlement. The live definitions come from ante_check_constraints() (0032).
+let checkDrift = 0;
+const rpc = await fetch(`${URL_}/rest/v1/rpc/ante_check_constraints`, {
+  method: "POST",
+  headers: { ...headers, "Content-Type": "application/json" },
+  body: "{}",
+});
+if (rpc.status !== 200) {
+  console.error(`  ✕ ante_check_constraints() unavailable (HTTP ${rpc.status}) — apply migration 0032; allowed-value lists are UNVERIFIED`);
+  checkDrift++;
+} else {
+  const live = new Map(
+    ((await rpc.json()) as Array<{ conname: string; definition: string }>).map((r) => [r.conname, quoted(r.definition)]),
+  );
+  for (const [name, want] of [...checks].sort(([a], [b]) => a.localeCompare(b))) {
+    const have = live.get(name);
+    if (!have) {
+      console.error(`  ✕ ${want.table} — check constraint ${name} MISSING`);
+      checkDrift++;
+      continue;
+    }
+    const lacking = [...want.values].filter((v) => !have.has(v));
+    const extra = [...have].filter((v) => !want.values.has(v));
+    if (lacking.length || extra.length) {
+      console.error(
+        `  ✕ ${want.table}.${name} — ${lacking.length ? `does not allow: ${lacking.join(", ")}` : ""}${lacking.length && extra.length ? "; " : ""}${extra.length ? `allows undeclared: ${extra.join(", ")}` : ""}`,
+      );
+      checkDrift++;
+    }
+  }
+  console.log(`${checks.size} allowed-value lists declared; ${checks.size - checkDrift} match the target`);
+}
+
+if (missing === 0 && unreachable === 0 && checkDrift === 0) {
+  console.log("✅ SCHEMA IN SYNC — every declared column and allowed-value list matches the target.");
   process.exit(0);
 }
 console.error(
-  `\n❌ SCHEMA DRIFT — ${missing} column(s) and ${unreachable} table(s) declared in supabase/migrations/ are not on ${label}.`,
+  `\n❌ SCHEMA DRIFT — ${missing} column(s), ${unreachable} table(s) and ${checkDrift} allowed-value list(s) declared in supabase/migrations/ do not match ${label}.`,
 );
 console.error("   The deployed code expects them. Apply the outstanding migrations before shipping.");
 process.exit(1);
