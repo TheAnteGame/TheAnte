@@ -53,6 +53,7 @@ const { openWeekCore } = await import("../lib/jobs/slateOpen");
 const { revealDeadline, revealCheck } = await import("../lib/jobs/reveal");
 const { settleCurrentWeek } = await import("../lib/jobs/settle");
 const { resettleFromWeek } = await import("../lib/jobs/resettle");
+const { recomputeOpenWeek } = await import("../lib/jobs/recomputeWeek");
 const { admitToOpenWeek } = await import("../lib/jobs/admit");
 const { houseLimit } = await import("../lib/engine/core");
 const { SLATE_MARGIN_MINUTES } = await import("../lib/engine/constants");
@@ -337,6 +338,43 @@ async function main() {
     check(rerun.status === "skipped", `week ${week} double slate-open skipped`);
     check((await balances()).total === before.total, `week ${week} double-open moved no chips`);
 
+    // ── Rehearsal of the D-110 repair: re-settle the previous week while this one
+    // is OPEN, then recompute this week's figures. Production did exactly this on
+    // 2026-09-29 (Week 3 re-settled under Week 4). With no input changed it must be a
+    // perfect no-op — every stack, the Pot, every limit and felt flag, the median.
+    if (week === 10) {
+      const { data: wOpen } = await service.from("weeks").select("id, median_snapshot, pot_before").eq("number", week).single();
+      const limitsOf = async () =>
+        new Map(((await service.from("week_players").select("player_id, house_limit, felt, stack_pre_ante").eq("week_id", wOpen!.id)).data ?? []).map((r) => [r.player_id, `${r.house_limit}|${r.felt}|${r.stack_pre_ante}`]));
+      const l1 = await limitsOf();
+      const b1 = await balances();
+      const fp = await ticketFingerprint();
+      const rs = await resettleFromWeek(service, week - 1, "torture-test D-110 rehearsal");
+      check(rs.status === "succeeded", `D-110 re-settle under an open week (${JSON.stringify(rs.detail)})`);
+      // Then break the snapshot the way Week 4 was broken — limits too low, median and
+      // Pot figure wrong — and require the recompute to put back EXACTLY what a
+      // correct slate open wrote. A no-op alone would not prove it corrects anything.
+      for (const [pid] of l1) {
+        const [lim] = l1.get(pid)!.split("|");
+        await service.from("week_players").update({ house_limit: Math.max(0, Number(lim) - 40), stack_pre_ante: 1 }).eq("week_id", wOpen!.id).eq("player_id", pid);
+      }
+      await service.from("weeks").update({ median_snapshot: (wOpen!.median_snapshot ?? 0) - 100, pot_before: (wOpen!.pot_before ?? 0) + 999 }).eq("id", wOpen!.id);
+      const rc = await recomputeOpenWeek(service);
+      check(rc.status === "succeeded", `D-110 recompute of the open week (${JSON.stringify(rc.detail)})`);
+      const b2 = await balances();
+      const l2 = await limitsOf();
+      const { data: wAfter } = await service.from("weeks").select("median_snapshot, pot_before").eq("number", week).single();
+      check(b2.pot === b1.pot, `D-110 rehearsal POT UNCHANGED: ${b1.pot} → ${b2.pot}`);
+      const moved = [...b1.stacks.entries()].filter(([id, v]) => b2.stacks.get(id) !== v);
+      check(moved.length === 0, `D-110 rehearsal STACKS UNCHANGED: ${moved.length} moved`);
+      check(wAfter!.median_snapshot === wOpen!.median_snapshot, `D-110 rehearsal median ${wOpen!.median_snapshot} → ${wAfter!.median_snapshot}`);
+      check(wAfter!.pot_before === wOpen!.pot_before, `D-110 rehearsal pot_before ${wOpen!.pot_before} → ${wAfter!.pot_before}`);
+      const changed = [...l1.entries()].filter(([id, v]) => l2.get(id) !== v);
+      check(l2.size === l1.size && changed.length === 0, `D-110 rehearsal LIMITS UNCHANGED: ${changed.length} changed`);
+      check((await ticketFingerprint()) === fp, "D-110 rehearsal tickets byte-identical");
+      console.log(`        ↺ D-110 rehearsal: re-settled week ${week - 1} under open week ${week}, recomputed its figures — 0 stacks, 0 limits moved`);
+    }
+
     // Stop here on request, leaving a genuine OPEN week on the board: antes posted, a
     // real slate, no tickets. That is the one league state the full run never leaves
     // behind, and it is the only way to look at the betting board (BetSlip) at all.
@@ -529,6 +567,26 @@ async function main() {
     const { data: allTickets } = await anyone.from("tickets").select("id").eq("week_id", weekRow.id);
     check((allTickets ?? []).length === (snaps ?? []).length, `week ${week} post-reveal ticket visibility (${allTickets?.length}/${(snaps ?? []).length})`);
 
+    // ── D-110: a week cannot open on top of an unpaid one ──────────────────────
+    // Revealed, nothing final yet: opening next week now would compute its median and
+    // limits with every stake of this week missing. It must refuse, create nothing,
+    // and move nothing.
+    if (week === 6) {
+      const b0 = await balances();
+      const blocked = await openWeekCore(
+        service,
+        seasonRow,
+        week + 1,
+        { games: [], spreads: [], finals: new Map(), raw: [] },
+        { opensAt: new Date(Date.now() - 60_000), deadlineAt: new Date(Date.now() + 3600_000) },
+      );
+      const detail = blocked.detail as { blocked?: boolean } | undefined;
+      check(blocked.status === "skipped" && detail?.blocked === true, `D-110 week ${week + 1} opened on an unsettled week (${JSON.stringify(blocked.detail)})`);
+      const { data: early } = await service.from("weeks").select("id").eq("number", week + 1).maybeSingle();
+      check(!early, `D-110 blocked open still created week ${week + 1}`);
+      check((await balances()).total === b0.total && (await balances()).pot === b0.pot, "D-110 blocked open moved chips");
+    }
+
     // ── Scores + settlement (real job; conservation asserts inside) ────────────
     for (const g of slateGames) {
       const r = rand();
@@ -568,31 +626,16 @@ async function main() {
       check(mailed.size === 3, `mail reached ${mailed.size} players, expected the 3 with an address`);
     }
 
-    // ── The fold penalty (D-096, v1.4): from Week 3, every non-felt folder pays
-    // 1–50 into the Pot at settlement; felt folders pay nothing; earlier weeks never.
+    // ── No fold penalty (v1.5, D-110): a fold costs the ante and nothing more.
+    // The 50-chip penalty (D-096) was withdrawn mid-season; no week may post one.
     {
       const { data: wkRow } = await service.from("weeks").select("id").eq("number", week).single();
-      const { data: pen } = await service
+      const { count: pen } = await service
         .from("ledger_entries")
-        .select("player_id, amount")
+        .select("id", { count: "exact", head: true })
         .eq("week_id", wkRow!.id)
-        .eq("kind", "fold_penalty")
-        .not("player_id", "is", null);
-      const paid = new Map((pen ?? []).map((e) => [e.player_id as string, e.amount]));
-      if (week < 3) {
-        check(paid.size === 0, `week ${week} FOLD PENALTY posted before Week 3 (${paid.size})`);
-      } else {
-        for (const i of folded) {
-          const pid = playerIds[i];
-          if (removedIds.has(pid)) continue;
-          const felt = snapOf.get(pid)?.felt ?? false;
-          const amt = paid.get(pid);
-          if (felt) check(amt === undefined, `week ${week} FOLD PENALTY charged on the felt (${pid})`);
-          else check(amt !== undefined && amt <= -1 && amt >= -50, `week ${week} FOLD PENALTY missing or wrong for folder ${pid}: ${amt}`);
-        }
-        const folderIds = new Set(folded.map((i) => playerIds[i]));
-        for (const pid of paid.keys()) check(folderIds.has(pid), `week ${week} FOLD PENALTY charged to a non-folder ${pid}`);
-      }
+        .eq("kind", "fold_penalty");
+      check((pen ?? 0) === 0, `week ${week} FOLD PENALTY posted (${pen}) — withdrawn in v1.5`);
     }
 
     // ── Weekly conservation, straight SQL truth ────────────────────────────────

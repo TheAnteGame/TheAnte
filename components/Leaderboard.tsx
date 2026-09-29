@@ -51,12 +51,16 @@ const loadBoard = cache(async () => {
 
   let deltas = new Map<string, number>();
   let felts = new Set<string>();
-  if (week) {
+  // The week column follows the projection when there is one. The projection is the
+  // oldest unpaid week, and its returns and profit are added to THAT week's ledger
+  // delta below — mixing them with a newer week's delta would show neither (D-110).
+  const deltaWeekId = proj?.weekId ?? week?.id;
+  if (deltaWeekId) {
     const [entries, { data: wps }] = await Promise.all([
       fetchAllRows<{ player_id: string | null; amount: number }>((f, t) =>
-        db.from("ledger_entries").select("player_id, amount").eq("week_id", week.id).order("id").range(f, t),
+        db.from("ledger_entries").select("player_id, amount").eq("week_id", deltaWeekId).order("id").range(f, t),
       ),
-      db.from("week_players").select("player_id, felt").eq("week_id", week.id),
+      db.from("week_players").select("player_id, felt").eq("week_id", deltaWeekId),
     ]);
     deltas = new Map();
     for (const e of entries ?? []) {

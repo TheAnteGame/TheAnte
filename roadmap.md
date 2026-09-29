@@ -8,6 +8,15 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-09-29 (fifty-seventh pass):** **Week 3 settlement failure repaired; fold
+> penalty withdrawn (D-110, rulebook v1.5).** Settlement crashed Monday night on an
+> unapplied migration (0030); nothing retried, Week 4 opened on unsettled stacks, and
+> the board read the wrong week. Production: 0030/0031 applied, Week 3 settled, stacks
+> verified. Code: retry on every tick, no week opens on an unpaid one, email alerts,
+> board/console read the oldest unpaid week, and a console tool to recompute an open
+> week's figures. **OPEN:** undo Week 3's two fold-penalty rows (owner's call — it
+> also removes Steve M.'s 72-chip Pot award), then recompute Week 4 before Thu noon.
+
 > **2026-09-27 (fifty-sixth pass):** **Live game data on profiles (D-109).** Each pick
 > now shows the score from its own side, a gold pulse while live, and Won/Lost/Ahead/
 > Behind where the payout will sit. Found on the way: a week still being played read as

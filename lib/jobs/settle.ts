@@ -9,6 +9,7 @@ import {
 import type { EngineGame, EngineLedgerEntry, EngineTicket } from "@/lib/engine";
 import { fetchAllRows } from "@/lib/db/fetchAll";
 import { stacksByPlayer, type JobOutcome } from "./util";
+import { alertCommissioner } from "./alert";
 
 // settle.week (ANTE-ADMIN §5): runs when every on-slate game is final or void.
 // The conservation assertion runs BEFORE anything is written — on failure the week
@@ -23,7 +24,20 @@ export async function settleCurrentWeek(db: SupabaseClient): Promise<JobOutcome>
     .limit(1)
     .maybeSingle();
   if (!week) return { status: "skipped", detail: { reason: "no revealed week" } };
-  return settleWeekRecord(db, week);
+
+  // Every failure reaches the commissioner, whichever way it arrives: a halted
+  // conservation check comes back as status "failed"; a rejected write (Week 3,
+  // 2026-09-29: a ledger kind the database did not yet allow) is thrown (D-110).
+  try {
+    const outcome = await settleWeekRecord(db, week);
+    if (outcome.status === "failed") {
+      await alertCommissioner(db, "settlement_failed", week.number, JSON.stringify(outcome.detail ?? {}));
+    }
+    return outcome;
+  } catch (e) {
+    await alertCommissioner(db, "settlement_failed", week.number, e instanceof Error ? e.message : String(e));
+    throw e;
+  }
 }
 
 /** Settle one specific week row. runTag scopes the idempotency keys so a

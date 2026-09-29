@@ -32,11 +32,16 @@ export interface WeekProjection {
 /** One load per request, not per component: the dashboard mounts the leaderboard
  *  twice (D-051) and the ticker and Table Talk both want the same numbers. */
 export const loadProjection = cache(async (db: SupabaseClient): Promise<WeekProjection | null> => {
+  // The OLDEST week whose stakes are out and not yet paid back — not the newest week.
+  // Normally they are the same week. On 2026-09-29 they were not: Week 3's settlement
+  // failed overnight, Week 4 opened on top of it, and asking for "the latest week"
+  // found Week 4 (not revealed, nothing to project) — so the board fell back to raw
+  // stacks with every Week 3 stake still missing and ranked the folders on top (D-110).
   const { data: week } = await db
     .from("weeks")
     .select("id, revealed_at, settled_at")
-    .in("phase", ["open", "revealed", "settled"])
-    .order("number", { ascending: false })
+    .eq("phase", "revealed")
+    .order("number", { ascending: true })
     .limit(1)
     .maybeSingle();
 

@@ -617,6 +617,29 @@ export async function runSettlement(): Promise<ActionResult> {
   return outcome.status === "failed" ? fail("Settlement failed or halted — see job runs") : { ok: true };
 }
 
+/** D-110 — put an open week's median, house limits and Pot figure right when it
+ *  opened on unsettled stacks. Moves no chips and touches no ticket; refuses unless
+ *  the antes already posted are exactly what the corrected stacks would have posted.
+ *  The before/after lands in the audit log. */
+export async function recomputeWeekSnapshot(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const reason = str(fd, "reason");
+  if (!reason) return fail("Recomputing a week's figures requires a typed reason");
+
+  await takeSnapshot(ctx.db, "before recomputing the open week's figures", ctx.playerId);
+  const { recomputeOpenWeek } = await import("@/lib/jobs/recomputeWeek");
+  const outcome = await recomputeOpenWeek(ctx.db);
+  await writeAudit(ctx, "week.recompute_snapshot", "week", "open", reason, { after: outcome as unknown });
+  revalidatePath("/admin/week");
+  revalidatePath("/dashboard");
+  if (outcome.status === "failed") {
+    const d = outcome.detail as { reason?: string } | undefined;
+    return fail(`Refused — ${d?.reason ?? "see the audit log"}`);
+  }
+  return outcome.status === "skipped" ? fail("No open week") : { ok: true };
+}
+
 // ── Content (§4.4) ─────────────────────────────────────────────────────────────
 
 export async function saveContent(fd: FormData): Promise<ActionResult> {

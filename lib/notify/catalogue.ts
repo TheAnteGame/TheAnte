@@ -54,6 +54,8 @@ export const MAIL_KINDS: MailKind[] = [
   { keyPrefix: "poll.reminder", label: "League poll — closes in six hours", trigger: "polls.tick job, six hours before a poll closes", bodySource: "designed", subjectKey: "mail.poll_reminder.subject" },
   { keyPrefix: "broadcast", label: "League email (one-off, from the Email page)", trigger: "Commissioner sends or schedules one on /admin/email", bodySource: "literal", subjectKey: "mail.broadcast.subject" },
   { keyPrefix: "backup-reminder", label: "Backup due (commissioner only)", trigger: "backup.reminder job, daily, until the file is confirmed", bodySource: "template", subjectKey: "mail.backup_reminder.subject", bodyKey: "notify.backup_reminder" },
+  { keyPrefix: "alert-settlement_failed", label: "Settlement failed (commissioner only)", trigger: "A settlement run fails; at most once a day per week", bodySource: "template", subjectKey: "mail.settlement_failed.subject", bodyKey: "notify.settlement_failed" },
+  { keyPrefix: "alert-week_blocked", label: "Week did not open (commissioner only)", trigger: "slate.open finds an earlier week unsettled; at most once a day", bodySource: "template", subjectKey: "mail.week_blocked.subject", bodyKey: "notify.week_blocked" },
 ];
 
 /** Content keys the console lists as editable templates but which reach NO email —

@@ -11,6 +11,8 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { DateTime } from "luxon";
 import { LEAGUE_TZ } from "@/lib/time";
 import { stacksByPlayer, type JobOutcome } from "./util";
+import { settleCurrentWeek } from "./settle";
+import { alertCommissioner } from "./alert";
 
 // slate.open (ANTE-ADMIN §5): freeze spreads, snapshot the median BEFORE antes,
 // snapshot the places tier and active count, evaluate felt pre-ante, create the week,
@@ -82,6 +84,40 @@ export async function openWeekCore(
     .maybeSingle();
   if (existing?.median_snapshot != null) {
     return { status: "skipped", detail: { reason: `week ${weekNumber} already open` } };
+  }
+
+  // Never open on top of an unpaid week (D-110). Everything below is computed from
+  // current stacks — the median, every house limit, the felt, the Pot — and while a
+  // week is revealed but unsettled, every stake in it is out of its owner's stack and
+  // not yet back. Week 4 opened that way on 2026-09-29: median 350 instead of 458,
+  // limits a third too low, the Pot recorded at 1,780 on its way to being paid out.
+  // Try the settlement first — the Monday-night run may simply have failed and been
+  // fixed since — and hold the week back, loudly, only if it still cannot settle.
+  const behind = async () =>
+    (
+      await db
+        .from("weeks")
+        .select("number, phase")
+        .eq("season_id", season.id)
+        .lt("number", weekNumber)
+        .neq("phase", "settled")
+        .order("number", { ascending: true })
+        .limit(1)
+        .maybeSingle()
+    ).data;
+  let unpaid = await behind();
+  if (unpaid?.phase === "revealed") {
+    try {
+      await settleCurrentWeek(db);
+    } catch {
+      // settleCurrentWeek has already told the commissioner; the check below holds the week.
+    }
+    unpaid = await behind();
+  }
+  if (unpaid) {
+    const reason = `week ${unpaid.number} is ${unpaid.phase}, not settled — week ${weekNumber} cannot open on its stacks`;
+    await alertCommissioner(db, "week_blocked", weekNumber, reason);
+    return { status: "skipped", detail: { reason, blocked: true } };
   }
 
   const stacks = await stacksByPlayer(db);

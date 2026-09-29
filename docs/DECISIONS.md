@@ -3025,3 +3025,83 @@ Settled weeks are unchanged and now carry final scores too.
 from head counts (§5), and a number here that later differed by a chip would be worse
 than no number. `pickStanding` reads the scoreboard alone and is tested on every
 state, including a cancelled game whose scoreboard still shows points.
+
+## D-110 — Week 3 did not settle, Week 4 opened on top of it, and the fold penalty is withdrawn (2026-09-29)
+
+**What happened.** Week 3's last game went final at 9:15pm MST Monday. Settlement
+tried to post the first two `fold_penalty` rows (D-096) and the database refused
+them: migration 0030, which adds that ledger kind, had never been applied to
+production. `schema:check` could not see it — it verifies columns, not check
+constraints — and the paste-back the D-096 session asked for never came. Nothing was
+written; the failure went to `job_runs` and nowhere else.
+
+Three gaps turned one missing migration into a wrong leaderboard:
+
+1. **Nothing retried.** `scores.sync` settled only when the NEWEST week was revealed
+   and returned early whenever no score had moved — so the tick after the failure
+   found "nothing to update" and never tried again.
+2. **Week 4 opened anyway.** Tuesday's `slate.open` does not look back. It computed
+   Week 4 from stacks with every Week 3 stake still out: median 350 instead of 458,
+   house limits roughly a third too low (Steve M. 80 instead of 150), the Pot recorded
+   at 1,780 on its way to being paid out.
+3. **The board looked at the wrong week.** The weekend projection (D-075) asked for
+   the newest week; once Week 4 opened that was an unrevealed week with nothing to
+   project, so the board fell back to raw stacks. The folders, who had risked
+   nothing, ranked near the top; Steve M., who had 130 chips out and won 186, ranked
+   last. The console's Week page asked the same wrong question, so Week 3's "Run
+   settlement now" button never rendered either.
+
+Repaired in production the same morning: 0030 and 0031 applied by hand in the SQL
+editor, `schema:check` green, and Week 3 settled through `/api/jobs/settle-week`. All
+fifteen stacks matched an in-memory dry run to the chip; conservation 7,500 = buy-ins.
+
+**The fold penalty is withdrawn (rulebook v1.5).** The owner's position: the league
+had not settled it, and even if it had, §13 forbids changing a rule mid-season. The
+D-096 record said "league vote"; the only approval in that session was a one-word
+"yes" to four proposed defaults, and the build wrote its exception to §13 into the
+rulebook header rather than asking whether the owner meant to break it. It is
+removed from the engine (not left dormant — bfa93cc holds it for a future season)
+and every surface it touched is back to "a fold costs the ante": rulebook §3, §7 and
+§14, the tutorial, guide, FAQ, deadline tips, final-call and nudge copy, and the
+auto-folded email. The `fold_penalty` ledger KIND stays: Week 3's two rows exist and
+the books must keep reading them. Undoing those two rows is a separate, commissioner-
+decided correction — the penalty's 100 chips are what funded Steve M.'s 72-chip Pot
+award, so reversing it is not just a refund.
+
+**What changes so it cannot recur:**
+
+- **`scores.sync` settles any revealed week on every tick**, oldest first, whether or
+  not a score moved. Settlement is idempotent and skips while games are unfinished,
+  so asking every five minutes is safe. When a settlement succeeds it calls
+  `slateOpen`, so a week held back (below) opens within five minutes of its
+  predecessor settling rather than a week late.
+- **`openWeekCore` refuses to open on an unpaid week.** It tries the settlement
+  first, and if an earlier week is still open or revealed it creates nothing, moves
+  nothing, and returns `blocked`. Both `slate.open` and the console's early open go
+  through it.
+- **Failures reach the commissioner by email** (`lib/jobs/alert.ts`): a failed or
+  halted settlement, and a blocked week. At most one email per problem per league
+  day, because the retry runs every five minutes. Both templates are in the console's
+  email catalogue.
+- **The projection and the board's week column read the oldest unpaid week**, not
+  the newest. Identical in every normal state; correct in the overlap.
+- **The console's Week page** shows a settle button for any earlier week left
+  unsettled, re-settlement of an earlier week while a newer one is open, and
+  **Recompute figures** for an open week (`lib/jobs/recomputeWeek.ts`). That tool
+  rewrites the median, house limits, tier and Pot figure from the stacks the week
+  should have opened on, with the same engine function slate.open uses. It moves no
+  chips and touches no ticket, and it refuses unless the antes already posted are
+  exactly what the corrected stacks would have posted. A ticket already submitted
+  stands (§13) and is reported if it would now be over its limit.
+
+**Proved by the torture season:** in week 6 it tries to open week 7 while week 6 is
+revealed and unsettled — refused, no week created, no chip moved. With the guard
+disabled that check fails exactly as production did (week opened, chips moved). In
+week 10 it rehearses this repair: re-settle week 9 while week 10 is open, deliberately
+corrupt week 10's limits, median and Pot figure, then recompute — every stack, the
+Pot, every limit, felt flag and the median come back identical. And no week posts a
+fold penalty.
+
+**Still true, and still a gap:** `schema:check` cannot see check constraints. A
+migration that only widens a `check (... in (...))` list still needs the manual
+`pg_get_constraintdef` check CLAUDE.md describes.

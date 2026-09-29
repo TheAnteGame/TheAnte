@@ -205,9 +205,7 @@ describe("the Pot (§7)", () => {
     ];
     const r = settleWeek(baseInput({ tickets, players, potBalance: 30 }));
     expect(r.potAwards).toHaveLength(0);
-    // Week 5: both folders pay the 50-chip penalty into the Pot (D-096) — and it
-    // still rolls, because a folder can never win it.
-    expect(r.potAfter).toBe(30 + 100);
+    expect(r.potAfter).toBe(30);
   });
 
   it("a negative Pot is a marker: nobody wins one this week (§7)", () => {
@@ -235,35 +233,15 @@ describe("the Pot (§7)", () => {
   });
 });
 
-describe("the fold penalty (§3 v1.4, D-096)", () => {
+describe("no fold penalty (§3 v1.5, D-110)", () => {
   const fold = (id: string): EngineTicket => ({ playerId: id, isFold: true, isShove: false, bets: [], committedStake: null, pendingRefund: null });
-  const penalties = (r: ReturnType<typeof settleWeek>) => r.entries.filter((e) => e.kind === "fold_penalty" && e.account !== null);
 
-  it("does not exist before Week 3 — a re-settlement of an early week cannot apply it", () => {
-    const r = settleWeek(baseInput({ weekNumber: 2, tickets: [fold("a")], players: [{ id: "a", stackPreAnte: 500, stackAtReveal: 490 }] }));
-    expect(penalties(r)).toHaveLength(0);
-  });
-
-  it("charges 50 into the Pot from Week 3, two-sided", () => {
-    const r = settleWeek(baseInput({ weekNumber: 3, tickets: [fold("a")], players: [{ id: "a", stackPreAnte: 500, stackAtReveal: 490 }], potBalance: 10 }));
-    expect(penalties(r)).toEqual([{ account: "a", kind: "fold_penalty", amount: -50, reason: "Week 3 — fold penalty (§3)" }]);
-    expect(r.potAfter).toBe(60);
-  });
-
-  it("exempts a stack on the felt, exactly as the ante does", () => {
-    // Week 5 ante is 15; a 12-chip stack is on the felt and paid no ante.
-    const r = settleWeek(baseInput({ weekNumber: 5, tickets: [fold("a")], players: [{ id: "a", stackPreAnte: 12, stackAtReveal: 12 }] }));
-    expect(penalties(r)).toHaveLength(0);
-  });
-
-  it("never takes the last chip", () => {
-    const r = settleWeek(baseInput({ weekNumber: 5, tickets: [fold("a")], players: [{ id: "a", stackPreAnte: 35, stackAtReveal: 20 }] }));
-    expect(penalties(r)[0]?.amount).toBe(-19);
-    expect(r.entries.some((e) => e.kind === "felt_floor")).toBe(false);
-  });
-
-  it("leaves a live ticket alone", () => {
-    const r = settleWeek(baseInput({ weekNumber: 5, tickets: [{ ...fold("a"), isFold: false }], players: [{ id: "a", stackPreAnte: 500, stackAtReveal: 485 }] }));
-    expect(penalties(r)).toHaveLength(0);
+  // The penalty (D-096) was withdrawn mid-season. Week 3 is the one week it ever
+  // posted, so a re-settlement of Week 3 is exactly the case that must now drop it.
+  it.each([1, 2, 3, 4, 18])("a fold in Week %i moves no chips at settlement", (weekNumber) => {
+    const r = settleWeek(baseInput({ weekNumber, tickets: [fold("a")], players: [{ id: "a", stackPreAnte: 500, stackAtReveal: 490 }], potBalance: 10 }));
+    expect(r.entries.filter((e) => e.account === "a")).toEqual([]);
+    expect(r.entries.some((e) => e.kind === "fold_penalty")).toBe(false);
+    expect(r.potAfter).toBe(10);
   });
 });

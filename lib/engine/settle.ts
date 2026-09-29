@@ -1,5 +1,4 @@
-import { isFelt, multiplierFor, profitFor } from "./core";
-import { FOLD_PENALTY, FOLD_PENALTY_FROM_WEEK, anteForWeek } from "./constants";
+import { multiplierFor, profitFor } from "./core";
 import type {
   BetSettlement,
   EngineGame,
@@ -93,22 +92,9 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
     }
   }
 
-  // §3 (v1.4) — the fold penalty, into the Pot. Posts here, at settlement, with
-  // everything else: a chip that moved when the fold was chosen would be a pick
-  // told during the blackout. Gated on the week so a re-settlement of Week 1 or 2
-  // can never apply it backwards; a stack on the felt is exempt, as from the ante;
-  // and it never takes the last chip (§9). Folders are ineligible for the Pot, so
-  // their gain figure is not in the race the penalty feeds.
-  if (weekNumber >= FOLD_PENALTY_FROM_WEEK) {
-    const ante = anteForWeek(weekNumber);
-    for (const t of tickets) {
-      if (!t.isFold) continue;
-      const p = players.find((x) => x.id === t.playerId);
-      if (!p || isFelt(p.stackPreAnte, ante)) continue;
-      const penalty = Math.min(FOLD_PENALTY, Math.max(0, p.stackAtReveal - 1));
-      if (penalty > 0) post(t.playerId, "fold_penalty", -penalty, `Week ${weekNumber} — fold penalty (§3)`);
-    }
-  }
+  // No fold penalty: a fold costs the ante and nothing more (§3 v1.5, D-110). The
+  // penalty (D-096) was withdrawn mid-season, so a re-settlement of ANY week —
+  // including Week 3, the one week it posted — now replays without it.
 
   // Stacks after bet settlement; §9 floor — the last chip is DEBITED FROM THE POT.
   const settlementDelta = new Map<string, number>();
