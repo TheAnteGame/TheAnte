@@ -27,6 +27,27 @@ export async function resettleFromWeek(
     return { status: "skipped", detail: { reason: `no settled weeks at or after week ${fromWeekNumber}` } };
   }
 
+  // Refuse any week that carries fold-penalty rows (D-110). The engine no longer
+  // posts the penalty (withdrawn, v1.5), so a replay would reverse those rows and not
+  // re-post them — handing each folder their 50 back a second time. Week 3 is the one
+  // week that has them, and its penalties were settled by hand instead: Marquis was
+  // refunded from Kegan's stack before Kegan's removal. Replaying Week 3 would pay
+  // Marquis twice and put chips back into a removed seat. Checked BEFORE a single
+  // reversal is written.
+  const { count: penalties } = await db
+    .from("ledger_entries")
+    .select("id", { count: "exact", head: true })
+    .in("week_id", weeks.map((w) => w.id))
+    .eq("kind", "fold_penalty");
+  if ((penalties ?? 0) > 0) {
+    return {
+      status: "failed",
+      detail: {
+        reason: `a week in this range carries fold-penalty entries (the penalty was withdrawn and settled by hand, D-110) — re-settling it would pay them out twice. Re-settle from a later week.`,
+      },
+    };
+  }
+
   const runTag = `-r${randomUUID().slice(0, 8)}`;
   const results: Array<{ week: number; status: string }> = [];
 

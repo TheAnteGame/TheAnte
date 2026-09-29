@@ -14,8 +14,8 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 > the board read the wrong week. Production: 0030/0031 applied, Week 3 settled, stacks
 > verified. Code: retry on every tick, no week opens on an unpaid one, email alerts,
 > board/console read the oldest unpaid week, and a console tool to recompute an open
-> week's figures. **OPEN:** undo Week 3's two fold-penalty rows (owner's call — it
-> also removes Steve M.'s 72-chip Pot award), then recompute Week 4 before Thu noon.
+> week's figures. **OPEN (Thu after reveal):** 50 chips Kegan → Marquis, then remove Kegan (370 → 26 each,
+> 6 to the Pot). Week 4 figures: recompute now. Week 3 can never be re-settled (guarded).
 
 > **2026-09-27 (fifty-sixth pass):** **Live game data on profiles (D-109).** Each pick
 > now shows the score from its own side, a gold pulse while live, and Won/Lost/Ahead/

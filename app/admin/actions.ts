@@ -604,7 +604,11 @@ export async function resettle(fd: FormData): Promise<ActionResult> {
   const outcome = await resettleFromWeek(ctx.db, weekNumber, reason);
   await writeAudit(ctx, "week.resettle", "week", String(weekNumber), reason, { after: outcome as unknown });
   revalidatePath("/admin/week");
-  return outcome.status === "failed" ? fail(`Cascade halted — see job detail`) : { ok: true };
+  if (outcome.status === "failed") {
+    const why = (outcome.detail as { reason?: string } | undefined)?.reason;
+    return fail(why ? `Refused — ${why}` : "Cascade halted — see job detail");
+  }
+  return { ok: true };
 }
 
 export async function runSettlement(): Promise<ActionResult> {

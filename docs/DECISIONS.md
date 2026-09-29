@@ -3105,3 +3105,23 @@ fold penalty.
 **Still true, and still a gap:** `schema:check` cannot see check constraints. A
 migration that only widens a `check (... in (...))` list still needs the manual
 `pg_get_constraintdef` check CLAUDE.md describes.
+
+**Addendum (same day) — how Week 3's penalties are settled.** The owner chose not to
+re-settle Week 3 (which would also have removed Steve M.'s 72-chip Pot award).
+Instead, once Week 4 reveals: Kegan L., who has missed three straight weeks, is
+removed under the deadweight rule; first, 50 chips of his stack go to Marquis S. as
+a `correction` pair, refunding Marquis's penalty; the remaining 370 are split evenly
+across the 14 players still in (26 each, 6 to the Pot). Kegan's own penalty stays
+where it went. Owner's reasoning: a beta season among family and friends, no money
+involved, and the fairest simple outcome. Both moves wait for the reveal — the
+blackout forbids moving a stack between the ante and the reveal.
+
+Because the two `fold_penalty` rows now stay in Week 3's ledger, **Week 3 must never
+be re-settled**: the engine no longer posts the penalty, so a replay would reverse
+the rows and pay each 50 out a second time — including into a removed seat.
+`resettleFromWeek` now refuses any range containing `fold_penalty` rows, before a
+single reversal is written. Torture plants such rows in week 17 and proves the
+refusal (with the guard disabled the cascade writes 86 reversals and moves chips),
+and rehearses the owner's sequence in week 16 — refund, then removal after the
+reveal and before settlement, then a clean settlement with the removed seat still
+at exactly 0.

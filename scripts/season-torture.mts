@@ -265,6 +265,11 @@ async function main() {
   const deadweightIdx = N - 1;
   const deadweightId = playerIds[deadweightIdx];
   const removedIds = new Set<string>();
+  // A second seat goes dark from week 13 and is removed MID-WEEK in week 16 — after
+  // the reveal, before settlement — with a hand correction first: exactly the D-110
+  // production sequence (Kegan, 2026-10-01). Chosen at week 13 as the healthiest stack.
+  let lateDeadweightId: string | null = null;
+  let lateTargetId: string | null = null;
 
   for (let week = 1; week <= 18; week++) {
     const t0 = Date.now();
@@ -447,6 +452,15 @@ async function main() {
     const folded: number[] = [];
     let shoves = 0;
 
+    if (week === 13 && !lateDeadweightId) {
+      const b13 = await balances();
+      const { data: seated } = await service.from("players").select("id").eq("status", "approved");
+      const pool = (seated ?? []).map((r) => r.id).filter((id) => id !== deadweightId && id !== playerIds[0] && !removedIds.has(id));
+      pool.sort((a, b) => (b13.stacks.get(b) ?? 0) - (b13.stacks.get(a) ?? 0));
+      lateDeadweightId = pool[0];
+      lateTargetId = pool[pool.length - 1];
+    }
+
     for (let i = 0; i < playerIds.length; i++) {
       const pid = playerIds[i];
       // A removed seat has no week_players row at all — slate open skips it — so this
@@ -456,7 +470,7 @@ async function main() {
       // rand() is consumed either way: the deadweight seat must not shift the
       // deterministic chaos sequence for everyone else.
       const unlucky = rand() < 0.06;
-      if (unlucky || pid === deadweightId) {
+      if (unlucky || pid === deadweightId || pid === lateDeadweightId) {
         folded.push(i);
         continue; // never submits — the deadline job folds them
       }
@@ -567,6 +581,56 @@ async function main() {
     const { data: allTickets } = await anyone.from("tickets").select("id").eq("week_id", weekRow.id);
     check((allTickets ?? []).length === (snaps ?? []).length, `week ${week} post-reveal ticket visibility (${allTickets?.length}/${(snaps ?? []).length})`);
 
+    // ── D-110: correction + removal between the reveal and settlement ─────────
+    // The production sequence: refund one folder 50 chips out of the leaving seat's
+    // stack (two correction rows), then remove that seat and split the rest evenly —
+    // all after the reveal, before this week settles. Settlement must then run clean
+    // around a removed seat that holds a fold ticket for the week.
+    if (week === 16 && lateDeadweightId && lateTargetId) {
+      const dw = lateDeadweightId;
+      const target = lateTargetId;
+      const { data: revealedWeeks } = await service
+        .from("weeks").select("id, number").not("revealed_at", "is", null).order("number", { ascending: false });
+      const { data: dwTickets } = await service.from("tickets").select("week_id, is_fold").eq("player_id", dw);
+      const dwByWeek = new Map((dwTickets ?? []).map((t) => [t.week_id, t.is_fold]));
+      let missed = 0;
+      for (const w of revealedWeeks ?? []) {
+        if (dwByWeek.get(w.id) !== true) break;
+        missed++;
+      }
+      check(missed >= 3, `D-110 mid-week removal: seat missed only ${missed} straight weeks`);
+
+      const b0 = await balances();
+      const dwStack = b0.stacks.get(dw) ?? 0;
+      check(dwStack > 50, `D-110 mid-week removal: seat holds only ${dwStack}`);
+      const { error: corrErr } = await service.from("ledger_entries").insert([
+        { player_id: dw, week_id: weekRow.id, kind: "correction", amount: -50, reason: "torture: D-110 fold-penalty refund, paid from the leaving seat", idempotency_key: "d110-fold-refund" },
+        { player_id: target, week_id: weekRow.id, kind: "correction", amount: 50, reason: "torture: D-110 fold-penalty refund", idempotency_key: "d110-fold-refund" },
+      ]);
+      check(!corrErr, `D-110 correction insert failed: ${corrErr?.message}`);
+      const b1 = await balances();
+      check(b1.total === b0.total && b1.pot === b0.pot, "D-110 correction moved the total or the Pot");
+
+      const recipients = (await service.from("players").select("id").eq("status", "approved").neq("id", dw)).data!.map((r) => r.id);
+      const plan = computeRemoval({ playerId: dw, stack: dwStack - 50, recipientIds: recipients, who: "Late D." });
+      const { error: remErr } = await service.from("ledger_entries").insert(
+        plan.entries.map((e) => ({ player_id: e.account, kind: e.kind, amount: e.amount, reason: e.reason, idempotency_key: `removal:${dw}:${e.account ?? "pot"}` })),
+      );
+      check(!remErr, `D-110 mid-week removal insert failed: ${remErr?.message}`);
+      await service.from("players").update({ status: "removed", removed_at: new Date().toISOString(), removal_reason: "torture: D-110 mid-week" }).eq("id", dw);
+      removedIds.add(dw);
+
+      const b2 = await balances();
+      check(b2.total === b0.total, `D-110 mid-week removal CONSERVATION ${b0.total} → ${b2.total}`);
+      check((b2.stacks.get(dw) ?? -1) === 0, `D-110 removed seat holds ${b2.stacks.get(dw)}`);
+      check((b2.stacks.get(target) ?? 0) - (b0.stacks.get(target) ?? 0) === 50 + plan.share, "D-110 refunded folder did not gain 50 + share");
+      const off = recipients.filter((id) => id !== target && (b2.stacks.get(id) ?? 0) - (b0.stacks.get(id) ?? 0) !== plan.share);
+      check(off.length === 0, `D-110 ${off.length} recipients did not gain exactly ${plan.share}`);
+      check(b2.pot - b0.pot === plan.remainder, `D-110 Pot moved ${b2.pot - b0.pot}, expected ${plan.remainder}`);
+      assertInvariants(await fetchAllLedger());
+      console.log(`        ✂ D-110 rehearsal: 50 refunded, then mid-week removal after the reveal: ${dwStack - 50} → ${plan.share} each, ${plan.remainder} to the Pot`);
+    }
+
     // ── D-110: a week cannot open on top of an unpaid one ──────────────────────
     // Revealed, nothing final yet: opening next week now would compute its median and
     // limits with every stake of this week missing. It must refuse, create nothing,
@@ -603,6 +667,10 @@ async function main() {
     }
     const settle = await settleCurrentWeek(service);
     check(settle.status === "succeeded", `week ${week} settlement (${JSON.stringify(settle.detail)})`);
+    if (week === 16 && lateDeadweightId) {
+      const bs = await balances();
+      check((bs.stacks.get(lateDeadweightId) ?? -1) === 0, `D-110 settlement put chips back into the removed seat: ${bs.stacks.get(lateDeadweightId)}`);
+    }
 
     // Voided shoves give the card back — mirror the returned card in our tracker.
     const returned = (settle.detail as { returnedShoves?: number })?.returnedShoves ?? 0;
@@ -779,6 +847,29 @@ async function main() {
       console.log(
         `        ✂ removed deadweight seat after ${missed} missed weeks: ${deadStack} chips → ${plan.share} each to ${recipients.length} players, ${plan.remainder} to the Pot`,
       );
+    }
+
+    // ── D-110 guard: a week holding fold-penalty rows cannot be re-settled ─────
+    // The engine no longer posts the penalty, so a replay would reverse those rows and
+    // never re-post them: paid out twice. Plant a pair in a settled week and prove the
+    // cascade refuses BEFORE writing a single reversal.
+    if (week === 17 && lateTargetId) {
+      const { data: w17 } = await service.from("weeks").select("id").eq("number", week).single();
+      const { error: fpErr } = await service.from("ledger_entries").insert([
+        { player_id: lateTargetId, week_id: w17!.id, kind: "fold_penalty", amount: -1, reason: "torture: planted legacy fold penalty", idempotency_key: "d110-planted" },
+        { player_id: null, week_id: w17!.id, kind: "fold_penalty", amount: 1, reason: "torture: planted legacy fold penalty, Pot side", idempotency_key: "d110-planted" },
+      ]);
+      check(!fpErr, `D-110 planting fold_penalty rows failed: ${fpErr?.message}`);
+      const b1 = await balances();
+      const refused = await resettleFromWeek(service, week, "torture: must refuse");
+      check(refused.status === "failed", `D-110 re-settle of a week with fold-penalty rows was NOT refused (${JSON.stringify(refused.detail)})`);
+      const { count: revs } = await service.from("ledger_entries").select("id", { count: "exact", head: true }).eq("week_id", w17!.id).eq("kind", "reversal");
+      check((revs ?? 0) === 0, `D-110 refused re-settle still wrote ${revs} reversals`);
+      const { data: ph } = await service.from("weeks").select("phase").eq("id", w17!.id).single();
+      check(ph?.phase === "settled", `D-110 refused re-settle left week ${week} ${ph?.phase}`);
+      const b2 = await balances();
+      check(b2.pot === b1.pot && [...b1.stacks].every(([id, v]) => b2.stacks.get(id) === v), "D-110 refused re-settle moved chips");
+      console.log(`        ⛔ D-110 guard: re-settle of week ${week} refused (it holds fold-penalty rows), nothing written`);
     }
 
     // ── Mid-season correction: re-settle week 5 after week 8 (the cascade) ─────
