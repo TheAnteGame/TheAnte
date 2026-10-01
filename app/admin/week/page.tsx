@@ -181,14 +181,14 @@ export default async function WeekControl() {
         <Section title="Re-settle an earlier week">
           <p className="mb-2 text-sm text-[color:var(--color-text-mid)]">
             Reverses every settlement entry from the chosen week forward (visibly — nothing is deleted) and replays it under
-            the current rules. This week is open, so it is not replayed: recompute its figures afterwards. It posts to
-            Table Talk.
+            the current rules. This week is open, so it is not replayed: recompute its figures afterwards. Recorded in
+            the audit log; nothing is posted to Table Talk (D-039).
           </p>
           <AdminForm
             action={resettle}
             submitLabel="Re-settle cascade"
             danger
-            confirmText="Re-settle? Every entry from the chosen week forward is reversed (visibly, nothing deleted) and replayed. This posts publicly."
+            confirmText="Re-settle? Every entry from the chosen week forward is reversed (visibly, nothing deleted) and replayed. It is recorded in the audit log."
             inline
           >
             <input name="weekNumber" type="number" min={1} max={18} defaultValue={lastSettled.number} className={`${inputCls} nums w-20`} aria-label="From week" />
@@ -215,13 +215,13 @@ export default async function WeekControl() {
           </p>
           <p className="mb-2 text-sm text-[color:var(--color-text-mid)]">
             Re-settlement reverses every entry visibly and replays this week and every later week in order.
-            Locked tickets settle exactly as submitted — the §9 floor absorbs any overdraft. It posts to Table Talk.
+            Locked tickets settle exactly as submitted — the §9 floor absorbs any overdraft. Recorded in the audit log; nothing is posted to Table Talk (D-039).
           </p>
           <AdminForm
             action={resettle}
             submitLabel="Re-settle cascade"
             danger
-            confirmText="Re-settle? Every entry from the chosen week forward is reversed (visibly, nothing deleted) and replayed. This posts publicly."
+            confirmText="Re-settle? Every entry from the chosen week forward is reversed (visibly, nothing deleted) and replayed. It is recorded in the audit log."
             inline
           >
             <input name="weekNumber" type="number" min={1} max={18} defaultValue={week.number} className={`${inputCls} nums w-20`} aria-label="From week" />
