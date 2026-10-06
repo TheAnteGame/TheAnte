@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { phaseOf, tally } from "./tally";
+import { outcomeOf, phaseOf, tally } from "./tally";
 
 const v = (...idx: number[]) => idx.map((option_index) => ({ option_index }));
 
@@ -26,5 +26,19 @@ describe("phaseOf", () => {
     expect(phaseOf(p, new Date("2026-09-21T11:00:00Z"))).toBe("open");
     expect(phaseOf(p, new Date("2026-09-22T12:00:00Z"))).toBe("closed");
     expect(phaseOf({ ...p, closed_at: "2026-09-21T00:00:00Z" }, new Date("2026-09-21T11:00:00Z"))).toBe("closed");
+  });
+});
+
+describe("outcomeOf (D-111)", () => {
+  const opts = ["Keep ante at 10 this season", "Let ante raise as designed"];
+  it("names the winning OPTION with its count and share — the ante poll, 2 to 5", () => {
+    expect(outcomeOf(opts, tally(v(0, 0, 1, 1, 1, 1, 1), 2))).toBe("“Let ante raise as designed” wins, with 5 votes of 7 (71%).");
+  });
+  it("calls a tie a tie", () => {
+    expect(outcomeOf(["A", "B", "C"], tally(v(0, 1, 0, 1, 2), 3))).toBe("A tie: “A” and “B”, with 2 votes each.");
+    expect(outcomeOf(["A", "B", "C"], tally(v(0, 1, 2), 3))).toBe("A tie: “A”, “B” and “C”, with 1 vote each.");
+  });
+  it("says so when nobody voted", () => {
+    expect(outcomeOf(opts, tally([], 2))).toBe("No votes were cast.");
   });
 });

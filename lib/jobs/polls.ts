@@ -2,7 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { DateTime } from "luxon";
 import type { JobOutcome } from "./util";
 import { emailDoc } from "@/lib/notify/templates";
-import { pollEmail } from "@/lib/notify/docs";
+import { pollEmail, pollResultEmail } from "@/lib/notify/docs";
+import { outcomeOf, tally } from "@/lib/polls/tally";
 import { voteLink } from "@/lib/polls/links";
 import { LEAGUE_TZ } from "@/lib/time";
 
@@ -44,6 +45,30 @@ async function mailPoll(db: SupabaseClient, poll: PollRow, kind: "open" | "remin
   return n;
 }
 
+/** The result, to every approved player, once (D-111). Counts and percentages only —
+ *  the votes are read as option indexes and nothing else, so no name can reach the
+ *  email even by accident. Deduped per player per poll in notification_log, so the
+ *  automatic close, an early close from the console, and a re-send are all safe to
+ *  repeat: a player who already has it is skipped. */
+export async function mailPollResults(db: SupabaseClient, poll: Pick<PollRow, "id" | "question" | "options">): Promise<number> {
+  const { data: votes, error } = await db.from("poll_votes").select("option_index").eq("poll_id", poll.id);
+  if (error) throw new Error(`poll votes read failed: ${error.message}`);
+  const t = tally(votes ?? [], poll.options.length);
+  const outcome = outcomeOf(poll.options, t);
+  const rows = poll.options.map((label, i) => ({ label, votes: t.counts[i], percent: t.percents[i] }));
+
+  const { data: players } = await db.from("players").select("id, email, first_name").eq("status", "approved");
+  const eligible = (players ?? []).length;
+  let n = 0;
+  for (const p of players ?? []) {
+    if (!p.email) continue;
+    const doc = pollResultEmail({ firstName: p.first_name ?? "Hey", question: poll.question, rows, total: t.total, eligible, outcome });
+    await emailDoc(db, { id: p.id, email: p.email }, "poll.result", `ANTE: Poll Results — ${poll.question}`, doc, `poll.result:${poll.id}`);
+    n++;
+  }
+  return n;
+}
+
 export async function pollsTick(db: SupabaseClient): Promise<JobOutcome> {
   const now = new Date();
   const nowIso = now.toISOString();
@@ -59,8 +84,12 @@ export async function pollsTick(db: SupabaseClient): Promise<JobOutcome> {
   for (const poll of polls as PollRow[]) {
     const closes = new Date(poll.closes_at);
     if (closes <= now) {
+      // Mail first, then mark closed: if the send dies part-way, the next tick finds
+      // the poll still unclosed and finishes the job, and the per-player dedupe
+      // keeps anyone from getting it twice.
+      const n = await mailPollResults(db, poll);
       await db.from("polls").update({ closed_at: nowIso }).eq("id", poll.id);
-      detail[poll.id] = "closed";
+      detail[poll.id] = `closed, results mailed ${n}`;
       continue;
     }
     if (!poll.opened_notified_at) {

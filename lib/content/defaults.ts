@@ -261,6 +261,7 @@ export const contentDefaults: Record<string, string> = {
   "mail.broadcast.subject": "ANTE: A Word From the Commissioner",
   "mail.poll_open.subject": "ANTE: League Poll",
   "mail.poll_reminder.subject": "ANTE: Poll Closes Soon",
+  "mail.poll_result.subject": "ANTE: Poll Results",
   "mail.support_new.subject": "ANTE: New Message From {player}",
   "mail.support_reply.subject": "ANTE: The Commissioner Answered",
   "mail.backup_reminder.subject": "ANTE: Your League Backup Is Due",

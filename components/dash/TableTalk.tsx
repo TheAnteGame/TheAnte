@@ -179,16 +179,18 @@ export async function TableTalk({
   const unread = countUnread(list, me?.chat_read_at ?? null, playerId);
   const badge = unreadBadge(unread, PAGE);
 
-  // League polls (D-095): anything open, plus anything closed in the last three
-  // days so the result is seen. Read with the service client — the room only ever
-  // receives aggregates and the reader's own vote, never who voted for what.
+  // League polls (D-095): OPEN polls only. A closed poll leaves the room the moment
+  // it closes — on schedule or closed early from the console — and its result goes
+  // to every player by email instead (D-111). Read with the service client — the room
+  // only ever receives aggregates and the reader's own vote, never who voted for what.
   const svc = serviceDb();
   const pollNow = new Date();
   const { data: pollRows } = await svc
     .from("polls")
     .select("id, question, options, opens_at, closes_at, closed_at")
     .lte("opens_at", pollNow.toISOString())
-    .gte("closes_at", new Date(pollNow.getTime() - 3 * 86400_000).toISOString())
+    .gt("closes_at", pollNow.toISOString())
+    .is("closed_at", null)
     .order("closes_at", { ascending: false });
   const polls: PollView[] = [];
   for (const p of pollRows ?? []) {
@@ -197,7 +199,7 @@ export async function TableTalk({
     const t = tally(votes ?? [], options.length);
     const mine = (votes ?? []).find((v) => v.player_id === playerId)?.option_index ?? null;
     const phase = phaseOf(p);
-    if (phase === "upcoming") continue;
+    if (phase !== "open") continue;
     polls.push({
       id: p.id,
       question: p.question,

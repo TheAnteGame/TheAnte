@@ -254,6 +254,37 @@ export function templateDoc(v: {
 
 /** 7. A league poll (D-095): open, or six hours from closing. One button per option,
  *  each a signed vote link for THIS player, so a tap in the inbox is the vote. */
+/** The result, mailed to the league when a poll closes (D-111). Counts, percentages
+ *  and the outcome — never a name. Who voted for what stays in the record, where only
+ *  the commissioner can see it; the room and this email see the league as a whole. */
+export function pollResultEmail(v: {
+  firstName: string;
+  question: string;
+  rows: Array<{ label: string; votes: number; percent: number }>;
+  total: number;
+  eligible: number;
+  outcome: string;
+}): EmailDoc {
+  return {
+    preheader: `Poll closed: ${v.outcome}`,
+    eyebrow: "League poll — closed",
+    headline: "The league has voted",
+    blocks: [
+      { kind: "lead", text: `${v.firstName}, the poll is closed. Here is how the league voted.` },
+      { kind: "note", title: "The question", text: v.question },
+      {
+        kind: "table",
+        caption: "The vote",
+        head: ["Option", "Votes", "Share"],
+        rows: v.rows.map((r) => [r.label, String(r.votes), `${r.percent}%`]),
+      },
+      { kind: "stats", items: [{ label: "Votes cast", value: String(v.total) }, { label: "Players in the league", value: String(v.eligible) }] },
+      { kind: "note", title: "The result", text: v.outcome },
+      { kind: "para", text: "Every vote is anonymous. Nobody sees who picked what — not in the room, and not in this email." },
+    ],
+  };
+}
+
 export function pollEmail(v: {
   kind: "open" | "reminder";
   firstName: string;

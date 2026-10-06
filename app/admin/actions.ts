@@ -1089,10 +1089,40 @@ export async function closePoll(fd: FormData): Promise<ActionResult> {
   const ctx = await getCommissioner();
   if (!ctx) return fail("No seat");
   const id = str(fd, "pollId");
-  const { error } = await ctx.db.from("polls").update({ closed_at: new Date().toISOString() }).eq("id", id).is("closed_at", null);
+  const { data: closed, error } = await ctx.db
+    .from("polls")
+    .update({ closed_at: new Date().toISOString() })
+    .eq("id", id)
+    .is("closed_at", null)
+    .select("id, question, options");
   if (error) return fail(error.message);
-  await writeAudit(ctx, "poll.close", "poll", id, "Closed early by the commissioner");
+  // An early close is a close: the result goes to the league exactly as it would on
+  // schedule (D-111). The scheduled tick never sees this poll again — it only
+  // closes polls that are still open — so the mail has to go from here.
+  let mailed = 0;
+  if (closed && closed.length > 0) {
+    const { mailPollResults } = await import("@/lib/jobs/polls");
+    mailed = await mailPollResults(ctx.db, { ...closed[0], options: closed[0].options as string[] });
+  }
+  await writeAudit(ctx, "poll.close", "poll", id, "Closed early by the commissioner", { after: { resultsMailed: mailed } });
   revalidatePath("/admin/polls");
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+/** D-111 — mail a closed poll's result to the league. For a poll that closed before
+ *  results mail existed, or to finish a send that died part-way. Deduped per player,
+ *  so pressing it twice reaches nobody twice. */
+export async function emailPollResults(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const id = str(fd, "pollId");
+  const { data: poll } = await ctx.db.from("polls").select("id, question, options, closes_at, closed_at").eq("id", id).maybeSingle();
+  if (!poll) return fail("No such poll");
+  if (!poll.closed_at && new Date(poll.closes_at) > new Date()) return fail("This poll is still open — results go out when it closes.");
+  const { mailPollResults } = await import("@/lib/jobs/polls");
+  const mailed = await mailPollResults(ctx.db, { id: poll.id, question: poll.question, options: poll.options as string[] });
+  await writeAudit(ctx, "poll.results_mailed", "poll", id, "Results emailed to the league", { after: { attempted: mailed } });
+  revalidatePath("/admin/polls");
   return { ok: true };
 }

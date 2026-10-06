@@ -4,7 +4,7 @@ import { LEAGUE_TZ } from "@/lib/time";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Section, inputCls, thCls, tdCls } from "@/components/admin/ui";
 import { phaseOf, tally } from "@/lib/polls/tally";
-import { closePoll, createPoll } from "../actions";
+import { closePoll, createPoll, emailPollResults } from "../actions";
 
 // League polls (D-095). Create one here; it appears in Table Talk when it opens,
 // the league is emailed at open and six hours before close, and the tally below
@@ -21,6 +21,20 @@ export default async function PollsAdmin() {
     db.from("players").select("id, first_name, last_name"),
   ]);
   const nameOf = new Map((players ?? []).map((p) => [p.id, `${p.first_name ?? ""} ${(p.last_name ?? "").slice(0, 1)}.`.trim()]));
+  // Who already has each poll's result (D-111): one sent row per player per poll.
+  const { data: resultLog } = await db
+    .from("notification_log")
+    .select("template_key, player_id")
+    .like("template_key", "poll.result:%")
+    .in("status", ["sent", "queued"]);
+  const resultsSent = new Map<string, number>();
+  for (const id of new Set((resultLog ?? []).map((r) => `${r.template_key}|${r.player_id}`))) {
+    const pollId = id.split("|")[0].slice("poll.result:".length);
+    resultsSent.set(pollId, (resultsSent.get(pollId) ?? 0) + 1);
+  }
+  const { count: approvedRaw } = await db.from("players").select("id", { count: "exact", head: true }).eq("status", "approved");
+  const approvedCount = approvedRaw ?? 0;
+
   const fmt = (iso: string | null) => (iso ? DateTime.fromISO(iso).setZone(LEAGUE_TZ).toFormat("ccc LLL d, h:mma") : "—");
 
   return (
@@ -97,9 +111,26 @@ export default async function PollsAdmin() {
                       ))}
                     </tbody>
                   </table>
+                  {phase === "closed" && (
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <span className="text-xs text-[color:var(--color-text-low)]">
+                        Results email: {resultsSent.get(p.id) ?? 0} of {approvedCount} players
+                      </span>
+                      {(resultsSent.get(p.id) ?? 0) < approvedCount && (
+                        <AdminForm
+                          action={emailPollResults}
+                          submitLabel="Email results to the league"
+                          inline
+                          confirmText="Email this poll's result to every player? Counts and percentages only — no names. Anyone who already has it is skipped."
+                        >
+                          <input type="hidden" name="pollId" value={p.id} />
+                        </AdminForm>
+                      )}
+                    </div>
+                  )}
                   {phase === "open" && (
                     <div className="mt-3">
-                      <AdminForm action={closePoll} submitLabel="Close now" danger inline confirmText="Close this poll now? Votes stop and the room sees the result.">
+                      <AdminForm action={closePoll} submitLabel="Close now" danger inline confirmText="Close this poll now? Votes stop, it leaves the room, and every player is emailed the result.">
                         <input type="hidden" name="pollId" value={p.id} />
                       </AdminForm>
                     </div>

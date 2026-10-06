@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-06 (fifty-eighth pass):** **Poll results by email (D-111).** A closed poll
+> leaves Table Talk at once and every player is emailed the counts, shares and outcome —
+> never a name. Early closes mail too; Polls has a re-send for older polls. Week 4
+> settled itself Monday night under the D-110 retry code; Week 5 opened at the 15 ante
+> the league voted for (5–2).
+
 > **2026-09-29 (fifty-seventh pass):** **Week 3 settlement failure repaired; fold
 > penalty withdrawn (D-110, rulebook v1.5).** Settlement crashed Monday night on an
 > unapplied migration (0030); nothing retried, Week 4 opened on unsettled stacks, and

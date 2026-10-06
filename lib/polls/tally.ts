@@ -33,3 +33,20 @@ export function phaseOf(p: { opens_at: string; closes_at: string; closed_at: str
   if (new Date(p.opens_at) > now) return "upcoming";
   return "open";
 }
+
+/** The one-line result for the closing email (D-111). Counts only — a poll's result
+ *  never carries a name. A tie is called a tie rather than handed to whichever option
+ *  sorts first; no votes says so plainly. */
+export function outcomeOf(options: string[], t: Tally): string {
+  if (t.total === 0) return "No votes were cast.";
+  const top = Math.max(...t.counts);
+  const leaders = options.filter((_, i) => t.counts[i] === top);
+  const votes = (n: number) => `${n} vote${n === 1 ? "" : "s"}`;
+  if (leaders.length === 1) {
+    const i = t.counts.indexOf(top);
+    return `“${options[i]}” wins, with ${votes(top)} of ${t.total} (${t.percents[i]}%).`;
+  }
+  const names = leaders.map((l) => `“${l}”`);
+  const list = names.length === 2 ? names.join(" and ") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  return `A tie: ${list}, with ${votes(top)} each.`;
+}

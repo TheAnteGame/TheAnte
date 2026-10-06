@@ -3149,3 +3149,30 @@ and none touching a chip in production:
   Seventeen other places read "the newest week"; left alone, because the D-110
   guard makes that the only unsettled week again. And CI's production schema job has
   never run — `SCHEMA_CHECK_KEY` is not a repo secret — which is the owner's call.
+
+## D-111 — A closed poll leaves the room and its result goes out by email (2026-10-06)
+
+The owner's ante poll closed on 2026-10-04 and was still sitting in Table Talk two
+days later: D-095 kept a closed poll in the room for three days "so the result is
+seen", and nothing ever told the league the result.
+
+**Now:** the room shows OPEN polls only — a poll leaves the moment it closes, on
+schedule or early from the console. Closing mails every approved player the result:
+the question, each option's votes and share, votes cast, players in the league, and
+the outcome in one line (`outcomeOf`: the winning option with its count and share, a
+tie called a tie, "No votes were cast" when none were). **No names, ever** — the job
+reads votes as option indexes only, so a name cannot reach the email even by
+mistake; each email greets only its own reader. Proven locally: the real job, a
+seeded poll, no results mail while open, results to every player with an address on
+close, no other player's name in any body, no duplicates on a second tick.
+
+The tick mails before it marks the poll closed, so a send that dies part-way is
+finished by the next tick; per-player dedupe (`poll.result:<id>` in
+notification_log) keeps anyone from getting it twice. An early close from the
+console mails too (the tick never revisits a closed poll). For a poll that closed
+before this existed, Polls shows "Email results to the league" with an "N of M
+players" count; it skips anyone who already has it.
+
+Unchanged and deliberate: the console's Polls page still shows the commissioner who
+voted for what (D-095's record). Noticed, not changed: open/reminder poll mail logs
+as `poll:<id>:open`, which the Notifications page's prefix match cannot label.
