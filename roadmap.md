@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-06 (fifty-ninth pass):** **FAV / DOG on the slip (D-112).** The spread and
+> moneyline numbers under each team are replaced by FAV, DOG or EVEN — players read the
+> numbers as a line to beat, and ANTE settles straight-up.
+
 > **2026-10-06 (fifty-eighth pass):** **Poll results by email (D-111).** A closed poll
 > leaves Table Talk at once and every player is emailed the counts, shares and outcome —
 > never a name. Early closes mail too; Polls has a re-send for older polls. Week 4

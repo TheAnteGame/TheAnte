@@ -192,7 +192,7 @@ Exactly one thing is public before the reveal, and it is not a pick: the list of
 
 This is what closes the last door. Hiding the picks isn't enough if the room can be read off the scoreboard.
 
-You are betting blind on the room. What you have is the point spread and your personal knowledge of these specific human beings. You know who takes the prime-time favorite every single week. That's the read, and it's the entire skill of the game.
+You are betting blind on the room. What you have is who the sportsbooks favor — every team is marked **FAV** or **DOG**, and there is no spread to beat — and your personal knowledge of these specific human beings. You know who takes the prime-time favorite every single week. That's the read, and it's the entire skill of the game.
 
 ### The reveal fires the instant the last ticket lands
 
@@ -406,7 +406,7 @@ Every one of these came up while stress-testing. None is exciting. All of them a
 
 ### Order of operations, every week
 
-1. **Tuesday, 6:00am MST.** The new slate opens and the point spreads are frozen as shown. **The median is measured now**, before anything moves.
+1. **Tuesday, 6:00am MST.** The new slate opens and each game's favorite and underdog are frozen as shown. **The median is measured now**, before anything moves.
 2. The ante comes out of every stack and goes into the Pot. Stacks below one full ante skip it (§9).
 3. Players submit, blind. **Each ticket locks on submission, and nothing visible changes** — no stack, no Pot, no count (§6).
 4. **The reveal fires when the last ticket lands, or Thursday noon MST — whichever comes first.** Anyone who hasn't submitted is folded. Everything that was waiting posts at once, including any shove's ante refund (§8).

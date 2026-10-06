@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { leanFor } from "@/lib/board/lean";
 import { BoardHeader } from "./BoardHeader";
 import { useRouter } from "next/navigation";
 import { submitWager } from "@/app/actions/wager";
@@ -276,20 +277,10 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                 : undefined
               : picks.get(g.id);
             const rung = pick ? rungs.findIndex((r) => r >= pick.chips) + 1 : 0;
-            // Positive spread = home favoured by that many (ANTE-TECH §3.1). Both
-            // numbers are frozen sportsbook context: neither settles anything here.
-            const signed = (n: number) => (n < 0 ? `\u2212${Math.abs(n)}` : `+${n}`);
-            const spreadFor = (side: Side) => {
-              if (g.spread === null) return null;
-              if (g.spread === 0) return "PK";
-              const favourite: Side = g.spread > 0 ? "home" : "away";
-              const magnitude = Math.abs(g.spread);
-              return side === favourite ? `\u2212${magnitude}` : `+${magnitude}`;
-            };
-            const moneyFor = (side: Side) => {
-              const n = side === "away" ? g.awayMoneyline : g.homeMoneyline;
-              return n === null || n === 0 ? null : signed(n);
-            };
+            // FAV / DOG, not numbers (D-112). Players read a spread as a line to beat
+            // and could not decode the signs; ANTE settles straight-up, so the only
+            // thing worth saying is who the books favour.
+            const lean = leanFor(g.spread, g.awayMoneyline, g.homeMoneyline);
 
             const sideBtn = (side: Side, team: string) => {
               const active = pick?.side === side;
@@ -321,16 +312,14 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
                   }`}
                 >
                   <span className="leading-tight">{team}</span>
-                  {(spreadFor(side) || moneyFor(side)) && (
+                  {lean && (
                     <span
                       title={copy.spreadNote}
-                      className={`nums flex items-center gap-1.5 text-[12px] font-normal ${
+                      className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
                         active ? "text-[color:var(--color-ink)]/55" : "text-[color:var(--color-text-low)]"
                       }`}
                     >
-                      {spreadFor(side) && <span>{spreadFor(side)}</span>}
-                      {spreadFor(side) && moneyFor(side) && <span aria-hidden>·</span>}
-                      {moneyFor(side) && <span>{moneyFor(side)}</span>}
+                      {lean[side]}
                     </span>
                   )}
                   {active && !shoveMode && (

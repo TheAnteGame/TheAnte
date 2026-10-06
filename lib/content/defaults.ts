@@ -224,7 +224,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.shove_commit_note": "You'll push {stake}, including the {ante} ante coming back at the reveal.",
   "dash.wager.shove_dark_note": "Nobody will know until the reveal. Not even the Commissioner.",
   "dash.wager.spread_note":
-    "The spread and the moneyline come from the sportsbooks and are frozen when the slate opens. Neither one pays here: bets settle straight-up, and what you win is set by how the room split (rulebook \u00a75).",
+    "FAV and DOG are the sportsbooks' favorite and underdog, set when the slate opens. There is no spread to beat: you are picking who wins outright, and what you win is set by how the room split (rulebook \u00a75).",
   "dash.wager.submit_tooltip":
     "Locks your picks in for the week. You'll get one confirmation first. After that there are no edits \u2014 not by you, not by the Commissioner.",
   // Arming the shove (D-040): an explainer gate BEFORE shove mode, distinct from the

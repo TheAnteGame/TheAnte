@@ -3176,3 +3176,21 @@ players" count; it skips anyone who already has it.
 Unchanged and deliberate: the console's Polls page still shows the commissioner who
 voted for what (D-095's record). Noticed, not changed: open/reminder poll mail logs
 as `poll:<id>:open`, which the Notifications page's prefix match cannot label.
+
+## D-112 — FAV and DOG instead of the spread and moneyline (2026-10-06)
+
+Player feedback: the numbers under each team were read two wrong ways. Players who
+bet sports thought they had to beat the spread; players who don't could not tell
+whether −3 or +3 was the favorite. ANTE settles straight-up (§5) and pays by how the
+room split — neither number ever touched a chip — so the slip now says only who the
+books favor: **FAV** or **DOG** under each team, **EVEN** on a true coin-flip, and
+nothing when the slate has no odds yet.
+
+`lib/board/lean.ts` decides: the spread first (positive = home favored, ANTE-TECH
+§3.1), the moneyline when the spread is zero or missing (the lower number is the
+favorite). Tested on every case; the bet slip and the tutorial's practice board both
+use it, checked in the browser on the tutorial (the live-slip preview harness can no
+longer mint a local JWT on the current Supabase CLI — noted, not fixed). The slip's
+note and two descriptive rulebook sentences (§6, §14) now say FAV/DOG and that there
+is no spread to beat. The spread and moneylines are still frozen and stored, and the
+console's Week page still shows the commissioner the raw spread.

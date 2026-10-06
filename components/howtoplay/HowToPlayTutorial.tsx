@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { leanFor } from "@/lib/board/lean";
 import { ChipStack, PokerChip } from "@/components/chip/PokerChip";
 
 // The how-to-play gate's tutorial, rebuilt to the owner's 2026-08-22 wireframes after
@@ -152,12 +153,8 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
       {MOCK_GAMES.map((g) => {
         const pick = picks.get(g.id);
         const rung = pick ? RUNGS.findIndex((r) => r >= pick.chips) + 1 : 0;
-        const spreadFor = (side: Side) => {
-          if (g.spread === 0) return "PK";
-          const fav: Side = g.spread > 0 ? "home" : "away";
-          const mag = Math.abs(g.spread);
-          return side === fav ? `−${mag}` : `+${mag}`;
-        };
+        // The same FAV / DOG the real slip shows (D-112).
+        const lean = leanFor(g.spread);
         const sideBtn = (side: Side, team: string) => {
           const active = pick?.side === side;
           return (
@@ -180,11 +177,13 @@ export function HowToPlayTutorial({ copy, acceptAction }: Props) {
               }`}
             >
               <span className="leading-tight">{team}</span>
-              <span
-                className={`nums text-[12px] font-normal ${active ? "text-[color:var(--color-ink)]/55" : "text-[color:var(--color-text-low)]"}`}
-              >
-                {spreadFor(side)}
-              </span>
+              {lean && (
+                <span
+                  className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${active ? "text-[color:var(--color-ink)]/55" : "text-[color:var(--color-text-low)]"}`}
+                >
+                  {lean[side]}
+                </span>
+              )}
               {active && (
                 <span className="flex items-center gap-2">
                   <ChipStack tone="purple" total={pick!.chips} count={rung} size={38} animated={!reducedMotion && chipBump === g.id} />
