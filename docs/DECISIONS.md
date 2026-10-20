@@ -3260,3 +3260,17 @@ included, so a player can see where they sit against both the leaders and the
 typical player. Against the real league: win rate 58%, bets with the crowd 54%, 7.1
 games a week, average bet 17, profit +8 per 100 — the top four bet with the crowd
 about as often (55%) but win more (63%) and keep more (+18 per 100).
+
+## D-115 — "Underdogs a week" on the play-style card (2026-10-20)
+
+Owner's request: a row between "Games a week" and "Average bet" for how often you
+pick the underdog — as an average count, not a percentage ("1.8 a week" says what to
+do; "26%" has to be multiplied out). An underdog is the team marked DOG on the slip:
+the sportsbooks' underdog, decided by the same `leanFor` the board uses (D-112) — not
+"the side fewer players took", which "Bets with the crowd" already covers. EVEN games
+and games without odds count neither way; shoves are left out, like every habit.
+
+It is also a habit the tip can point at. Against the real league after six weeks it
+ranges 1.2–4.8 a week; top four 3.0, league 2.7. Worth knowing when reading it: the
+top four span almost the whole range (the leader backs the fewest), so the average is
+one input, not a recipe.

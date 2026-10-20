@@ -3,6 +3,7 @@ import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chunk, fetchAllRows } from "@/lib/db/fetchAll";
 import type { PlayerProfile } from "./playStyle";
+import { leanFor } from "@/lib/board/lean";
 
 // Reads the history the play-style card is computed from (D-113).
 //
@@ -25,8 +26,22 @@ export const gatherPlayProfiles = cache(async (db: SupabaseClient): Promise<Play
     fetchAllRows<{ id: string; player_id: string; week_id: string; is_fold: boolean; is_shove: boolean }>((f, t) =>
       db.from("tickets").select("id, player_id, week_id, is_fold, is_shove").in("week_id", weekIds).order("id").range(f, t),
     ),
-    fetchAllRows<{ id: string; week_id: string; away_team: string; home_team: string; on_slate: boolean }>((f, t) =>
-      db.from("games").select("id, week_id, away_team, home_team, on_slate").in("week_id", weekIds).order("id").range(f, t),
+    fetchAllRows<{
+      id: string;
+      week_id: string;
+      away_team: string;
+      home_team: string;
+      on_slate: boolean;
+      spread_frozen: number | null;
+      away_moneyline: number | null;
+      home_moneyline: number | null;
+    }>((f, t) =>
+      db
+        .from("games")
+        .select("id, week_id, away_team, home_team, on_slate, spread_frozen, away_moneyline, home_moneyline")
+        .in("week_id", weekIds)
+        .order("id")
+        .range(f, t),
     ),
     fetchAllRows<{ player_id: string | null; amount: number }>((f, t) =>
       db.from("ledger_entries").select("player_id, amount").in("week_id", weekIds).order("id").range(f, t),
@@ -88,6 +103,18 @@ export const gatherPlayProfiles = cache(async (db: SupabaseClient): Promise<Play
       net: decided.reduce((s, b) => s + (b.result === "won" ? Number(b.payout ?? 0) : -Number(b.chips)), 0),
       homeChances,
       homeBacked,
+      // The team marked DOG on the slip (D-115) — the books' underdog, the same call
+      // leanFor makes for the board. EVEN games and games with no odds count neither way.
+      dogs: mine.filter((b) => {
+        const g = gameById.get(b.game_id);
+        if (!g) return false;
+        const lean = leanFor(
+          g.spread_frozen === null ? null : Number(g.spread_frozen),
+          g.away_moneyline === null ? null : Number(g.away_moneyline),
+          g.home_moneyline === null ? null : Number(g.home_moneyline),
+        );
+        return lean?.[b.side as "away" | "home"] === "DOG";
+      }).length,
       result: result.get(p.id) ?? 0,
     };
   });

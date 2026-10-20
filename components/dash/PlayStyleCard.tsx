@@ -39,6 +39,7 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
     { label: await t("row.win"), key: "winPct", fmt: (n) => `${n}%` },
     { label: await t("row.crowd"), key: "crowdPct", fmt: (n) => `${n}%` },
     { label: await t("row.games"), key: "gamesPerWeek", fmt: (n) => n.toFixed(1) },
+    { label: await t("row.dogs"), key: "dogsPerWeek", fmt: (n) => n.toFixed(1) },
     { label: await t("row.chips"), key: "chipsPerBet", fmt: (n) => String(n) },
     { label: await t("row.net"), key: "netPer100", fmt: (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0") },
   ];
@@ -48,6 +49,7 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
   else if (hint?.metric === "crowdPct")
     hintText = await t(hint.top > hint.me ? "hint.crowd_more" : "hint.crowd_less", { top: hint.top, me: hint.me });
   else if (hint?.metric === "gamesPerWeek") hintText = await t("hint.games", { top: hint.top.toFixed(1), me: hint.me.toFixed(1) });
+  else if (hint?.metric === "dogsPerWeek") hintText = await t("hint.dogs", { top: hint.top.toFixed(1), me: hint.me.toFixed(1) });
   else if (hint?.metric === "chipsPerBet") hintText = await t("hint.chips", { top: hint.top, me: hint.me });
 
   const [name, blurb, youLabel, topLabel, leagueLabel, note] = await Promise.all([

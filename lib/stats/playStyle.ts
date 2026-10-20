@@ -30,6 +30,8 @@ export interface PlayerProfile {
    *  often they backed it. */
   homeChances: number;
   homeBacked: number;
+  /** Bets on the sportsbooks' underdog — the team marked DOG on the slip (D-115). */
+  dogs: number;
   /** Total result over settled weeks, Pots included — the ranking for "top players". */
   result: number;
 }
@@ -41,6 +43,9 @@ export interface StyleNumbers {
   crowdPct: number;
   lonelyPct: number;
   gamesPerWeek: number;
+  /** Underdogs backed per week played (D-115). A count, not a share: "1.8 a week"
+   *  says what to do; "26%" has to be multiplied out first. */
+  dogsPerWeek: number;
   chipsPerBet: number;
   /** Chips netted per 100 chips bet on decided games — "for every 100 you bet". */
   netPer100: number;
@@ -76,6 +81,7 @@ export function numbersOf(p: PlayerProfile): StyleNumbers {
     crowdPct: pct(p.crowd, p.decided),
     lonelyPct: pct(p.lonely, p.decided),
     gamesPerWeek: p.liveWeeks > 0 ? Math.round((p.bets / p.liveWeeks) * 10) / 10 : 0,
+    dogsPerWeek: p.liveWeeks > 0 ? Math.round((p.dogs / p.liveWeeks) * 10) / 10 : 0,
     chipsPerBet: p.bets > 0 ? Math.round(p.chipsBet / p.bets) : 0,
     netPer100: p.chipsDecided > 0 ? Math.round((p.net / p.chipsDecided) * 100) : 0,
   };
@@ -126,6 +132,7 @@ function average(rows: StyleNumbers[]): StyleNumbers {
     crowdPct: avg("crowdPct", 0),
     lonelyPct: avg("lonelyPct", 0),
     gamesPerWeek: avg("gamesPerWeek", 1),
+    dogsPerWeek: avg("dogsPerWeek", 1),
     chipsPerBet: avg("chipsPerBet", 0),
     netPer100: avg("netPer100", 0),
   };
@@ -154,7 +161,7 @@ export function playStyleReport(viewerId: string, profiles: PlayerProfile[]): Pl
       const vals = all.map((r) => r[k]);
       return Math.max(...vals) - Math.min(...vals) || 1;
     };
-    const habits: Array<keyof StyleNumbers> = ["crowdPct", "gamesPerWeek", "chipsPerBet"];
+    const habits: Array<keyof StyleNumbers> = ["crowdPct", "gamesPerWeek", "dogsPerWeek", "chipsPerBet"];
     const gaps = habits.map((k) => ({ k, size: Math.abs(mine[k] - top[k]) / spread(k) }));
     const biggest = gaps.sort((a, b) => b.size - a.size)[0];
     if (biggest && biggest.size >= 0.2) hint = { metric: biggest.k, me: mine[biggest.k], top: top[biggest.k] };
