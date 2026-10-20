@@ -75,18 +75,18 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
         <thead>
           <tr className="border-b border-[color:var(--color-border)]">
             <th className="px-4 py-1.5 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]" />
-            <th className="px-2 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{youLabel}</th>
-            <th className="px-2 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{topLabel}</th>
-            <th className="px-4 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{leagueLabel}</th>
+            <th className="w-12 px-1.5 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--color-text-low)]">{youLabel}</th>
+            <th className="w-12 px-1.5 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--color-text-low)]">{topLabel}</th>
+            <th className="w-12 py-1.5 pl-1.5 pr-4 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--color-text-low)]">{leagueLabel}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.key} className="border-b border-[color:var(--color-border)] last:border-b-0">
               <td className="px-4 py-1.5 text-[color:var(--color-text-mid)]">{r.label}</td>
-              <td className="nums px-2 py-1.5 text-right font-semibold text-[color:var(--color-text-hi)]">{r.fmt(me[r.key])}</td>
-              <td className="nums px-2 py-1.5 text-right text-[color:var(--color-text-mid)]">{r.fmt(top[r.key])}</td>
-              <td className="nums px-4 py-1.5 text-right text-[color:var(--color-text-low)]">{r.fmt(league[r.key])}</td>
+              <td className="nums px-1.5 py-1.5 text-right font-semibold text-[color:var(--color-text-hi)]">{r.fmt(me[r.key])}</td>
+              <td className="nums px-1.5 py-1.5 text-right text-[color:var(--color-text-mid)]">{r.fmt(top[r.key])}</td>
+              <td className="nums py-1.5 pl-1.5 pr-4 text-right text-[color:var(--color-text-low)]">{r.fmt(league[r.key])}</td>
             </tr>
           ))}
         </tbody>
