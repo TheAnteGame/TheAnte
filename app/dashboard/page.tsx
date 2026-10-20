@@ -15,6 +15,7 @@ import { NewsBox } from "@/components/dash/NewsBox";
 import { PromoBox } from "@/components/dash/PromoBox";
 import { SupportBox } from "@/components/dash/SupportBox";
 import { LeagueStats } from "@/components/dash/LeagueStats";
+import { PlayStyleCard } from "@/components/dash/PlayStyleCard";
 import { PollRefresh } from "@/components/wager/PollRefresh";
 
 // The dashboard (ANTE-PLAYER §4): header, ticker, stakes band, then two columns —
@@ -164,6 +165,9 @@ export default async function Dashboard() {
             {/* Owner's order: the promo rides with the chat at the top, and simply is
                 not rendered when no heading is set, so nothing collapses to a gap.
                 This puts promo above news, where ANTE-PLAYER §4 had news first. */}
+            {/* Your play style takes the top of the column (D-113); League Stats moves
+                below the promo rather than going away. */}
+            <PlayStyleCard playerId={playerId} />
             <PromoBox />
             <LeagueStats />
             <NewsBox playerId={playerId} />

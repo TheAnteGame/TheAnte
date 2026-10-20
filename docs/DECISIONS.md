@@ -3194,3 +3194,37 @@ longer mint a local JWT on the current Supabase CLI — noted, not fixed). The s
 note and two descriptive rulebook sentences (§6, §14) now say FAV/DOG and that there
 is no spread to beat. The spread and moneylines are still frozen and stored, and the
 console's Week page still shows the commissioner the raw spread.
+
+## D-113 — Your play style, top of the right column (2026-10-20)
+
+The owner wanted the top-right space for strategy rather than League Stats (which
+moves below the promo). The card tells each player what kind of player they are,
+how they compare with the top four, and the one habit where they differ most.
+
+**Types are relative to the league, never fixed thresholds.** Each player's habits —
+share of bets on the crowd side, share on the lonely side, games a week, chips a bet,
+and how often they back their own favorite team — are placed among everyone else's.
+The strongest one names them: **Chalk Eater**, **Lone Wolf**, **Spreader** (many
+games, not big bets), **Sniper** (big bets, not many games), **Homer** (own team in
+≥80% of at least five chances), or **Balancer** when nothing is past the league
+middle — so a middle-of-the-road player is never told they are a lone wolf. Against
+the real league after six weeks it splits 3 / 3 / 2 / 3 / 2 / 1.
+
+**Why relative:** the obvious rule — "contrarians win" — is false in this league so
+far. The leader takes the crowd side 61% of the time at a 68% hit rate; the most
+contrarian player is last. The comparison is therefore computed from whoever is on
+top, so the advice follows the season rather than an opinion.
+
+**Top players** are the top four by result over SETTLED weeks, Pots included — not by
+live stack, which dips all weekend with stakes out (the D-110 board bug). They are
+shown only as averages; four is the smallest group that cannot be read as one person
+in a fourteen-seat league. The hint is the habit (crowd share, games, chips — never
+an outcome) with the biggest gap from the top group relative to how much it varies
+across the league, and only when that gap is real.
+
+Private and blackout-safe: rendered for the viewer alone, names nobody, settled weeks
+only. Shove tickets are left out of habits (one whole-stack bet would make anyone a
+sniper for the season) but count in the ranking. A data failure shows the empty card
+rather than breaking the dashboard. `lib/stats/playStyle.ts` (tested on the anonymised
+real league), `lib/stats/gatherStyle.ts`, `components/dash/PlayStyleCard.tsx`; every
+word is console-editable under `dash.style.*`.

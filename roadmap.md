@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-20 (sixtieth pass):** **Your play style (D-113).** Top of the right column:
+> your type (Chalk Eater, Lone Wolf, Spreader, Sniper, Homer, Balancer), you vs the top
+> four, and the one habit where you differ most. League Stats moved below the promo.
+> Predictor deferred to mid-season (owner).
+
 > **2026-10-06 (fifty-ninth pass):** **FAV / DOG on the slip (D-112).** The spread and
 > moneyline numbers under each team are replaced by FAV, DOG or EVEN — players read the
 > numbers as a line to beat, and ANTE settles straight-up.
