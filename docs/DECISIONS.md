@@ -3253,3 +3253,10 @@ now ignored; `players.news_source_id` stays in the schema, unused, in case the c
 moves to the profile. "It never rotates" was the rotation always STARTING on the
 outlet that published most recently; it now starts at a different headline each page
 load, frozen at mount like the list so the five-second poll cannot move it.
+
+**Addendum (same day) — a League column.** The play-style table now reads You · Top 4
+· League. League is the average of every player with enough history, the top four
+included, so a player can see where they sit against both the leaders and the
+typical player. Against the real league: win rate 58%, bets with the crowd 54%, 7.1
+games a week, average bet 17, profit +8 per 100 — the top four bet with the crowd
+about as often (55%) but win more (63%) and keep more (+18 per 100).

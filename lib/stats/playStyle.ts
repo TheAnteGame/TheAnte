@@ -50,6 +50,9 @@ export interface PlayStyleReport {
   style: PlayStyle;
   me: StyleNumbers;
   top: StyleNumbers;
+  /** The whole league — every player with enough history, the top group included —
+   *  as averages, so "you" can be read against both the leaders and the typical player. */
+  league: StyleNumbers;
   /** True when the viewer is one of the top players. */
   meIsTop: boolean;
   /** How many players the top group is. */
@@ -157,5 +160,5 @@ export function playStyleReport(viewerId: string, profiles: PlayerProfile[]): Pl
     if (biggest && biggest.size >= 0.2) hint = { metric: biggest.k, me: mine[biggest.k], top: top[biggest.k] };
   }
 
-  return { style: styleOf(me, field), me: mine, top, meIsTop, topSize: TOP_SIZE, hint };
+  return { style: styleOf(me, field), me: mine, top, league: average(field.map(numbersOf)), meIsTop, topSize: TOP_SIZE, hint };
 }

@@ -34,7 +34,7 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
     );
   }
 
-  const { style, me, top, meIsTop, topSize, hint } = report;
+  const { style, me, top, league, meIsTop, topSize, hint } = report;
   const rows: Array<{ label: string; key: keyof StyleNumbers; fmt: (n: number) => string }> = [
     { label: await t("row.win"), key: "winPct", fmt: (n) => `${n}%` },
     { label: await t("row.crowd"), key: "crowdPct", fmt: (n) => `${n}%` },
@@ -50,12 +50,13 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
   else if (hint?.metric === "gamesPerWeek") hintText = await t("hint.games", { top: hint.top.toFixed(1), me: hint.me.toFixed(1) });
   else if (hint?.metric === "chipsPerBet") hintText = await t("hint.chips", { top: hint.top, me: hint.me });
 
-  const [name, blurb, youLabel, topLabel, note] = await Promise.all([
+  const [name, blurb, youLabel, topLabel, leagueLabel, note] = await Promise.all([
     t(`name.${style}`),
     t(`desc.${style}`),
     t("you"),
     t("top", { n: topSize }),
-    t("note"),
+    t("league"),
+    t("note", { n: topSize }),
   ]);
 
   return (
@@ -75,7 +76,8 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
           <tr className="border-b border-[color:var(--color-border)]">
             <th className="px-4 py-1.5 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]" />
             <th className="px-2 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{youLabel}</th>
-            <th className="px-4 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{topLabel}</th>
+            <th className="px-2 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{topLabel}</th>
+            <th className="px-4 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-text-low)]">{leagueLabel}</th>
           </tr>
         </thead>
         <tbody>
@@ -83,7 +85,8 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
             <tr key={r.key} className="border-b border-[color:var(--color-border)] last:border-b-0">
               <td className="px-4 py-1.5 text-[color:var(--color-text-mid)]">{r.label}</td>
               <td className="nums px-2 py-1.5 text-right font-semibold text-[color:var(--color-text-hi)]">{r.fmt(me[r.key])}</td>
-              <td className="nums px-4 py-1.5 text-right text-[color:var(--color-text-mid)]">{r.fmt(top[r.key])}</td>
+              <td className="nums px-2 py-1.5 text-right text-[color:var(--color-text-mid)]">{r.fmt(top[r.key])}</td>
+              <td className="nums px-4 py-1.5 text-right text-[color:var(--color-text-low)]">{r.fmt(league[r.key])}</td>
             </tr>
           ))}
         </tbody>

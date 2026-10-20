@@ -33,6 +33,12 @@ describe("play style (D-113)", () => {
     expect(r.top).toEqual({ winPct: 63, crowdPct: 55, lonelyPct: 19, gamesPerWeek: 7.6, chipsPerBet: 16, netPer100: 18 });
   });
 
+  it("the league column averages everyone with enough history, top group included", () => {
+    const r = playStyleReport("p14", LEAGUE)!;
+    expect(r.league).toEqual(playStyleReport("p01", LEAGUE)!.league);
+    expect(r.league).toEqual({ winPct: 58, crowdPct: 54, lonelyPct: 21, gamesPerWeek: 7.1, chipsPerBet: 17, netPer100: 8 });
+  });
+
   it("a top player gets no 'do it like them' hint", () => {
     const r = playStyleReport("p01", LEAGUE)!;
     expect(r.meIsTop).toBe(true);
