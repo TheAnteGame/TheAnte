@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-20 (sixty-second pass):** **Tile edges fixed, plain tooltips, how the top 4
+> win (D-116).** Chamfer clip no longer shaves borders; band tooltips rewritten; play-style
+> card gets a "how the top 4 are winning" line and a no-guarantee note. Use the
+> `ante-dev-local` launch profile for previews — `ante-dev` reads PRODUCTION.
+
 > **2026-10-20 (sixty-first pass):** **Right column, plainer (D-114).** Play-style rows
 > reworded; League Stats restyled with Biggest climb, Crowd got burned, Hot streak; the
 > news box loses its source menu and opens on a different outlet each load.

@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { gatherLeagueStats } from "@/lib/stats/gather";
@@ -17,8 +18,9 @@ const ordinal = (n: number) => {
   return `${n}${tail}`;
 };
 
-export async function LeagueStats() {
-  const db = createUserClient();
+/** dbOverride: the local preview harness only (see PlayStyleCard). */
+export async function LeagueStats({ dbOverride }: { dbOverride?: SupabaseClient } = {}) {
+  const db = dbOverride ?? createUserClient();
   const [heading, emptyMsg, climbLabel, priceLabel, burnedLabel, burnedWho, streakLabel, streakValue, streakOne, stats] = await Promise.all([
     getContent("dash.stats.heading"),
     getContent("dash.stats.empty"),

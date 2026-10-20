@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { gatherPlayProfiles } from "@/lib/stats/gatherStyle";
@@ -10,12 +11,14 @@ import { playStyleReport, type StyleNumbers } from "@/lib/stats/playStyle";
 // reports the top group only as averages. Built from SETTLED weeks, so it cannot move
 // between the ante and the payout (§6).
 
-export async function PlayStyleCard({ playerId }: { playerId: string }) {
+/** dbOverride exists for the local preview harness only (same as WagerArea's): it
+ *  renders the card as a seeded player without a Clerk session. */
+export async function PlayStyleCard({ playerId, dbOverride }: { playerId: string; dbOverride?: SupabaseClient }) {
   // A read failure shows the empty card, never a broken dashboard: this box is a
   // nice-to-have beside the board, and must not be able to take the board down.
   let report: ReturnType<typeof playStyleReport> = null;
   try {
-    report = playStyleReport(playerId, await gatherPlayProfiles(createUserClient()));
+    report = playStyleReport(playerId, await gatherPlayProfiles(dbOverride ?? createUserClient()));
   } catch (e) {
     console.error("play style card:", e);
   }
@@ -51,6 +54,18 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
   else if (hint?.metric === "gamesPerWeek") hintText = await t("hint.games", { top: hint.top.toFixed(1), me: hint.me.toFixed(1) });
   else if (hint?.metric === "dogsPerWeek") hintText = await t("hint.dogs", { top: hint.top.toFixed(1), me: hint.me.toFixed(1) });
   else if (hint?.metric === "chipsPerBet") hintText = await t("hint.chips", { top: hint.top, me: hint.me });
+
+  // How to win, for everyone (D-116): the top group's habits as one plain sentence, in
+  // whole numbers a player can actually do. Same line for every reader — it is a
+  // summary of the Top column, not advice aimed at anyone.
+  const games = Math.max(1, Math.round(top.gamesPerWeek));
+  const dogs = Math.round(top.dogsPerWeek);
+  const recipe = await t("recipe", {
+    n: topSize,
+    games,
+    dogs: dogs === 1 ? await t("recipe.dog_one") : await t("recipe.dogs", { dogs }),
+    chips: top.chipsPerBet,
+  });
 
   const [name, blurb, youLabel, topLabel, leagueLabel, note] = await Promise.all([
     t(`name.${style}`),
@@ -94,7 +109,10 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
         </tbody>
       </table>
 
-      {hintText && <p className="border-t border-[color:var(--color-border)] px-4 py-3 text-sm text-[color:var(--color-text-hi)]">{hintText}</p>}
+      {hintText && <p className="border-t border-[color:var(--color-border)] px-4 pt-3 text-sm text-[color:var(--color-text-hi)]">{hintText}</p>}
+      <p className={`px-4 pb-3 text-sm font-semibold text-[color:var(--color-gold)] ${hintText ? "pt-2" : "border-t border-[color:var(--color-border)] pt-3"}`}>
+        {recipe}
+      </p>
       <p className="px-4 pb-3 text-[11px] text-[color:var(--color-text-low)]">{note}</p>
     </section>
   );

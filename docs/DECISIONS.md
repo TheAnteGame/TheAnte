@@ -3274,3 +3274,30 @@ It is also a habit the tip can point at. Against the real league after six weeks
 ranges 1.2–4.8 a week; top four 3.0, league 2.7. Worth knowing when reading it: the
 top four span almost the whole range (the leader backs the fewest), so the average is
 one input, not a recipe.
+
+## D-116 — Tile edges, plain-English band tips, and "how the top 4 are winning" (2026-10-20)
+
+**Missing tile edges.** Team tiles and the shove button lost their bottom or right
+1px line at some window widths. Cause: `.chamfer` cut corners with a clip-path that
+ran EXACTLY along the box edge, so a box landing between whole pixels had its border
+shaved off. The straight sides of all three chamfer clips now sit 1px outside the box;
+the corners are cut exactly as before. One CSS rule, every chamfered element (≈25
+uses) — checked locally at 1280, 1037 and 375 wide. The shove button was the same
+bug, not a new break. The open notch at each cut corner is the design (no line along
+the diagonal); closing it is a separate, wider change offered to the owner.
+
+**Band tooltips rewritten for anyone** (ante, Pot, wager, in play, limit, deadline,
+ring) — short sentences, same placeholders, no claim the data cannot back.
+
+**Play style:** one line for everyone, in gold — "How the top 4 are winning: about N
+games a week, N of them underdogs, and an average bet of about N chips" — from the Top
+column in whole numbers; the footnote adds "Suggestions aren't guaranteed."
+
+**Local preview, safely.** The preview harness read `NEXT_PUBLIC_SUPABASE_URL` from
+`.env.local`, which is PRODUCTION — so `ante-dev` in a browser was pointed at the live
+database (it was stopped before anything was clicked). `.claude/launch.json` gains
+`ante-dev-local` (port 33335): the same dev server with the database pointed at the
+local stack's standard demo keys and email off. The harness also renders the right
+column now (PlayStyleCard and LeagueStats take an optional `dbOverride`, the pattern
+WagerArea already used). One torture run crashed right after a `db reset` while that
+dev server held connections to the local stack; three runs after it were clean.

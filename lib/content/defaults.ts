@@ -292,23 +292,25 @@ export const contentDefaults: Record<string, string> = {
   // cannot back — the Pot deliberately does not assert its own arithmetic, because
   // late admissions (D-020) put antes into it after the head count was frozen.
   "band.ante_tip":
-    "Your weekly buy-in, taken automatically when the slate opens Tuesday. Every ante in the league goes straight into the Pot. It climbs with the tiers: 10 to start, 15 from Week 5, 20 from Week 10, 30 from Week 15.",
+    "The ante is what it costs to play each week. It comes out of your stack by itself on Tuesday morning and goes into the Pot. It goes up as the season goes on: 10 chips in Weeks 1–4, 15 in Weeks 5–9, 20 in Weeks 10–14, and 30 in Weeks 15–18.",
   "band.pot_tip":
-    "Every ante in the league lands here, and essentially nothing else: bets settle between players, so the Pot only moves by the small remainder left once the winners are paid \u2014 up some weeks, down others. On Monday night it goes to whoever GAINED the most chips that week \u2014 not the biggest stack \u2014 and a fold can never win it. Bigger leagues pay more than one place. The Pot panel further down shows the full working.",
+    "The Pot is everyone's antes put together. On Monday night it goes to the player who gained the most chips that week — not the player with the biggest stack. If you fold, you can't win it. It can go up or down a little each week, depending on how the bets turn out.",
   "band.your_wager_tip":
-    "What you put on this week, across every game on your ticket. A shove shows the whole stack it committed, and a fold shows nothing, because that is what a fold wagered. It replaces the deadline here: the wall has already passed, and a deadline behind you is the least useful thing on this band.",
+    "How many chips you bet this week, all your games added together. If you folded, it shows nothing.",
   "band.in_play_tip":
-    "Every chip the league has staked on this week's games. It is not the Pot and almost none of it ends up there. Losing chips pay the winners: a correct pick gets its stake back plus a payout, and that payout comes from the players who were wrong. Only the DIFFERENCE between the two ever touches the Pot, which is usually small and is often negative \u2014 across an eighteen-week simulation the table owed the winners more than the losers put up in ten weeks out of eighteen, and the Pot covered the gap. Nothing is kept by a house, because there is no house. It replaces your limit here because the limit stopped mattering the moment the board opened.",
+    "All the chips everyone bet this week. Most of them go back to players: the people who picked wrong pay the people who picked right. Only the small amount left over goes into or out of the Pot. Nobody else keeps any of it.",
   "band.limit_tip":
-    "The most you can commit this week, across every game. One third of the smaller of your own stack or the league's middle stack, rounded down to a ten. {capped} It is a ceiling, not a target — betting less is fine.",
-  "band.limit_capped_stack": "Right now yours is set by your own stack of {stack}.",
-  "band.limit_capped_room": "Right now yours is set by the league's middle stack of {median}, not by your own.",
+    "This is the most you can bet this week, with all your games added together. It is one third of your stack, or one third of the league's middle stack — whichever is smaller. {capped} You don't have to bet it all.",
+  "band.limit_capped_stack":
+    "Yours is set by your own stack ({stack} chips).",
+  "band.limit_capped_room":
+    "Yours is set by the league's middle stack ({median} chips).",
   "band.deadline_tip":
-    "{deadline} — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first.",
+    "{deadline} — {countdown}. Get your picks in before then. If you don't, you sit this week out: you still pay the ante, and you can't win the Pot. Everyone's picks are shown the moment the last player is in, or at the deadline — whichever comes first.",
   "band.deadline_tip_first":
-    "The season starts here. {deadline} is the first deadline — {countdown}. Your ticket has to be in by then. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot. The reveal fires the instant the last player submits, or at the deadline, whichever comes first. The roster locks at this moment too, so it is last call for anyone still deciding.",
+    "The season starts here. {deadline} is the first deadline — {countdown}. Get your picks in before then. If you don't, you sit this week out: you still pay the ante, and you can't win the Pot. Everyone's picks are shown the moment the last player is in, or at the deadline — whichever comes first. This is also the last chance for anyone to join the league.",
   "band.ring_tip":
-    "Week {week} of 18. The ring tracks the four ante tiers a season passes through — purple, red, teal, gold. You are in {tier}, weeks {range}. The ante rises with each one, so the cost of sitting out rises too.",
+    "Week {week} of 18. The color shows how big the ante is. There are four colors — purple, red, teal and gold — and the ante goes up with each one. You are in {tier} (Weeks {range}).",
 
   // Ticker system items (ADMIN §4.5.3 — wording is content-managed)
   "ticker.deadline": "Thursday noon MST — {remaining}",
@@ -519,13 +521,16 @@ export const contentDefaults: Record<string, string> = {
   "dash.style.row.dogs": "Underdogs a week",
   "dash.style.row.chips": "Average bet",
   "dash.style.row.net": "Profit per 100 chips bet",
+  "dash.style.recipe": "How the top {n} are winning: about {games} games a week, {dogs}, and an average bet of about {chips} chips.",
+  "dash.style.recipe.dogs": "{dogs} of them underdogs",
+  "dash.style.recipe.dog_one": "1 of them an underdog",
   "dash.style.hint.top": "You are one of the top {n} right now. The Top {n} column is your group.",
   "dash.style.hint.crowd_more": "The top players bet with the crowd more often than you: {top}% of their bets to your {me}%.",
   "dash.style.hint.crowd_less": "The top players bet with the crowd less often than you: {top}% of their bets to your {me}%.",
   "dash.style.hint.games": "The top players bet about {top} games a week. You bet {me}.",
   "dash.style.hint.dogs": "The top players back about {top} underdogs a week. You back {me}.",
   "dash.style.hint.chips": "The top players' average bet is about {top} chips. Yours is {me}.",
-  "dash.style.note": "From settled weeks only. Only you see your type. Top {n} and Lg (the whole league) are averages, never names.",
+  "dash.style.note": "From settled weeks only. Only you see your type. Top {n} and Lg (the whole league) are averages, never names. Suggestions aren't guaranteed.",
   "dash.stats.heading": "League stats",
   "dash.stats.empty": "Nothing settled yet. The first numbers land after Week 1 scores.",
   "dash.stats.biggest_week": "Biggest week",

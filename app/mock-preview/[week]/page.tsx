@@ -7,6 +7,8 @@ import { RevealBoard } from "@/components/wager/RevealBoard";
 import { PotMath } from "@/components/wager/PotMath";
 import { WagerArea } from "@/components/wager/WagerArea";
 import { SettledResults } from "@/components/wager/SettledResults";
+import { PlayStyleCard } from "@/components/dash/PlayStyleCard";
+import { LeagueStats } from "@/components/dash/LeagueStats";
 
 // LOCAL PREVIEW HARNESS — never ships. Renders the real reveal and settled
 // components against the local torture-season data, with no Clerk session, so the
@@ -128,6 +130,14 @@ export default async function MockPreview({
           {/* Only renders as a board while a week is genuinely open — leave the DB there
               with TORTURE_STOP_AFTER_OPEN=1. Otherwise it shows that week's real state. */}
           <WagerArea playerId={playerId} dbOverride={asMe} />
+        </section>
+
+        <section id="right-column" className="flex max-w-md flex-col gap-3">
+          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
+            0b — The right column
+          </h1>
+          <PlayStyleCard playerId={playerId} dbOverride={asMe} />
+          <LeagueStats dbOverride={asMe} />
         </section>
 
         <section id="reveal" className="flex flex-col gap-3">

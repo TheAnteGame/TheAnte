@@ -394,17 +394,23 @@ td.nums,
 }
 
 /* Chamfer, not radius (art §5): the one corner treatment, via clip-path. Applied
-   to primary actions and featured cards only; ordinary rows stay plain. */
+   to primary actions and featured cards only; ordinary rows stay plain.
+
+   The straight sides of the clip sit 1px OUTSIDE the box (D-116). Run exactly along
+   the edge, the clip shaved off the 1px border wherever a box landed between whole
+   pixels — some team tiles and the shove button lost their bottom or right line,
+   depending on window width. Nothing paints outside the box, so the extra pixel
+   only stops the clip from eating the border; the corners are cut exactly as before. */
 .chamfer {
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  clip-path: polygon(8px -1px, calc(100% + 1px) -1px, calc(100% + 1px) calc(100% - 8px), calc(100% - 8px) calc(100% + 1px), -1px calc(100% + 1px), -1px 8px);
 }
 .chamfer-lg {
-  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  clip-path: polygon(18px -1px, calc(100% + 1px) -1px, calc(100% + 1px) calc(100% - 18px), calc(100% - 18px) calc(100% + 1px), -1px calc(100% + 1px), -1px 18px);
 }
 /* Tag-scale cut: the 8px chamfer is most of a 9px label's height, which reads as a
    torn corner rather than a milled one. Same treatment, proportioned to the part. */
 .chamfer-xs {
-  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+  clip-path: polygon(3px -1px, calc(100% + 1px) -1px, calc(100% + 1px) calc(100% - 3px), calc(100% - 3px) calc(100% + 1px), -1px calc(100% + 1px), -1px 3px);
 }
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────────
