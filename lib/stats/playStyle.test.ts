@@ -30,7 +30,7 @@ describe("play style (D-113)", () => {
     const r = playStyleReport("p14", LEAGUE)!;
     expect(r.meIsTop).toBe(false);
     expect(r.topSize).toBe(4);
-    expect(r.top).toEqual({ winPct: 63, crowdPct: 55, lonelyPct: 19, gamesPerWeek: 7.6, chipsPerBet: 16, netPer10: 1.8 });
+    expect(r.top).toEqual({ winPct: 63, crowdPct: 55, lonelyPct: 19, gamesPerWeek: 7.6, chipsPerBet: 16, netPer100: 18 });
   });
 
   it("a top player gets no 'do it like them' hint", () => {

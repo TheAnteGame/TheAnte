@@ -17,12 +17,14 @@ type Item = { id: string; title: string; url: string | null; source: string | nu
 const ON_MS = 6000; // long enough to actually read a headline
 const OFF_MS = 2000;
 
-export function NewsFader({ items, sourceLabel }: { items: Item[]; sourceLabel: string }) {
+export function NewsFader({ items, sourceLabel, startAt = 0 }: { items: Item[]; sourceLabel: string; startAt?: number }) {
   // Frozen at mount. The dashboard calls router.refresh() every five seconds and hands
   // this a freshly fetched array; when a story lands the ORDER shifts, and the visible
   // headline would change mid-beat. News can wait for the next real page load.
   const [list] = useState<Item[]>(items);
-  const [index, setIndex] = useState(0);
+  // Where the loop starts, frozen at mount like the list (D-114): server and client
+  // both start from the prop, so hydration agrees, and later polls cannot move it.
+  const [index, setIndex] = useState(() => (items.length > 0 ? startAt % items.length : 0));
   const [on, setOn] = useState(true);
 
   useEffect(() => {

@@ -4,15 +4,18 @@ import { rotateBySource, type NewsItem } from "@/lib/news/select";
 import { mentionsTeam } from "@/lib/news/mentions";
 import { decodeEntities } from "@/lib/news/decode";
 import { NewsFader } from "./NewsFader";
-import { NewsSourcePicker } from "./NewsSourcePicker";
 
 // Your team's headlines (ANTE-PLAYER §7) — always ABOUT your team, and from as many
 // outlets as cover it (D-100). Two shapes feed it: the club's own feed, which tags
 // its items with a team code, and the league desks (ESPN, CBS), which tag nothing
 // and so are matched on the team's nickname. They then take turns, so the box reads
-// as several reporters on one team rather than one press office (D-099). A player
-// who prefers one outlet pins it from the menu underneath; pinning narrows WHO is
-// reporting, never WHAT they report on. Commissioner curates only by hiding (§0).
+// as several reporters on one team rather than one press office (D-099).
+// Commissioner curates only by hiding (§0).
+//
+// The "Read from" menu is gone (D-114): owner's call, it was not worth the space. Any
+// pin a player saved before is IGNORED, not honoured — with no menu there would be no
+// way to undo it, and they would be stuck on one outlet. players.news_source_id stays
+// in the schema, unused, in case the choice moves to the profile page later.
 
 const SHOW = 8;
 const POOL = SHOW * 4;
@@ -20,22 +23,13 @@ const POOL = SHOW * 4;
 export async function NewsBox({ playerId }: { playerId: string }) {
   const db = createUserClient();
 
-  // The pinned source is read SEPARATELY, and on purpose. Asking for it in the same
-  // select as favorite_team meant that on a database without migration 0031 the whole
-  // row read failed and the box went blank — the team came back with it. Split, the
-  // pin degrades to "no pin" and the headlines keep working.
-  const [{ data: me }, pin, heading, empty, sourceLabel, pickLabel, allLabel] = await Promise.all([
+  const [{ data: me }, heading, empty, sourceLabel] = await Promise.all([
     db.from("players").select("favorite_team").eq("id", playerId).maybeSingle(),
-    db.from("players").select("news_source_id").eq("id", playerId).maybeSingle(),
     getContent("dash.news.heading"),
     getContent("dash.news.empty"),
     getContent("dash.news.source_label"),
-    getContent("dash.news.pick_label"),
-    getContent("dash.news.all_sources"),
   ]);
   const team = me?.favorite_team ?? null;
-  const canPin = !pin.error;
-  const pinned = canPin ? ((pin.data as { news_source_id?: string | null } | null)?.news_source_id ?? null) : null;
 
   type Row = {
     id: string;
@@ -62,19 +56,10 @@ export async function NewsBox({ playerId }: { playerId: string }) {
       .limit(POOL);
 
   let items: NewsItem[] = [];
-  let offered: Array<{ id: string; name: string }> = [];
 
   if (team) {
-    const [{ data: teamRow }, { data: sourceRows }] = await Promise.all([
-      db.from("teams").select("name").eq("code", team).maybeSingle(),
-      // Every enabled source that can reach this player: the club's feed and the
-      // league desks, which do cover the team — just without a tag on the row.
-      db.from("feed_sources").select("id, name, kind, team_code").eq("enabled", true).order("name"),
-    ]);
+    const { data: teamRow } = await db.from("teams").select("name").eq("code", team).maybeSingle();
     const nickname = (teamRow?.name as string | undefined) ?? "";
-    offered = (sourceRows ?? [])
-      .filter((s) => s.team_code === team || s.kind === "league_ticker")
-      .map((s) => ({ id: s.id, name: s.name }));
 
     const [tagged, league] = await Promise.all([
       base().eq("team_code", team),
@@ -86,9 +71,7 @@ export async function NewsBox({ playerId }: { playerId: string }) {
     const pool = [
       ...named(tagged.data as Row[] | null),
       ...named((league.data as Row[] | null) ?? []).filter((r) => mentionsTeam(r.title, nickname)),
-    ]
-      .filter((r) => !pinned || r.sourceId === pinned)
-      .sort((a, b) => b.at.localeCompare(a.at));
+    ].sort((a, b) => b.at.localeCompare(a.at));
 
     items = rotateBySource(pool, SHOW);
   }
@@ -101,12 +84,11 @@ export async function NewsBox({ playerId }: { playerId: string }) {
       {items.length === 0 ? (
         <p className="px-4 py-4 text-sm text-[color:var(--color-text-mid)]">{empty}</p>
       ) : (
-        <NewsFader items={items} sourceLabel={sourceLabel} />
-      )}
-      {/* Only when there is a choice to make AND the pin can actually be saved — a
-          dropdown that silently does nothing is worse than no dropdown. */}
-      {canPin && offered.length > 1 && (
-        <NewsSourcePicker label={pickLabel} allLabel={allLabel} current={pinned} sources={offered} />
+        // Opens on a different headline — so a different outlet — each page load
+        // (D-114). The rotation itself stays stable; only where it starts moves,
+        // because always opening on the most recent outlet read as "it never rotates".
+        // eslint-disable-next-line react-hooks/purity -- a server render, once per request; varying per load is the point
+        <NewsFader items={items} sourceLabel={sourceLabel} startAt={Math.floor(Date.now() / 1000)} />
       )}
     </section>
   );

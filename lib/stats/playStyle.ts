@@ -42,8 +42,8 @@ export interface StyleNumbers {
   lonelyPct: number;
   gamesPerWeek: number;
   chipsPerBet: number;
-  /** Chips netted per 10 chips bet on decided games. */
-  netPer10: number;
+  /** Chips netted per 100 chips bet on decided games — "for every 100 you bet". */
+  netPer100: number;
 }
 
 export interface PlayStyleReport {
@@ -74,7 +74,7 @@ export function numbersOf(p: PlayerProfile): StyleNumbers {
     lonelyPct: pct(p.lonely, p.decided),
     gamesPerWeek: p.liveWeeks > 0 ? Math.round((p.bets / p.liveWeeks) * 10) / 10 : 0,
     chipsPerBet: p.bets > 0 ? Math.round(p.chipsBet / p.bets) : 0,
-    netPer10: p.chipsDecided > 0 ? Math.round((p.net / p.chipsDecided) * 100) / 10 : 0,
+    netPer100: p.chipsDecided > 0 ? Math.round((p.net / p.chipsDecided) * 100) : 0,
   };
 }
 
@@ -124,7 +124,7 @@ function average(rows: StyleNumbers[]): StyleNumbers {
     lonelyPct: avg("lonelyPct", 0),
     gamesPerWeek: avg("gamesPerWeek", 1),
     chipsPerBet: avg("chipsPerBet", 0),
-    netPer10: avg("netPer10", 1),
+    netPer100: avg("netPer100", 0),
   };
 }
 

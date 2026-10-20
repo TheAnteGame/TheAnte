@@ -206,3 +206,50 @@ export function headToHead(playerId: string, gains: WeeklyGain[]): HeadToHead[] 
     .filter((r) => r.weeks > 0)
     .sort((a, b) => b.won - a.won || a.lost - b.lost);
 }
+
+export interface Climb {
+  playerId: string;
+  /** Standings place after the week before, and after the latest week. 1 = first. */
+  from: number;
+  to: number;
+  week: number;
+}
+
+/** The biggest climb up the standings in the latest settled week (D-114): who moved
+ *  up the most places. Replaces "biggest week", which mostly repeated who won the Pot.
+ *
+ *  `results` are each player's FULL weekly change, Pot included — standings are what
+ *  a stack actually did. Places are shared on a tie (1 + players strictly ahead), so
+ *  nobody "climbs" by a coin-flip on equal stacks. Needs two settled weeks; with one,
+ *  everybody started level and there is nothing to climb from. */
+export function biggestClimb(playerIds: string[], results: WeeklyGain[]): Climb | null {
+  const weeks = [...new Set(results.map((r) => r.week))].sort((a, b) => a - b);
+  if (weeks.length < 2) return null;
+  const latest = weeks[weeks.length - 1];
+  const previous = weeks[weeks.length - 2];
+
+  const totalThrough = (week: number) => {
+    const t = new Map(playerIds.map((id) => [id, 0]));
+    for (const r of results) if (r.week <= week && t.has(r.playerId)) t.set(r.playerId, t.get(r.playerId)! + r.gain);
+    return t;
+  };
+  const placesOf = (t: Map<string, number>) => {
+    const all = [...t.values()];
+    return new Map([...t].map(([id, v]) => [id, 1 + all.filter((x) => x > v).length]));
+  };
+  const before = placesOf(totalThrough(previous));
+  const afterTotals = totalThrough(latest);
+  const after = placesOf(afterTotals);
+
+  let best: Climb | null = null;
+  for (const id of [...playerIds].sort()) {
+    const from = before.get(id)!;
+    const to = after.get(id)!;
+    const up = from - to;
+    if (up <= 0) continue;
+    const bestUp = best ? best.from - best.to : 0;
+    // The bigger climb wins; on an equal climb, the one who finished higher.
+    if (!best || up > bestUp || (up === bestUp && to < best.to)) best = { playerId: id, from, to, week: latest };
+  }
+  return best;
+}

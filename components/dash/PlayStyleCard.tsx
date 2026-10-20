@@ -40,7 +40,7 @@ export async function PlayStyleCard({ playerId }: { playerId: string }) {
     { label: await t("row.crowd"), key: "crowdPct", fmt: (n) => `${n}%` },
     { label: await t("row.games"), key: "gamesPerWeek", fmt: (n) => n.toFixed(1) },
     { label: await t("row.chips"), key: "chipsPerBet", fmt: (n) => String(n) },
-    { label: await t("row.net"), key: "netPer10", fmt: (n) => (n > 0 ? `+${n.toFixed(1)}` : n < 0 ? `−${Math.abs(n).toFixed(1)}` : "0") },
+    { label: await t("row.net"), key: "netPer100", fmt: (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0") },
   ];
 
   let hintText: string | null = null;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  biggestClimb,
   headToHead,
   leagueHighlights,
   playerTendencies,
@@ -182,5 +183,25 @@ describe("headToHead", () => {
 
   it("returns nothing for a player with no shared weeks", () => {
     expect(headToHead("ghost", gains)).toEqual([]);
+  });
+});
+
+describe("biggestClimb (D-114)", () => {
+  const r = (playerId: string, week: number, gain: number) => ({ playerId, week, gain });
+  it("finds who moved up the most places in the latest week", () => {
+    // After week 1: a 100, b 50, c 0, d -50. Week 2: d +200 → d first; c +60 → c second.
+    const res = [r("a", 1, 100), r("b", 1, 50), r("c", 1, 0), r("d", 1, -50), r("a", 2, -10), r("b", 2, -10), r("c", 2, 60), r("d", 2, 200)];
+    expect(biggestClimb(["a", "b", "c", "d"], res)).toEqual({ playerId: "d", from: 4, to: 1, week: 2 });
+  });
+  it("counts the Pot: it is part of what a stack did", () => {
+    const res = [r("a", 1, 30), r("b", 1, 20), r("a", 2, 0), r("b", 2, 40)];
+    expect(biggestClimb(["a", "b"], res)).toEqual({ playerId: "b", from: 2, to: 1, week: 2 });
+  });
+  it("shares places on a tie, so a dead heat is not a climb", () => {
+    const res = [r("a", 1, 10), r("b", 1, 10), r("a", 2, 5), r("b", 2, 5)];
+    expect(biggestClimb(["a", "b"], res)).toBeNull();
+  });
+  it("needs two settled weeks", () => {
+    expect(biggestClimb(["a", "b"], [r("a", 1, 10), r("b", 1, -10)])).toBeNull();
   });
 });

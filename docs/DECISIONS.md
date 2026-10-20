@@ -3228,3 +3228,28 @@ sniper for the season) but count in the ranking. A data failure shows the empty 
 rather than breaking the dashboard. `lib/stats/playStyle.ts` (tested on the anonymised
 real league), `lib/stats/gatherStyle.ts`, `components/dash/PlayStyleCard.tsx`; every
 word is console-editable under `dash.style.*`.
+
+## D-114 — Plainer words on the right column, a real "biggest climb", and no news picker (2026-10-20)
+
+Owner's review of the right column, to be read by anyone ("talk to people like
+they're in fifth grade").
+
+**Play style card:** "Bets with the crowd", "Average bet", and "Profit per 100 chips
+bet" (a whole number, e.g. +23) instead of a one-decimal "net per 10". An average bet
+of 16 is an average of 10s and 20s, not a bet anyone placed.
+
+**League Stats:** plain-case labels and semibold values, matching the card above it.
+"Biggest week" (which mostly repeated who won the Pot) is replaced by **Biggest
+climb** — most places moved up the standings in the latest settled week, from full
+weekly results including the Pot, places shared on ties so a dead heat is never a
+climb (`biggestClimb`, tested). "Coldest take" is now **Crowd got burned** ("N backed
+it, and it lost"); "Hot hand" is now **Hot streak** ("N weeks up in a row"). The hot
+streak was verified correct against production — two straight weeks of gaining
+chips — the old label just read as two Pots.
+
+**News box:** the "Read from" menu is removed (owner: not worth the space). The one
+player who had pinned a source would have been stuck on it with no menu, so pins are
+now ignored; `players.news_source_id` stays in the schema, unused, in case the choice
+moves to the profile. "It never rotates" was the rotation always STARTING on the
+outlet that published most recently; it now starts at a different headline each page
+load, frozen at mount like the list so the five-second poll cannot move it.

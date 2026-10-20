@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-20 (sixty-first pass):** **Right column, plainer (D-114).** Play-style rows
+> reworded; League Stats restyled with Biggest climb, Crowd got burned, Hot streak; the
+> news box loses its source menu and opens on a different outlet each load.
+
 > **2026-10-20 (sixtieth pass):** **Your play style (D-113).** Top of the right column:
 > your type (Chalk Eater, Lone Wolf, Spreader, Sniper, Homer, Balancer), you vs the top
 > four, and the one habit where you differ most. League Stats moved below the promo.

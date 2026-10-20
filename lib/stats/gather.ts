@@ -3,9 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { chunk, fetchAllRows } from "@/lib/db/fetchAll";
 import { getTeamNames } from "@/lib/teams";
 import {
+  biggestClimb,
   headToHead,
   leagueHighlights,
   playerTendencies,
+  type Climb,
   type LeagueHighlights,
   type PlayerTendency,
   type StatBet,
@@ -23,6 +25,8 @@ export interface LeagueStats {
   weeks: Array<{ id: string; number: number; settled: boolean }>;
   tendencies: PlayerTendency[];
   highlights: LeagueHighlights;
+  /** Most places climbed in the latest settled week (D-114). */
+  climb: Climb | null;
   nameOf: (playerId: string) => string;
   /** Full name and favorite team, for the name tooltip. */
   fullNameOf: (playerId: string) => string;
@@ -58,6 +62,7 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
       weeks,
       tendencies: [],
       highlights: { biggestWeek: null, bestPrice: null, coldestTake: null, hotHand: null },
+      climb: null,
       nameOf,
       fullNameOf,
       teamOf,
@@ -134,6 +139,14 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
     const key = `${e.player_id}:${weekNumber.get(e.week_id)}`;
     gainMap.set(key, (gainMap.get(key) ?? 0) + Number(e.amount));
   }
+  // Standings move with EVERYTHING a stack did, the Pot included — so the climb is
+  // computed from the full weekly change, not the Pot-less gain above (D-114).
+  const fullMap = new Map<string, number>();
+  for (const e of ledger) {
+    if (!e.player_id || !e.week_id) continue;
+    const key = `${e.player_id}:${weekNumber.get(e.week_id)}`;
+    fullMap.set(key, (fullMap.get(key) ?? 0) + Number(e.amount));
+  }
   const gains: WeeklyGain[] = [...gainMap.entries()].map(([key, gain]) => {
     const [playerId, week] = key.split(":");
     return { playerId, week: Number(week), gain };
@@ -148,6 +161,15 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
     weeks,
     tendencies: playerTendencies(players.map((p) => p.id), bets, statTickets, gains),
     highlights: leagueHighlights(settledBets, settledGains),
+    climb: biggestClimb(
+      players.map((p) => p.id),
+      [...fullMap.entries()]
+        .map(([key, gain]) => {
+          const [playerId, week] = key.split(":");
+          return { playerId, week: Number(week), gain };
+        })
+        .filter((g) => settledWeeks.has(g.week)),
+    ),
     nameOf,
     fullNameOf,
     teamOf,
