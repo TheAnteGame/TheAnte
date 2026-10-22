@@ -3301,3 +3301,33 @@ local stack's standard demo keys and email off. The harness also renders the rig
 column now (PlayStyleCard and LeagueStats take an optional `dbOverride`, the pattern
 WagerArea already used). One torture run crashed right after a `db reset` while that
 dev server held connections to the local stack; three runs after it were clean.
+
+## D-117 — Security rules checked once per query, not once per row (2026-10-22)
+
+**Why the site was slow.** Signed-in pages took several seconds. The database, not
+the server: production's `pg_stat_statements` showed ~41 hours of query time since
+August, led by the standings view (76,676 calls, 0.48 s average, 5.7 s worst). An
+EXPLAIN as a real player: 0.9 s for 14 rows — `ante.is_approved()` and `ante.me()`
+were called bare in 24 of 26 policies, so Postgres re-ran each (a players lookup)
+for every row, hundreds of times per query, with the bets policy re-entering the
+tickets policy on top.
+
+**Migration 0033** wraps every call — `(select ante.is_approved())`, `(select
+ante.me())`, `((select auth.jwt()) ->> 'sub')` — so each is an InitPlan, run once per
+statement. The functions are STABLE, so the result is identical: same rows, same
+blackout, same writes allowed. Local: standings 60 ms → 3.9 ms.
+
+**Proved equivalent before production saw it:** generated from the live policy text
+(production and the migration chain fingerprinted identically, `1381ee92…`); with
+the wrappers stripped the text matches exactly (0 of 26 differ); 28 viewers ×
+20 tables visible-row counts identical with and without it (560 checks); the torture
+season, which checks the blackout through real RLS, is clean with it applied.
+
+**Applying it safely — `docs/rollbacks/0033_apply_with_checks.sql`:** one
+transaction that refuses unless the live rules have the expected fingerprint,
+counts what every player and a stranger can see, applies 0033, counts again, and
+raises (rolling everything back) on a single difference. Its last line reports what
+is actually live — APPLIED / NOT APPLIED. Tested locally: success, a second run
+(stopped by the guard), and a deliberately wrong policy (stopped, "25 of 560
+changed", nothing applied). **Undo — `docs/rollbacks/0033_restore_policies.sql`**
+restores all 24 policies word for word and reports RESTORED.
