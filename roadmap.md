@@ -8,6 +8,13 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-22 (sixty-third pass):** **Performance (D-117, D-118).** Root cause of the slow
+> signed-in pages: RLS called is_approved()/me() per row. Migration 0033 (applied, verified
+> 304/304) wraps them — standings 0.9 s → 0.01 s, news 0.33 s → 0.009 s. Loading screens on
+> every heavy page. **ON HOLD pending a busy-day re-measure (pg_stat_statements deltas):**
+> slower polling (#2 — chat rides the 5 s refresh, so not without a chat-only poll) and
+> shared reads (#3). Undo for 0033: docs/rollbacks/0033_restore_policies.sql (one DO block).
+
 > **2026-10-20 (sixty-second pass):** **Tile edges fixed, plain tooltips, how the top 4
 > win (D-116).** Chamfer clip no longer shaves borders; band tooltips rewritten; play-style
 > card gets a "how the top 4 are winning" line and a no-guarantee note. Use the
