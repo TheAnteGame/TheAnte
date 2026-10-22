@@ -3347,3 +3347,15 @@ Both scripts are now ONE do-block each — a single statement, so a raise undoes
 change inside it in any client — and tested in psql autocommit (the editor's
 behaviour): undo, re-undo (stopped), a deliberately wrong policy (stopped, every
 policy still original), apply, re-apply (stopped).
+
+## D-118 — Every heavy page answers a click at once (2026-10-22)
+
+The site had no `loading.tsx` anywhere, so pressing a link changed nothing on screen
+— not even the address — until the server finished the whole next page. Owner: "it
+doesn't even have a load bar." The dashboard, the board (`/results/[week]`), the
+results list, player profiles and the season page now each have one: a skeleton of
+the page in the site's own panels (`components/ui/PageSkeleton.tsx`), no data and no
+client JS, pulsing unless the player prefers reduced motion. Next also prefetches it
+ahead of time, so the response to a click is immediate even while the data loads.
+Display only — no query, no chip, no rule is involved. A dev-only page,
+`/mock-preview/skeleton`, holds it still for inspection.
