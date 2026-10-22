@@ -6,3 +6,7 @@
 
 # D-094: the GIF button — a symbol like the emoji, not copy
 GIF
+
+# D-118: the loading skeleton's screen-reader label — a loading screen must render with
+# NO data (a content lookup is a database call, which would delay the instant response).
+Loading
