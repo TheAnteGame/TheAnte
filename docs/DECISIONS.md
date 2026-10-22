@@ -3331,3 +3331,19 @@ is actually live — APPLIED / NOT APPLIED. Tested locally: success, a second ru
 (stopped by the guard), and a deliberately wrong policy (stopped, "25 of 560
 changed", nothing applied). **Undo — `docs/rollbacks/0033_restore_policies.sql`**
 restores all 24 policies word for word and reports RESTORED.
+
+**Addendum — applied to production, and what went wrong on the way.** The owner ran
+the apply script in the Supabase SQL editor and got `relation "vis_before" does not
+exist`. The editor does not run a pasted script as one transaction: each statement
+committed on its own, so the `on commit drop` temp tables vanished at once and the
+ALTER POLICY statements still applied — 0033 went live without its checks. Verified
+directly instead, read-only: every viewer's visible rows against the INTENDED rule,
+computed independently as the owner — 304 checks across 16 viewers (14 approved,
+1 removed, a stranger), 0 wrong. Standings in production: 0.9 s → 0.01 s. (No week
+had sealed picks at the time, so the pre-reveal case rests on the torture season,
+run with 0033, and the 0-difference text proof.)
+
+Both scripts are now ONE do-block each — a single statement, so a raise undoes every
+change inside it in any client — and tested in psql autocommit (the editor's
+behaviour): undo, re-undo (stopped), a deliberately wrong policy (stopped, every
+policy still original), apply, re-apply (stopped).
