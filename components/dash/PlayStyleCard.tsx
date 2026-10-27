@@ -37,23 +37,23 @@ export async function PlayStyleCard({ playerId, dbOverride }: { playerId: string
     );
   }
 
-  const { style, me, top, league, meIsTop, topSize, hint } = report;
+  const { style, me, top, league, meIsTop, topSize } = report;
   const rows: Array<{ label: string; key: keyof StyleNumbers; fmt: (n: number) => string }> = [
     { label: await t("row.win"), key: "winPct", fmt: (n) => `${n}%` },
     { label: await t("row.crowd"), key: "crowdPct", fmt: (n) => `${n}%` },
-    { label: await t("row.games"), key: "gamesPerWeek", fmt: (n) => n.toFixed(1) },
-    { label: await t("row.dogs"), key: "dogsPerWeek", fmt: (n) => n.toFixed(1) },
-    { label: await t("row.chips"), key: "chipsPerBet", fmt: (n) => String(n) },
+    // Whole numbers a player can act on (D-119): nobody bets 5.3 games or 21 chips.
+    // Games and underdogs round to the nearest whole; the bet is the typical (middle)
+    // bet, always a size someone actually placed — 10, 20, 30, 40 or 50.
+    { label: await t("row.games"), key: "gamesPerWeek", fmt: (n) => String(Math.round(n)) },
+    { label: await t("row.dogs"), key: "dogsPerWeek", fmt: (n) => String(Math.round(n)) },
+    { label: await t("row.chips"), key: "typicalBet", fmt: (n) => String(n) },
+    { label: await t("row.over_ten"), key: "overTenPct", fmt: (n) => `${n}%` },
     { label: await t("row.net"), key: "netPer100", fmt: (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0") },
   ];
 
-  let hintText: string | null = null;
-  if (meIsTop) hintText = await t("hint.top", { n: topSize });
-  else if (hint?.metric === "crowdPct")
-    hintText = await t(hint.top > hint.me ? "hint.crowd_more" : "hint.crowd_less", { top: hint.top, me: hint.me });
-  else if (hint?.metric === "gamesPerWeek") hintText = await t("hint.games", { top: hint.top.toFixed(1), me: hint.me.toFixed(1) });
-  else if (hint?.metric === "dogsPerWeek") hintText = await t("hint.dogs", { top: hint.top.toFixed(1), me: hint.me.toFixed(1) });
-  else if (hint?.metric === "chipsPerBet") hintText = await t("hint.chips", { top: hint.top, me: hint.me });
+  // The one-habit comparison ("The top players bet about 8.3 games a week. You bet
+  // 5.3.") is gone (D-119): it repeated a row of the table. Top players still get told.
+  const hintText: string | null = meIsTop ? await t("hint.top", { n: topSize }) : null;
 
   // How to win, for everyone (D-116): the top group's habits as one plain sentence, in
   // whole numbers a player can actually do. Same line for every reader — it is a
@@ -64,7 +64,7 @@ export async function PlayStyleCard({ playerId, dbOverride }: { playerId: string
     n: topSize,
     games,
     dogs: dogs === 1 ? await t("recipe.dog_one") : await t("recipe.dogs", { dogs }),
-    chips: top.chipsPerBet,
+    chips: top.typicalBet,
   });
 
   const [name, blurb, youLabel, topLabel, leagueLabel, note] = await Promise.all([

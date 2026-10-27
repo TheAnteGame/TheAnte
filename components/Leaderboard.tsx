@@ -107,6 +107,7 @@ export async function Leaderboard({ playerId }: { playerId: string }) {
     };
   });
 
+  const sortHint = await getContent("dash.leaderboard.sort_hint");
   const copy: LbCopy = {
     heading: await getContent("dash.leaderboard.heading"),
     empty: await getContent("dash.leaderboard.empty"),
@@ -129,9 +130,14 @@ export async function Leaderboard({ playerId }: { playerId: string }) {
 
   return (
     <section aria-label={copy.heading} className="panel">
-      <h2 className="panel-head px-4 py-3 font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
-        {copy.heading}
-      </h2>
+      <div className="panel-head flex items-baseline justify-between gap-3 px-4 py-3">
+        <h2 className="font-[family-name:var(--font-display)] font-bold uppercase tracking-[0.16em] text-[color:var(--color-heading)]">
+          {copy.heading}
+        </h2>
+        {/* Players did not know the columns sort — or that sorting by the week column on
+            a Sunday is the live leaderboard, while Stack waits for settlement (D-119). */}
+        <span className="text-right text-[11px] text-[color:var(--color-text-low)]">{sortHint}</span>
+      </div>
       <LeaderboardTable rows={rows} copy={copy} />
     </section>
   );

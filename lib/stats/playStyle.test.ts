@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { playStyleReport, styleOf, type PlayerProfile } from "./playStyle";
+import { overTenPctOf, playStyleReport, styleOf, typicalBetOf, type PlayerProfile } from "./playStyle";
 
 // The league after six settled weeks (2026-10-20), anonymised (underdog counts are the
 // real ones, D-115): p01 is first by
@@ -31,29 +31,57 @@ describe("play style (D-113)", () => {
     const r = playStyleReport("p14", LEAGUE)!;
     expect(r.meIsTop).toBe(false);
     expect(r.topSize).toBe(4);
-    expect(r.top).toEqual({ winPct: 63, crowdPct: 55, lonelyPct: 19, gamesPerWeek: 7.6, dogsPerWeek: 3, chipsPerBet: 16, netPer100: 18 });
+    expect(r.top).toEqual({ winPct: 63, crowdPct: 55, lonelyPct: 19, gamesPerWeek: 7.6, dogsPerWeek: 3, chipsPerBet: 16, typicalBet: 20, overTenPct: 0, netPer100: 18 });
   });
 
   it("the league column averages everyone with enough history, top group included", () => {
     const r = playStyleReport("p14", LEAGUE)!;
     expect(r.league).toEqual(playStyleReport("p01", LEAGUE)!.league);
-    expect(r.league).toEqual({ winPct: 58, crowdPct: 54, lonelyPct: 21, gamesPerWeek: 7.1, dogsPerWeek: 2.7, chipsPerBet: 17, netPer100: 8 });
+    expect(r.league).toEqual({ winPct: 58, crowdPct: 54, lonelyPct: 21, gamesPerWeek: 7.1, dogsPerWeek: 2.7, chipsPerBet: 17, typicalBet: 20, overTenPct: 0, netPer100: 8 });
   });
 
-  it("a top player gets no 'do it like them' hint", () => {
-    const r = playStyleReport("p01", LEAGUE)!;
-    expect(r.meIsTop).toBe(true);
-    expect(r.hint).toBeNull();
-  });
-
-  it("the hint is a habit, never an outcome, and points at the biggest real gap", () => {
-    expect(playStyleReport("p14", LEAGUE)!.hint).toEqual({ metric: "crowdPct", me: 42, top: 55 });
-    expect(playStyleReport("p05", LEAGUE)!.hint).toEqual({ metric: "chipsPerBet", me: 24, top: 16 });
+  it("knows when the viewer is one of the top players", () => {
+    expect(playStyleReport("p01", LEAGUE)!.meIsTop).toBe(true);
+    expect(playStyleReport("p14", LEAGUE)!.meIsTop).toBe(false);
   });
 
   it("too little history — the viewer's or the league's — shows no card", () => {
     const thin = { ...LEAGUE[13], decided: 6 };
     expect(playStyleReport("p14", [...LEAGUE.slice(0, 13), thin])).toBeNull();
     expect(playStyleReport("p01", LEAGUE.slice(0, 4))).toBeNull();
+  });
+});
+
+describe("typical bet (D-119) — always a size a player can actually bet", () => {
+  const p = (betSizes: Record<number, number>, extra: Partial<PlayerProfile> = {}): PlayerProfile => ({
+    ...LEAGUE[0],
+    bets: Object.values(betSizes).reduce((a, b) => a + b, 0),
+    chipsBet: Object.entries(betSizes).reduce((a, [s, n]) => a + Number(s) * n, 0),
+    betSizes,
+    ...extra,
+  });
+  it("is the middle bet, not the average: mostly 20s with some 30s is 20, never 23", () => {
+    expect(typicalBetOf([p({ 20: 7, 30: 3 })])).toBe(20);
+  });
+  it("takes the lower middle on an even split, so it is never 15", () => {
+    expect(typicalBetOf([p({ 10: 2, 20: 2 })])).toBe(10);
+  });
+  it("pools a group's bets rather than averaging their averages", () => {
+    // 40 bets of 10 from one player and 4 of 50 from another: the group bets 10.
+    expect(typicalBetOf([p({ 10: 40 }), p({ 50: 4 })])).toBe(10);
+  });
+  it("without sizes, rounds the average to the nearest ten", () => {
+    expect(typicalBetOf([{ ...LEAGUE[0], betSizes: undefined, bets: 10, chipsBet: 210 }])).toBe(20);
+  });
+});
+
+describe("bets over 10 (D-119)", () => {
+  const p = (betSizes: Record<number, number>): PlayerProfile => ({ ...LEAGUE[0], betSizes });
+  it("is the share of bets above the minimum, pooled across a group", () => {
+    expect(overTenPctOf([p({ 10: 6, 20: 3, 30: 1 })])).toBe(40);
+    expect(overTenPctOf([p({ 10: 10 }), p({ 20: 10 })])).toBe(50);
+  });
+  it("never guesses without bet sizes", () => {
+    expect(overTenPctOf([{ ...LEAGUE[0], betSizes: undefined }])).toBe(0);
   });
 });

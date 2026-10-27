@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-27 (sixty-fourth pass):** **Play-style numbers you can bet (D-119).** Typical
+> bet (a real bet size), new "Bets over 10" row, whole-number games and underdogs, no
+> repeated tip; standings heading says "Click a column to sort".
+
 > **2026-10-22 (sixty-third pass):** **Performance (D-117, D-118).** Root cause of the slow
 > signed-in pages: RLS called is_approved()/me() per row. Migration 0033 (applied, verified
 > 304/304) wraps them — standings 0.9 s → 0.01 s, news 0.33 s → 0.009 s. Loading screens on

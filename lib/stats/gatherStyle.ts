@@ -95,6 +95,12 @@ export const gatherPlayProfiles = cache(async (db: SupabaseClient): Promise<Play
       liveWeeks: live.length,
       bets: mine.length,
       chipsBet: mine.reduce((s, b) => s + Number(b.chips), 0),
+      // Bets placed at each size, for the typical (middle) bet (D-119).
+      betSizes: mine.reduce<Record<number, number>>((acc, b) => {
+        const size = Number(b.chips);
+        acc[size] = (acc[size] ?? 0) + 1;
+        return acc;
+      }, {}),
       decided: decided.length,
       won: decided.filter((b) => b.result === "won").length,
       crowd: decided.filter((b) => b.multiplier !== null && Number(b.multiplier) < 1).length,

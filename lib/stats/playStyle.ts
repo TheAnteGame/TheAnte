@@ -32,6 +32,10 @@ export interface PlayerProfile {
   homeBacked: number;
   /** Bets on the sportsbooks' underdog — the team marked DOG on the slip (D-115). */
   dogs: number;
+  /** How many bets were placed at each size (10, 20, … 50), for the "typical bet"
+   *  (D-119). Optional so a hand-built profile without it still works: the typical
+   *  bet then falls back to the average rounded to the nearest ten. */
+  betSizes?: Record<number, number>;
   /** Total result over settled weeks, Pots included — the ranking for "top players". */
   result: number;
 }
@@ -46,7 +50,13 @@ export interface StyleNumbers {
   /** Underdogs backed per week played (D-115). A count, not a share: "1.8 a week"
    *  says what to do; "26%" has to be multiplied out first. */
   dogsPerWeek: number;
+  /** The exact average bet. Kept for classing players (Sniper / Spreader need the
+   *  precision) but never shown: nobody can bet 21 chips (D-119). */
   chipsPerBet: number;
+  /** The middle bet size — always one a player can actually place (D-119). */
+  typicalBet: number;
+  /** Share of bets placed above the 10-chip minimum (D-119): how often a player presses. */
+  overTenPct: number;
   /** Chips netted per 100 chips bet on decided games — "for every 100 you bet". */
   netPer100: number;
 }
@@ -62,8 +72,6 @@ export interface PlayStyleReport {
   meIsTop: boolean;
   /** How many players the top group is. */
   topSize: number;
-  /** The one comparison worth acting on, or null when nothing stands out. */
-  hint: { metric: keyof StyleNumbers; me: number; top: number } | null;
 }
 
 export const MIN_DECIDED = 10;
@@ -83,8 +91,52 @@ export function numbersOf(p: PlayerProfile): StyleNumbers {
     gamesPerWeek: p.liveWeeks > 0 ? Math.round((p.bets / p.liveWeeks) * 10) / 10 : 0,
     dogsPerWeek: p.liveWeeks > 0 ? Math.round((p.dogs / p.liveWeeks) * 10) / 10 : 0,
     chipsPerBet: p.bets > 0 ? Math.round(p.chipsBet / p.bets) : 0,
+    typicalBet: typicalBetOf([p]),
+    overTenPct: overTenPctOf([p]),
     netPer100: p.chipsDecided > 0 ? Math.round((p.net / p.chipsDecided) * 100) : 0,
   };
+}
+
+/** The middle bet across these players' bets, pooled (D-119). Lower median on an even
+ *  count, so it is always a size somebody actually bet — never "15" between a 10 and a
+ *  20, and never "21". Falls back to the average rounded to ten when sizes are absent. */
+export function typicalBetOf(players: PlayerProfile[]): number {
+  const counts = new Map<number, number>();
+  let missing = false;
+  for (const p of players) {
+    if (!p.betSizes) {
+      missing = true;
+      continue;
+    }
+    for (const [size, n] of Object.entries(p.betSizes)) counts.set(Number(size), (counts.get(Number(size)) ?? 0) + n);
+  }
+  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  if (missing || total === 0) {
+    const bets = players.reduce((s, p) => s + p.bets, 0);
+    const chips = players.reduce((s, p) => s + p.chipsBet, 0);
+    return bets > 0 ? Math.max(10, Math.round(chips / bets / 10) * 10) : 0;
+  }
+  let seen = 0;
+  const middle = Math.ceil(total / 2);
+  for (const size of [...counts.keys()].sort((a, b) => a - b)) {
+    seen += counts.get(size)!;
+    if (seen >= middle) return size;
+  }
+  return 0;
+}
+
+/** Share of these players' bets placed above 10 chips, pooled (D-119). Whole percent.
+ *  Without sizes it cannot be known, so it reads 0 rather than a guess. */
+export function overTenPctOf(players: PlayerProfile[]): number {
+  let over = 0;
+  let total = 0;
+  for (const p of players) {
+    for (const [size, n] of Object.entries(p.betSizes ?? {})) {
+      total += n;
+      if (Number(size) > 10) over += n;
+    }
+  }
+  return total > 0 ? Math.round((over / total) * 100) : 0;
 }
 
 /** Share of the OTHER players strictly below this value: 0 = lowest, 1 = highest. */
@@ -121,7 +173,8 @@ export function styleOf(p: PlayerProfile, field: PlayerProfile[]): PlayStyle {
   return score > 0.5 ? best : "balanced";
 }
 
-function average(rows: StyleNumbers[]): StyleNumbers {
+function average(group: PlayerProfile[]): StyleNumbers {
+  const rows = group.map(numbersOf);
   const avg = (k: keyof StyleNumbers, places: number) => {
     const m = rows.reduce((s, r) => s + r[k], 0) / rows.length;
     const f = 10 ** places;
@@ -134,6 +187,9 @@ function average(rows: StyleNumbers[]): StyleNumbers {
     gamesPerWeek: avg("gamesPerWeek", 1),
     dogsPerWeek: avg("dogsPerWeek", 1),
     chipsPerBet: avg("chipsPerBet", 0),
+    // Pooled, not averaged: the middle of the group's actual bets, a real size (D-119).
+    typicalBet: typicalBetOf(group),
+    overTenPct: overTenPctOf(group),
     netPer100: avg("netPer100", 0),
   };
 }
@@ -147,25 +203,8 @@ export function playStyleReport(viewerId: string, profiles: PlayerProfile[]): Pl
   const ranked = [...field].sort((a, b) => b.result - a.result || a.playerId.localeCompare(b.playerId));
   const topGroup = ranked.slice(0, TOP_SIZE);
   const meIsTop = topGroup.some((p) => p.playerId === viewerId);
-  const top = average(topGroup.map(numbersOf));
+  const top = average(topGroup);
   const mine = numbersOf(me);
 
-  // The hint: the habit where the viewer differs most from the top group, measured
-  // against how much that habit varies across the league — so 3 games a week apart
-  // and 15 points of crowd-share apart are compared fairly. Results (win %, net) are
-  // left out: they are outcomes, not something you can choose to do differently.
-  let hint: PlayStyleReport["hint"] = null;
-  if (!meIsTop) {
-    const all = field.map(numbersOf);
-    const spread = (k: keyof StyleNumbers) => {
-      const vals = all.map((r) => r[k]);
-      return Math.max(...vals) - Math.min(...vals) || 1;
-    };
-    const habits: Array<keyof StyleNumbers> = ["crowdPct", "gamesPerWeek", "dogsPerWeek", "chipsPerBet"];
-    const gaps = habits.map((k) => ({ k, size: Math.abs(mine[k] - top[k]) / spread(k) }));
-    const biggest = gaps.sort((a, b) => b.size - a.size)[0];
-    if (biggest && biggest.size >= 0.2) hint = { metric: biggest.k, me: mine[biggest.k], top: top[biggest.k] };
-  }
-
-  return { style: styleOf(me, field), me: mine, top, league: average(field.map(numbersOf)), meIsTop, topSize: TOP_SIZE, hint };
+  return { style: styleOf(me, field), me: mine, top, league: average(field), meIsTop, topSize: TOP_SIZE };
 }

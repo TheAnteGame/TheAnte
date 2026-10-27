@@ -3359,3 +3359,28 @@ client JS, pulsing unless the player prefers reduced motion. Next also prefetche
 ahead of time, so the response to a click is immediate even while the data loads.
 Display only — no query, no chip, no rule is involved. A dev-only page,
 `/mock-preview/skeleton`, holds it still for inspection.
+
+## D-119 — Play-style numbers a player can bank on; "click a column to sort" (2026-10-27)
+
+**Win rate was right; the top four was not who the owner pictured.** The card's Top 4
+win rate (58%) checked against the standings: ranked by stack the top four win 62%,
+62%, 50% and 59% — third place wins half their bets and climbed on Pots. The 61%
+players are 5th and 6th. Card and standings count wins identically.
+
+**No number for a bet nobody placed.** Bets go in tens, so "average bet 21" described
+no ticket (five 20s, three 10s and two 30s average 19). The owner did not want
+"average" labels, nor plain rounding. Now:
+- **Typical bet** — the middle bet (lower median), always a size somebody actually
+  bet; for Top 4 and Lg, the middle of the group's bets pooled. Exact averages are
+  still kept internally to class Snipers and Spreaders, never shown.
+- **Bets over 10** (new seventh row) — share of bets above the minimum, pooled. It
+  carries what the typical bet cannot: real league, typical bet is 10 for Top 4 and
+  Lg alike, but 41% vs 47% press past it (the top four press LESS).
+- **Games a week** and **Underdogs a week** show as whole numbers.
+
+**The one-habit tip is gone** ("The top players bet about 8.3 games a week. You bet
+5.3.") — owner: it repeated a row. Top players still get their line; the "how the
+top 4 are winning" summary stays, now with the typical bet.
+
+**Standings:** "Click a column to sort" sits at the right of the heading bar —
+players did not know sorting by the week column on a Sunday is the live leaderboard.
