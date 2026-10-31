@@ -3512,3 +3512,16 @@ Also: the Table Talk help now says names work without the @ (D-121) and how to r
 Backups include `chat_reactions`; restore accepts a backup taken before it existed.
 
 **Release order:** apply 0037 → `schema:check` → deploy.
+
+## D-124 — Dashboard header: Help menu, phone hamburger, rank under the logo (2026-10-31)
+
+Owner's call: on a phone the masthead was the logo on the left and a pile of links,
+the name, the rank box, the commissioner button and Log out wrapping on the right.
+
+- **Left, both sizes:** the logo, and the rank/chips box under it.
+- **Computer, right:** a stack — the player's name (their Profile), **Help** (a menu:
+  How to Play, Tutorial, FAQ), Commissioner (commissioner only), Log out.
+- **Phone, right:** one ☰ holding all of it, in that order.
+
+`components/dash/HeaderMenu.tsx`; the break is Tailwind's `sm` (640px). New content keys
+`dash.help_label`, `dash.menu_aria`. Nothing else on the dashboard moved.

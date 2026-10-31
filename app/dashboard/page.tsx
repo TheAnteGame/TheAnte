@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@clerk/nextjs";
 import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState, routeFor } from "@/lib/player";
@@ -17,6 +16,7 @@ import { SupportBox } from "@/components/dash/SupportBox";
 import { LeagueStats } from "@/components/dash/LeagueStats";
 import { PlayStyleCard } from "@/components/dash/PlayStyleCard";
 import { PollRefresh } from "@/components/wager/PollRefresh";
+import { HeaderMenu } from "@/components/dash/HeaderMenu";
 
 // The dashboard (ANTE-PLAYER §4): header, ticker, stakes band, then two columns —
 // wager area + leaderboard left (~62%), Table Talk / news / promo / support right.
@@ -48,6 +48,8 @@ export default async function Dashboard() {
     guideLabel,
     tutorialLabel,
     faqLabel,
+    helpLabel,
+    menuAria,
     commissioner,
   ] = await Promise.all([
     getContent("dash.header_rank_label"),
@@ -58,6 +60,8 @@ export default async function Dashboard() {
     getContent("dash.guide_link_label"),
     getContent("dash.tutorial_link_label"),
     getContent("dash.faq_link_label"),
+    getContent("dash.help_label"),
+    getContent("dash.menu_aria"),
     getCommissioner(),
   ]);
 
@@ -70,76 +74,43 @@ export default async function Dashboard() {
         {/* No top padding (D-055): the wrapper above already supplies pt-5, so the
             header's own 12px only pushed the masthead further down the page. Bottom
             padding stays, or the logo sits on the ticker. */}
-        <header className="rail flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 pb-3 pt-0">
-          <Link href="/dashboard" className="shrink-0">
-            <Logo alt={logoAlt} width={104} height={66} priority className="h-auto w-[83px] sm:w-[104px]" />
-          </Link>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.14em]">
-              <Link
-                href="/guide"
-                className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
-              >
-                {guideLabel}
-              </Link>
-              <span aria-hidden className="text-[color:var(--color-border)]">
-                ·
+        <header className="rail flex items-start justify-between gap-4 px-6 pb-3 pt-0">
+          {/* D-124: logo with the rank box under it on the left; everything else lives
+              in HeaderMenu — a stack on a computer, one menu on a phone. */}
+          <div className="flex flex-col items-start gap-2">
+            <Link href="/dashboard" className="shrink-0">
+              <Logo alt={logoAlt} width={104} height={66} priority className="h-auto w-[83px] sm:w-[104px]" />
+            </Link>
+            <div className="well chamfer flex items-baseline gap-2 px-3 py-1.5">
+              <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
+                {rankLabel}
               </span>
-              <Link
-                href="/how-to-play?replay=1"
-                className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
-              >
-                {tutorialLabel}
-              </Link>
-              <span aria-hidden className="text-[color:var(--color-border)]">
-                ·
+              <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-text-hi)]">
+                {standing?.rank ?? "\u2014"}
               </span>
-              <Link
-                href="/faq"
-                className="text-[color:var(--color-text-low)] hover:text-[color:var(--color-gold)]"
-              >
-                {faqLabel}
-              </Link>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
-              <Link
-                href="/profile"
-                className="text-sm font-medium text-[color:var(--color-text-hi)] underline-offset-4 hover:underline"
-              >
-                {state.player!.firstName ?? "\u2014"}
-              </Link>
-              <div className="well chamfer flex items-baseline gap-2 px-3 py-1.5">
-                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
-                  {rankLabel}
-                </span>
-                <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-text-hi)]">
-                  {standing?.rank ?? "\u2014"}
-                </span>
-                <span aria-hidden className="text-[color:var(--color-border)]">
-                  /
-                </span>
-                <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-stack)]">
-                  {standing?.stack ?? "\u2014"}
-                </span>
-                <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
-                  {chipsLabel}
-                </span>
-              </div>
-              {commissioner && (
-                <Link
-                  href="/admin"
-                  className="chamfer border border-[color:var(--color-gold-dim)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold)] hover:bg-[color:var(--color-surface-2)]"
-                >
-                  {commissionerLabel}
-                </Link>
-              )}
-              <SignOutButton>
-                <button className="text-xs text-[color:var(--color-text-low)] underline-offset-4 hover:underline hover:text-[color:var(--color-text-mid)]">
-                  {logoutLabel}
-                </button>
-              </SignOutButton>
+              <span aria-hidden className="text-[color:var(--color-border)]">
+                /
+              </span>
+              <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-stack)]">
+                {standing?.stack ?? "\u2014"}
+              </span>
+              <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
+                {chipsLabel}
+              </span>
             </div>
           </div>
+          <HeaderMenu
+            name={state.player!.firstName ?? "\u2014"}
+            helpLabel={helpLabel}
+            menuAria={menuAria}
+            help={[
+              { href: "/guide", label: guideLabel },
+              { href: "/how-to-play?replay=1", label: tutorialLabel },
+              { href: "/faq", label: faqLabel },
+            ]}
+            commissioner={commissioner ? { href: "/admin", label: commissionerLabel } : null}
+            logoutLabel={logoutLabel}
+          />
         </header>
 
         <Ticker />

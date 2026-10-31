@@ -8,6 +8,9 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-31 (sixty-ninth pass):** **Header cleanup (D-124).** Rank box under the logo;
+> How to Play / Tutorial / FAQ in a Help menu; on phones everything else is in a ☰ menu.
+
 > **2026-10-31 (sixty-eighth pass):** **Reactions in Table Talk (D-123).** 👍 ❤️ 😂 🔥 👎,
 > one per player per message; press and hold (phone) or hover + (computer). Three
 > reactions from others → the author gets one email + push. Migration 0037. Also sent the
