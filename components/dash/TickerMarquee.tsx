@@ -55,9 +55,10 @@ export function TickerMarquee({
       const railW = trackRef.current?.parentElement?.clientWidth ?? 0;
       if (copyW <= 0 || railW <= 0) return;
       setCopies(Math.max(2, Math.ceil(railW / copyW) + 1));
-      // The setting is a SPEED — how long a line takes to cross the rail — and the
-      // lap is one whole item set, so it scales with how wide that set is (D-101).
-      setLapSeconds(lapSeconds(speedSeconds, copyW, railW));
+      // The setting is a SPEED — how long a line takes to cross a computer's rail — and
+      // the lap is one whole item set, so it scales with how wide that set is (D-101).
+      // Not with this rail: a phone moves at the same pixels per second (D-126).
+      setLapSeconds(lapSeconds(speedSeconds, copyW));
     };
     measure();
     window.addEventListener("resize", measure);

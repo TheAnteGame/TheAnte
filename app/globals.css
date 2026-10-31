@@ -1001,6 +1001,38 @@ textarea {
   backdrop-filter: blur(12px) saturate(1.2);
 }
 
+/* The brand opens larger at the top of the page and settles to the working size the
+   moment the page scrolls under it: a quarter larger on a phone, half again on a
+   computer (D-126). Unlayered, so these win over the h-14 / h-10 utilities on purpose. */
+.dash-bar .dash-row {
+  height: 70px;
+  transition: height 200ms ease;
+}
+.dash-bar .dash-logo {
+  height: 50px;
+  transition: height 200ms ease;
+}
+.dash-bar[data-stuck="true"] .dash-row {
+  height: 56px;
+}
+.dash-bar[data-stuck="true"] .dash-logo {
+  height: 40px;
+}
+@media (min-width: 640px) {
+  .dash-bar .dash-row {
+    height: 104px;
+  }
+  .dash-bar .dash-logo {
+    height: 72px;
+  }
+  .dash-bar[data-stuck="true"] .dash-row {
+    height: 72px;
+  }
+  .dash-bar[data-stuck="true"] .dash-logo {
+    height: 48px;
+  }
+}
+
 /* The player's mark: their initial on a poker chip — gold edge spots, a felt centre.
    The one ornament in the bar; everything around it stays quiet. */
 .chip-avatar {
@@ -1030,7 +1062,9 @@ textarea {
   .menu-pop {
     animation: none;
   }
-  .dash-bar {
+  .dash-bar,
+  .dash-bar .dash-row,
+  .dash-bar .dash-logo {
     transition: none;
   }
 }

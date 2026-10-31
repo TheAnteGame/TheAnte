@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-31 (seventy-first pass):** **Logo and ticker (D-126).** Logo opens 50% larger
+> on a computer and 25% on a phone, settling on scroll; the ticker crawls at the same
+> pixels per second on a phone as on a computer (it was under a third).
+
 > **2026-10-31 (seventieth pass):** **Dashboard bar (D-125).** One sticky row that frosts
 > on scroll; phone ☰ opens a sheet; computer gets Help ▾ and an account menu with the
 > player's chip avatar. Keyboard and reduced-motion handled.

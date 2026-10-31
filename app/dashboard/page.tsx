@@ -77,9 +77,12 @@ export default async function Dashboard() {
           it still reads as part of the table rather than browser chrome. It only
           frosts once the page scrolls under it (DashBar). */}
       <DashBar>
-        <div className="rail mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:px-6">
-          <Link href="/dashboard" className="shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-gold)]">
-            <Logo alt={logoAlt} width={104} height={66} priority className="h-10 w-auto sm:h-12" />
+        <div className="dash-row rail mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link
+            href="/dashboard"
+            className="shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-gold)]"
+          >
+            <Logo alt={logoAlt} width={156} height={99} priority className="dash-logo h-10 w-auto" />
           </Link>
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             {/* The player's standing — the one figure they always want — as the milled

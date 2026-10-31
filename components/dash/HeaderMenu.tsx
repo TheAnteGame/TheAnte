@@ -33,6 +33,9 @@ export function HeaderMenu(props: HeaderMenuProps) {
   const { name, standing, help, helpLabel, profileLabel, menuAria, accountAria, commissioner, logoutLabel } =
     props;
   const [open, setOpen] = useState<Open>(null);
+  // The bar is taller at the top of the page than once scrolled (D-126), so the
+  // sheet hangs from wherever its bottom edge is at the moment it opens.
+  const [sheetTop, setSheetTop] = useState(56);
   const root = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const triggers = useRef<Partial<Record<Exclude<Open, null>, HTMLButtonElement | null>>>({});
@@ -72,7 +75,10 @@ export function HeaderMenu(props: HeaderMenuProps) {
     };
   }, [open, close]);
 
-  const toggle = (which: Exclude<Open, null>) => setOpen((o) => (o === which ? null : which));
+  const toggle = (which: Exclude<Open, null>) => {
+    if (which === "sheet") setSheetTop(Math.round(root.current?.closest("header")?.getBoundingClientRect().bottom ?? 56));
+    setOpen((o) => (o === which ? null : which));
+  };
 
   /** Up and Down through a menu's items, wrapping. */
   const arrows = (e: React.KeyboardEvent<HTMLElement>) => {
@@ -224,7 +230,8 @@ export function HeaderMenu(props: HeaderMenuProps) {
             <div
               aria-hidden
               onClick={() => setOpen(null)}
-              className="fixed inset-x-0 bottom-0 top-14 z-40 bg-black/45 sm:hidden"
+              style={{ top: sheetTop }}
+              className="fixed inset-x-0 bottom-0 z-40 bg-black/45 sm:hidden"
             />
             <div
               role="menu"
@@ -232,7 +239,8 @@ export function HeaderMenu(props: HeaderMenuProps) {
               aria-label={menuAria}
               onKeyDown={arrows}
               onClick={() => setOpen(null)}
-              className="menu-pop fixed inset-x-0 top-14 z-50 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_16px_40px_rgba(0,0,0,0.4)] sm:hidden"
+              style={{ top: sheetTop, maxHeight: `calc(100dvh - ${sheetTop}px)` }}
+              className="menu-pop fixed inset-x-0 z-50 overflow-y-auto border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-1)] pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_16px_40px_rgba(0,0,0,0.4)] sm:hidden"
             >
               <Link
                 role="menuitem"

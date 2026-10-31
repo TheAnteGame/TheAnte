@@ -3549,3 +3549,22 @@ commercial web app".
 
 `components/dash/DashBar.tsx`, `components/dash/HeaderMenu.tsx`. New content keys
 `dash.profile_label`, `dash.account_aria`.
+
+## D-126 — The brand opens larger; the ticker runs at one speed everywhere (2026-10-31)
+
+**Logo.** Owner: "make the logo 50% bigger … when it's at the top; when somebody starts
+to scroll it goes to the size it's currently at", then the same for phones at 25%. At
+the top of the page the bar is 104px with a 72px logo on a computer (settles to
+72/48) and 70px with a 50px logo on a phone (settles to 56/40), animated, off under
+reduced motion. `DashBar` settles past 48px of scroll and opens again only under 4px:
+with a single threshold the shrink pulled the page up under the bar, which unstuck it,
+which grew it again — measured at 23 flips over a short scroll. The phone sheet now
+hangs from the bar's real bottom edge, measured when it opens.
+
+**Ticker.** Owner: "faster on desktop and extremely slow on mobile". It was: D-101
+defined the speed setting as "how long a line takes to cross the rail", and the rail
+was the one on screen — ~340px on a phone, ~1152px on a computer — so a phone crawled
+at under a third of the pixels per second. The setting now means the time to cross a
+computer's rail (`REFERENCE_RAIL_PX = 1152`) on every screen, so text moves at the
+same speed everywhere; a phone just shows less of it at once. Computer speed is
+unchanged.
