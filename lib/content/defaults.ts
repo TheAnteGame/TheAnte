@@ -92,6 +92,9 @@ export const contentDefaults: Record<string, string> = {
     "Notifications are blocked for The Ante on this device. On iPhone: Settings, Notifications, The Ante, Allow Notifications. On Android: tap the icon beside the web address, then Permissions, Notifications. Then reload this page.",
   "profile.push_unsupported": "This browser can't show notifications. Email still reaches you.",
   "profile.push_failed": "That didn't take. Try again, or reload the page first.",
+  "profile.push_email_label": "Email me too",
+  "profile.push_email_off_warning":
+    "Email is off. Your phone is now the only way the league reaches you — if you turn off ANTE's notifications in your phone's settings, you'll get nothing at all. Turning phone notifications off here switches email back on.",
   "profile.push_test_title": "Notifications are on",
   "profile.push_test_body": "This is how the league will reach you. Week openings, reminders and the reveal land here.",
 
@@ -273,6 +276,7 @@ export const contentDefaults: Record<string, string> = {
   "mail.final_call.subject": "ANTE: Final Call for Week {week}",
   "mail.nudge.subject": "ANTE: The Room Is Waiting on You",
   "mail.mention.subject": "ANTE: {author} Mentioned You at the Table",
+  "mail.reactions.subject": "ANTE: {count} People Reacted to Your Message",
   "mail.broadcast.subject": "ANTE: A Word From the Commissioner",
   "mail.poll_open.subject": "ANTE: League Poll",
   "mail.poll_reminder.subject": "ANTE: Poll Closes Soon",
@@ -487,7 +491,15 @@ export const contentDefaults: Record<string, string> = {
   "dash.tabletalk.help_aria": "How Table Talk works",
   "dash.tabletalk.help_title": "How Table Talk works",
   "dash.tabletalk.help_mentions":
-    "Type @ and a name to call somebody out \u2014 pick from the list that pops up. They get an email pointing them back to the room. Five mentions per message, tops.",
+    "Say somebody's name and they hear about it \u2014 email and phone. Two people share a name? Add a last initial (Steve L), or type @ and pick from the list. Five per message, tops.",
+  "dash.tabletalk.help_react":
+    "React to a message: press and hold it on a phone, or hover and tap + on a computer. Tap a reaction to add or take off yours; press and hold one to see who. Three reactions and the author hears about it.",
+  "dash.tabletalk.react_add": "Add a reaction",
+  "dash.tabletalk.react_like": "Thumbs up",
+  "dash.tabletalk.react_love": "Love",
+  "dash.tabletalk.react_laugh": "Laughing",
+  "dash.tabletalk.react_fire": "Fire",
+  "dash.tabletalk.react_dislike": "Thumbs down",
   "dash.tabletalk.help_emoji":
     "Emojis work everywhere: tap the \ud83d\ude42 by the send button, or use your keyboard \u2014 Ctrl+\u2318+Space on a Mac, Win+. on Windows, the emoji key on your phone.",
   "dash.tabletalk.help_format":
@@ -566,6 +578,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.support.sent_body": "The Commissioner has been told there is a message waiting. When they answer, the reply comes to the email address on your profile \u2014 you do not need to check back here.",
   "dash.support.close_cta": "Done",
   "notify.mention": "{author} mentioned you in Table Talk:\n\n{message}\n\nAnswer them at https://theantegame.com/dashboard",
+  "notify.reactions": "{count} people reacted to your message in Table Talk ({reactions}):\n\n{message}",
   "notify.backup_reminder": "It has been {days} days since you last saved a copy of the league.\n\nOpen the Commissioner console, go to Backups, press \"Download current data\", then press \"I've got the file\" so this stops nagging you.\n\nThis is the only copy that survives losing the database, so it is worth the thirty seconds.",
   "notify.settlement_failed": "Week {week} did not settle.\n\nWhat it said: {detail}\n\nIt retries every five minutes on its own, and retrying is safe: settlement checks that every chip balances before it writes, and never writes the same entry twice. Until it succeeds, the board shows a projection rather than settled stacks, and the next week will not open. The job history is on the Ops page of the Commissioner console.",
   "notify.week_blocked": "Week {week} was due to open but did not, because an earlier week has not settled. A week cannot open on stacks that are still missing their stakes.\n\nWhat it said: {detail}\n\nIt opens by itself within five minutes of that settlement succeeding. The Thursday deadline does not move.",

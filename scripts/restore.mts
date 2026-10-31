@@ -59,7 +59,7 @@ if (!filePath) {
 const ORDER = [
   "teams", "players", "commissioner", "seasons", "weeks", "games", "week_players",
   "tickets", "bets", "ledger_entries", "pot_awards", "mark_votes", "chat_messages",
-  "moderation_actions", "support_messages", "audit_log", "notification_log",
+  "chat_reactions", "moderation_actions", "support_messages", "audit_log", "notification_log",
   "content_blocks", "content_revisions", "app_settings", "feed_sources", "ticker_items",
 ] as const;
 
@@ -83,7 +83,9 @@ console.log(`${total} rows across ${Object.keys(snapshot.tables).length} tables.
 // ── --verify: prove the file on its own ───────────────────────────────────────
 if (verifyOnly) {
   const problems: string[] = [];
-  for (const table of ORDER) if (!(table in snapshot.tables)) problems.push(`missing table: ${table}`);
+  // Tables added after the format was fixed: a backup taken before them is still whole.
+  const LATER = new Set<string>(["chat_reactions"]);
+  for (const table of ORDER) if (!(table in snapshot.tables) && !LATER.has(table)) problems.push(`missing table: ${table}`);
 
   const ledgerSum = (snapshot.tables.ledger_entries ?? []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   if (snapshot.chipTotal !== null && ledgerSum !== snapshot.chipTotal) {
@@ -100,6 +102,7 @@ if (verifyOnly) {
     ["games", "week_id", "weeks"],
     ["ledger_entries", "player_id", "players"],
     ["chat_messages", "player_id", "players"],
+    ["chat_reactions", "message_id", "chat_messages"],
     ["support_messages", "player_id", "players"],
   ];
   for (const [child, col, parent] of links) {

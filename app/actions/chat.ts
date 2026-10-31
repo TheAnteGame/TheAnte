@@ -8,6 +8,7 @@ import { getPlayerState } from "@/lib/player";
 import { emailPlayer } from "@/lib/notify/templates";
 import { getContent } from "@/lib/content/getContent";
 import { buildHandles, findMentioned, findNamed, MAX_MENTIONS_PER_MESSAGE } from "@/lib/chat/mentions";
+import { isReactionKind, NOTIFY_AT, reactionLine } from "@/lib/chat/reactions";
 
 // Posting runs as the player: the chat_post RLS policy enforces approved status and
 // the mute (a muted player can read and can still bet — ANTE-ADMIN §4.3).
@@ -108,4 +109,72 @@ export async function markChatRead(): Promise<void> {
   if (!userId) return;
   const db = createUserClient();
   await db.from("players").update({ chat_read_at: new Date().toISOString() }).eq("clerk_user_id", userId);
+}
+
+/** React to a message, change your reaction, or (kind null) take it off (D-123). One
+ *  per player per message. Muted players cannot react: a mute stops posting, and a
+ *  reaction is a small post. Writes with the service role after these checks, the
+ *  same shape as a poll vote. */
+export async function reactToMessage(messageId: string, kind: string | null): Promise<{ ok: boolean }> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false };
+  const state = await getPlayerState();
+  if (!state?.player || state.player.status !== "approved") return { ok: false };
+  if (kind !== null && !isReactionKind(kind)) return { ok: false };
+  const playerId = state.player.id;
+
+  const db = serviceDb();
+  const [{ data: me }, { data: msg }] = await Promise.all([
+    db.from("players").select("is_muted, muted_until").eq("id", playerId).maybeSingle(),
+    db.from("chat_messages").select("id, player_id, body, is_system, hidden_at").eq("id", messageId).maybeSingle(),
+  ]);
+  if (me?.is_muted && (!me.muted_until || new Date(me.muted_until) > new Date())) return { ok: false };
+  if (!msg || msg.is_system || msg.hidden_at) return { ok: false };
+
+  const { error } =
+    kind === null
+      ? await db.from("chat_reactions").delete().eq("message_id", messageId).eq("player_id", playerId)
+      : await db
+          .from("chat_reactions")
+          .upsert({ message_id: messageId, player_id: playerId, kind, created_at: new Date().toISOString() }, { onConflict: "message_id,player_id" });
+  if (error) return { ok: false };
+
+  // Best-effort, like a mention: the reaction is saved whatever happens here.
+  if (kind !== null && msg.player_id && msg.player_id !== playerId) {
+    try {
+      await notifyReactions(msg.player_id, messageId, msg.body);
+    } catch {
+      /* swallowed on purpose */
+    }
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+/** The author hears about it once per message (D-123): when NOTIFY_AT other players
+ *  have reacted. An email and a push, through the same path as every other notice, so
+ *  quiet hours and email-off both apply; the dedupe key makes it once, ever. */
+async function notifyReactions(authorId: string, messageId: string, body: string): Promise<void> {
+  const db = serviceDb();
+  const { data: rows } = await db.from("chat_reactions").select("player_id, kind").eq("message_id", messageId).neq("player_id", authorId);
+  if (!rows || rows.length < NOTIFY_AT) return;
+  const { data: author } = await db.from("players").select("id, email").eq("id", authorId).maybeSingle();
+  if (!author) return;
+  const subject = await getContent("mail.reactions.subject", { count: rows.length });
+  const quote = body.length > 140 ? `${body.slice(0, 137).trimEnd()}…` : body;
+  await emailPlayer(
+    db,
+    author,
+    "notify.reactions",
+    subject,
+    { count: rows.length, reactions: reactionLine(rows), message: quote },
+    `reactions-${messageId}`,
+    {
+      allowFreeText: true,
+      eyebrow: "Table Talk",
+      headline: "The table noticed",
+      cta: { label: "See the room", href: "https://theantegame.com/dashboard" },
+    },
+  );
 }

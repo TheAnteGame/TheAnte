@@ -24,6 +24,7 @@ export function ChatHelp({
   emojiLine,
   formatLine,
   gifLine,
+  reactLine,
 }: {
   ariaLabel: string;
   title: string;
@@ -31,6 +32,7 @@ export function ChatHelp({
   emojiLine: string;
   formatLine: string;
   gifLine: string;
+  reactLine: string;
 }) {
   const [open, setOpen] = useState(false);
   const [at, setAt] = useState<{ top: number; left: number } | null>(null);
@@ -107,6 +109,7 @@ export function ChatHelp({
             <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{emojiLine}</p>
             <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{formatLine}</p>
             <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{gifLine}</p>
+            <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-text-mid)]">{reactLine}</p>
           </div>,
           document.body,
         )}

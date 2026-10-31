@@ -49,6 +49,7 @@ export const MAIL_KINDS: MailKind[] = [
   { keyPrefix: "player.folded", label: "Auto-folded", trigger: "Deadline passes with no ticket", bodySource: "designed", subjectKey: "mail.folded.subject" },
   { keyPrefix: "notify.reveal", label: "The board is open", trigger: "The reveal fires — last ticket in, or Thursday noon", bodySource: "designed", subjectKey: "mail.reveal.subject" },
   { keyPrefix: "notify.mention", label: "Mentioned in Table Talk", trigger: "Another player @mentions them", bodySource: "template", subjectKey: "mail.mention.subject", bodyKey: "notify.mention" },
+  { keyPrefix: "reactions", label: "Reactions on a message", trigger: "A third player reacts to their Table Talk message; once per message", bodySource: "template", subjectKey: "mail.reactions.subject", bodyKey: "notify.reactions" },
   { keyPrefix: "notify.support_new", label: "Support — new message", trigger: "A player writes to the commissioner", bodySource: "template", subjectKey: "mail.support_new.subject", bodyKey: "notify.support_new" },
   { keyPrefix: "notify.support_reply", label: "Support — reply", trigger: "Commissioner answers a support message", bodySource: "template", subjectKey: "mail.support_reply.subject", bodyKey: "notify.support_reply" },
   { keyPrefix: "poll.open", label: "League poll — opened", trigger: "polls.tick job, when a poll opens", bodySource: "designed", subjectKey: "mail.poll_open.subject" },

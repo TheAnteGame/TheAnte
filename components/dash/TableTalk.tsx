@@ -17,6 +17,8 @@ import { ChatDock } from "./ChatDock";
 import { leaderFrom } from "@/lib/ticker/leader";
 import { ChatTag, type TagTone } from "./ChatTag";
 import { loadProjection, withProjection } from "@/lib/stats/standings";
+import { summarize } from "@/lib/chat/reactions";
+import { Reactable } from "./Reactable";
 
 // Table Talk (ANTE-PLAYER §7): a real chat panel. System messages are distinct and
 // carry weight — they are the only place the commissioner's authority is visible.
@@ -38,7 +40,7 @@ export async function TableTalk({
 }) {
   const db = dbOverride ?? createUserClient();
 
-  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord, gifAria, gifPlaceholder, gifRemoveAria, helpGif, pollEyebrow, pollCloses, pollClosed, pollVotes, pollChange, pollYourVote] = await Promise.all([
+  const [{ data: messages }, { data: me }, { data: mine }, heading, placeholder, liveLabel, mutedNotice, helpAria, helpTitle, helpMentions, helpEmoji, helpFormat, emojiAria, tagCommish, tagLeader, todayLabel, yesterdayLabel, dockLabel, dockNew, dockOpen, dockClose, dockCloseWord, gifAria, gifPlaceholder, gifRemoveAria, helpGif, pollEyebrow, pollCloses, pollClosed, pollVotes, pollChange, pollYourVote, helpReact, reactAdd, reactLike, reactLove, reactLaugh, reactFire, reactDislike] = await Promise.all([
     // Player conversation ONLY (D-039). Nothing writes system messages any more, and
     // this filter also retires the ones already posted — the room never shows them
     // again without a migration. The rows stay in the table; they are simply not this
@@ -82,6 +84,13 @@ export async function TableTalk({
     getContent("dash.poll.votes"),
     getContent("dash.poll.change"),
     getContent("dash.poll.your_vote"),
+    getContent("dash.tabletalk.help_react"),
+    getContent("dash.tabletalk.react_add"),
+    getContent("dash.tabletalk.react_like"),
+    getContent("dash.tabletalk.react_love"),
+    getContent("dash.tabletalk.react_laugh"),
+    getContent("dash.tabletalk.react_fire"),
+    getContent("dash.tabletalk.react_dislike"),
   ]);
 
   // Who wears a tag (D-066). Both reads go through the PLAYER client like everything
@@ -169,6 +178,22 @@ export async function TableTalk({
   };
 
   const muted = !!me?.is_muted && (!me.muted_until || new Date(me.muted_until) > new Date());
+
+  // Reactions (D-123), for the page of messages on screen. Names as the room shows
+  // them, "Dustin G." — reactions are public, like the messages they sit on.
+  const { data: reactionRows } = list.length
+    ? await db.from("chat_reactions").select("message_id, player_id, kind").in("message_id", list.map((m) => m.id))
+    : { data: [] as { message_id: string; player_id: string; kind: string }[] };
+  const shortName = (id: string) => {
+    const p = (roster ?? []).find((x) => x.id === id);
+    return p ? `${p.first_name ?? ""} ${(p.last_name ?? "").slice(0, 1)}.`.trim() : "\u2014";
+  };
+  const reactionsOf = (messageId: string) =>
+    summarize((reactionRows ?? []).filter((r) => r.message_id === messageId), playerId, shortName);
+  const reactCopy = {
+    add: reactAdd,
+    labels: { like: reactLike, love: reactLove, laugh: reactLaugh, fire: reactFire, dislike: reactDislike },
+  };
   const mutedText = mutedNotice.replace(
     "{expiry}",
     me?.muted_until ? DateTime.fromISO(me.muted_until).setZone(LEAGUE_TZ).toFormat("ccc h:mma 'MST'") : "lifted",
@@ -223,7 +248,7 @@ export async function TableTalk({
       openAria={dockOpen}
       closeAria={dockClose}
       closeLabel={dockCloseWord}
-      help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} gifLine={helpGif} />}
+      help={<ChatHelp ariaLabel={helpAria} title={helpTitle} mentionsLine={helpMentions} emojiLine={helpEmoji} formatLine={helpFormat} gifLine={helpGif} reactLine={helpReact} />}
     >
     <section aria-label={heading} className="flex h-full min-h-0 flex-col">
       {polls.map((p) => (
@@ -257,7 +282,7 @@ export async function TableTalk({
             {m.is_system ? (
               <span className="text-[color:var(--color-gold)]">{m.body}</span>
             ) : (
-              <>
+              <Reactable messageId={m.id} initial={reactionsOf(m.id)} myName={shortName(playerId)} canReact={!muted} copy={reactCopy}>
                 {!grouped &&
                   (() => {
                     const a = authorOf(m.player_id);
@@ -296,7 +321,7 @@ export async function TableTalk({
                 ) : (
                   <Body text={m.body} handles={handles} />
                 )}
-              </>
+              </Reactable>
             )}
           </li>
           );

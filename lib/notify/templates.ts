@@ -4,7 +4,7 @@ import { contentDefaults } from "@/lib/content/defaults";
 import { send } from "./index";
 import { render, type EmailDoc } from "./render";
 import { templateDoc } from "./docs";
-import { pushBody, pushFromDoc, pushPath, pushPlayer, pushTitle, type PushTiming } from "./push";
+import { pushBody, pushConfigured, pushFromDoc, pushPath, pushPlayer, pushTitle, type PushOutcome, type PushTiming } from "./push";
 
 // Template rendering + logged sends. Templates are content-managed (notify.* keys);
 // variables are a WHITELIST passed by the calling job — that is how the blackout
@@ -74,33 +74,83 @@ export async function emailPlayer(
   // These used to send bare text: a player's inbox showed a branded document for a
   // ticket confirmation and an unstyled paragraph for the reminder ten minutes later.
   // The commissioner's edited words are the body; the envelope comes free.
-  if (player.email && !(dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) {
+  const email = async () => {
+    if (!player.email || (dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) return;
     const { html, text } = render(
       templateDoc({ eyebrow: opts?.eyebrow ?? "ANTE", headline: opts?.headline ?? subject.replace(/^ANTE:\s*/, ""), body, cta: opts?.cta }),
     );
     const result = await send("email", templateKey, player.email, { subject, body: text, html });
-    await db.from("notification_log").insert({
-      player_id: player.id,
-      channel: "email",
-      template_key: logKey,
-      body: text,
-      status: result.status,
-      provider_message_id: result.providerMessageId ?? null,
-      error: result.error ?? null,
-    });
-  }
+    await logEmail(db, player.id, logKey, text, result);
+  };
 
   // The same words on their phones (D-120), deduped on their own channel so a push
   // that failed is retried even when the email already went.
-  await pushPlayer(
-    db,
-    player.id,
-    templateKey,
-    logKey,
-    { title: pushTitle(subject), body: pushBody(body), url: pushPath(opts?.cta?.href) },
-    Boolean(dedupeKey),
-    opts?.push,
-  );
+  const push = () =>
+    pushPlayer(
+      db,
+      player.id,
+      templateKey,
+      logKey,
+      { title: pushTitle(subject), body: pushBody(body), url: pushPath(opts?.cta?.href) },
+      Boolean(dedupeKey),
+      opts?.push,
+    );
+
+  await emailAndPush(db, player.id, logKey, email, push);
+}
+
+/** Email, push, or push alone (D-122). A player who has turned email off AND has a
+ *  device gets the push only; if it reaches no device, the email goes after all, so
+ *  turning email off can never mean hearing nothing. Everyone else gets both. */
+async function emailAndPush(
+  db: SupabaseClient,
+  playerId: string,
+  logKey: string,
+  email: () => Promise<void>,
+  push: () => Promise<PushOutcome>,
+): Promise<void> {
+  if (!(await phoneOnly(db, playerId))) {
+    await email();
+    await push();
+    return;
+  }
+  const outcome = await push();
+  if (outcome === "failed" || outcome === "no-device") return email();
+  if (outcome === "deduped") return;
+  await db.from("notification_log").insert({
+    player_id: playerId,
+    channel: "email",
+    template_key: logKey,
+    status: "skipped",
+    error: "email off; phone notifications only",
+  });
+}
+
+async function phoneOnly(db: SupabaseClient, playerId: string): Promise<boolean> {
+  if (!pushConfigured()) return false;
+  const [{ data: p }, { count }] = await Promise.all([
+    db.from("players").select("email_notifications").eq("id", playerId).maybeSingle(),
+    db.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("player_id", playerId),
+  ]);
+  return p?.email_notifications === false && (count ?? 0) > 0;
+}
+
+async function logEmail(
+  db: SupabaseClient,
+  playerId: string,
+  logKey: string,
+  text: string,
+  result: Awaited<ReturnType<typeof send>>,
+): Promise<void> {
+  await db.from("notification_log").insert({
+    player_id: playerId,
+    channel: "email",
+    template_key: logKey,
+    body: text,
+    status: result.status,
+    provider_message_id: result.providerMessageId ?? null,
+    error: result.error ?? null,
+  });
 }
 
 /** Idempotency: one email per (player, dedupe key), checked against the log. Scoped
@@ -151,19 +201,14 @@ export async function emailDoc(
   push?: PushTiming,
 ): Promise<void> {
   const logKey = dedupeKey ?? templateKey;
-  if (player.email && !(dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) {
+  const email = async () => {
+    if (!player.email || (dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) return;
     const { html, text } = render(doc);
     const result = await send("email", templateKey, player.email, { subject, body: text, html });
-    await db.from("notification_log").insert({
-      player_id: player.id,
-      channel: "email",
-      template_key: logKey,
-      body: text,
-      status: result.status,
-      provider_message_id: result.providerMessageId ?? null,
-      error: result.error ?? null,
-    });
-  }
+    await logEmail(db, player.id, logKey, text, result);
+  };
 
-  await pushPlayer(db, player.id, templateKey, logKey, pushFromDoc(subject, doc), Boolean(dedupeKey), push);
+  await emailAndPush(db, player.id, logKey, email, () =>
+    pushPlayer(db, player.id, templateKey, logKey, pushFromDoc(subject, doc), Boolean(dedupeKey), push),
+  );
 }

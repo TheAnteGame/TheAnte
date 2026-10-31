@@ -8,6 +8,16 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-31 (sixty-eighth pass):** **Reactions in Table Talk (D-123).** 👍 ❤️ 😂 🔥 👎,
+> one per player per message; press and hold (phone) or hover + (computer). Three
+> reactions from others → the author gets one email + push. Migration 0037. Also sent the
+> league the phone-notification setup email (14/14).
+
+> **2026-10-31 (sixty-seventh pass):** **Phone only (D-122).** With phone notifications
+> on, a player can untick "Email me too"; a warning says the phone is now the only way
+> they hear. Email comes back automatically if their last device goes or a push can't be
+> delivered. Migration 0036 must be applied before deploy.
+
 > **2026-10-31 (sixty-sixth pass):** **Phone hours + names in chat (D-121).** Quiet hours
 > 10pm–9am for pushes (held, sent in the morning); week-open push at 10am Tue, final call
 > 9am Thu, new phone-only "one hour left" 11am Thu. Emails and the game clock unchanged.

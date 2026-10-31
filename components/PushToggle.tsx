@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { removePushSubscription, savePushSubscription, sendTestPush } from "@/app/actions/push";
+import { removePushSubscription, savePushSubscription, sendTestPush, setEmailNotifications } from "@/app/actions/push";
 import { pushSupport, registration, subscribe, writeFlag } from "@/lib/pushClient";
 
 interface Copy {
@@ -15,16 +15,32 @@ interface Copy {
   blocked: string;
   unsupported: string;
   failed: string;
+  emailLabel: string;
+  emailOffWarning: string;
 }
 
 type View = "loading" | "off" | "on" | "working" | "blocked" | "ios-install" | "unsupported";
 
 /** Phone notifications for THIS device (D-120). Acts on tap, outside the profile
  *  form: the browser's own Allow prompt has to come straight from the tap, and a
- *  device is switched on or off by itself, not saved with a name change. */
-export function PushToggle({ copy, publicKey }: { copy: Copy; publicKey: string }) {
+ *  device is switched on or off by itself, not saved with a name change.
+ *
+ *  With the phone on, email can go off (D-122). That one is per player, not per
+ *  device, and the server turns it back on when the player's last device goes. */
+export function PushToggle({ copy, publicKey, emailOn: initialEmailOn }: { copy: Copy; publicKey: string; emailOn: boolean }) {
   const [view, setView] = useState<View>("loading");
   const [failed, setFailed] = useState(false);
+  const [emailOn, setEmailOn] = useState(initialEmailOn);
+  const [savingEmail, setSavingEmail] = useState(false);
+
+  async function toggleEmail(on: boolean) {
+    setFailed(false);
+    setSavingEmail(true);
+    const result = await setEmailNotifications(on).catch(() => ({ ok: false, emailOn }));
+    setEmailOn(result.emailOn);
+    if (!result.ok) setFailed(true);
+    setSavingEmail(false);
+  }
 
   useEffect(() => {
     let live = true;
@@ -73,7 +89,8 @@ export function PushToggle({ copy, publicKey }: { copy: Copy; publicKey: string 
       const reg = await registration();
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
-        await removePushSubscription(sub.endpoint);
+        const removed = await removePushSubscription(sub.endpoint);
+        if (removed.emailBackOn) setEmailOn(true);
         await sub.unsubscribe();
       }
       writeFlag(false);
@@ -108,6 +125,27 @@ export function PushToggle({ copy, publicKey }: { copy: Copy; publicKey: string 
           <button type="button" onClick={turnOff} className={button}>
             {copy.turnOff}
           </button>
+        </div>
+      )}
+      {/* Shown while this phone is on — and whenever email is off, so it can always
+          be turned back on from any device. */}
+      {(view === "on" || !emailOn) && view !== "loading" && (
+        <div className="mt-2 flex flex-col gap-1">
+          <label className="flex items-center gap-2 text-sm text-[color:var(--color-text-hi)]">
+            <input
+              type="checkbox"
+              checked={emailOn}
+              disabled={savingEmail}
+              onChange={(e) => toggleEmail(e.target.checked)}
+              className="h-4 w-4 accent-[color:var(--color-chrome)]"
+            />
+            {copy.emailLabel}
+          </label>
+          {!emailOn && (
+            <p role="status" className="text-xs leading-relaxed text-[color:var(--color-loss)]">
+              {copy.emailOffWarning}
+            </p>
+          )}
         </div>
       )}
       {view === "ios-install" && <p className="text-sm leading-relaxed text-[color:var(--color-text-hi)]">{copy.iosSteps}</p>}

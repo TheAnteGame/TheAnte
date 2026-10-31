@@ -21,7 +21,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
   const db = createUserClient();
   const { data: me } = await db
     .from("players")
-    .select("first_name, last_name, email, favorite_team, theme_preference, chat_position")
+    .select("first_name, last_name, email, favorite_team, theme_preference, chat_position, email_notifications")
     .eq("id", state.player.id)
     .maybeSingle();
 
@@ -56,6 +56,8 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
     pushBlocked,
     pushUnsupported,
     pushFailed,
+    pushEmailLabel,
+    pushEmailOffWarning,
   ] = await Promise.all([
     getContent("profile.heading"),
     getContent("profile.first_name_label"),
@@ -85,6 +87,8 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
     getContent("profile.push_blocked"),
     getContent("profile.push_unsupported"),
     getContent("profile.push_failed"),
+    getContent("profile.push_email_label"),
+    getContent("profile.push_email_off_warning"),
   ]);
 
   const { error } = await searchParams;
@@ -131,6 +135,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
       {pushConfigured() && (
         <PushToggle
           publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!}
+          emailOn={me?.email_notifications !== false}
           copy={{
             label: pushLabel,
             help: pushHelp,
@@ -142,6 +147,8 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
             blocked: pushBlocked,
             unsupported: pushUnsupported,
             failed: pushFailed,
+            emailLabel: pushEmailLabel,
+            emailOffWarning: pushEmailOffWarning,
           }}
         />
       )}

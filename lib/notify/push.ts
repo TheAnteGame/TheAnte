@@ -74,6 +74,10 @@ export interface PushTiming {
   unlessTicketFor?: string;
 }
 
+/** What happened to a push, so a player who turned email off (D-122) can be emailed
+ *  after all when their phone was not reached. */
+export type PushOutcome = "sent" | "held" | "deduped" | "failed" | "no-device" | "not-pushed";
+
 export async function pushPlayer(
   db: SupabaseClient,
   playerId: string,
@@ -82,15 +86,15 @@ export async function pushPlayer(
   message: PushMessage,
   dedupe: boolean,
   timing?: PushTiming,
-): Promise<void> {
-  if (!pushConfigured()) return;
-  if (NOT_PUSHED.some((k) => templateKey.startsWith(k))) return;
+): Promise<PushOutcome> {
+  if (!pushConfigured()) return "no-device";
+  if (NOT_PUSHED.some((k) => templateKey.startsWith(k))) return "not-pushed";
 
   const { data: subs } = await db
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth")
     .eq("player_id", playerId);
-  if (!subs || subs.length === 0) return;
+  if (!subs || subs.length === 0) return "no-device";
 
   if (dedupe) {
     const { data: existing } = await db
@@ -101,7 +105,7 @@ export async function pushPlayer(
       .eq("template_key", logKey)
       .in("status", ["sent", "held"])
       .limit(1);
-    if (existing && existing.length > 0) return;
+    if (existing && existing.length > 0) return "deduped";
   }
 
   // Quiet hours (D-121): the push waits in push_queue and the push.release job sends
@@ -130,7 +134,7 @@ export async function pushPlayer(
       deliver_after: releaseAt.toISOString(),
       unless_ticket_week: timing?.unlessTicketFor ?? null,
     });
-    return;
+    return "held";
   }
 
   const result = await deliver(db, subs, message);
@@ -142,6 +146,7 @@ export async function pushPlayer(
     status: result.sent > 0 ? "sent" : "failed",
     error: result.errors.length > 0 ? result.errors.join("; ").slice(0, 500) : null,
   });
+  return result.sent > 0 ? "sent" : "failed";
 }
 
 /** One player's devices. A 404 or 410 means the push service has forgotten that
@@ -180,8 +185,20 @@ export async function deliver(
     }),
   );
 
-  if (gone.length > 0) await db.from("push_subscriptions").delete().in("id", gone);
+  if (gone.length > 0) {
+    const { data: removed } = await db.from("push_subscriptions").delete().in("id", gone).select("player_id");
+    for (const id of new Set((removed ?? []).map((r) => r.player_id as string))) await emailBackOnIfNoDevices(db, id);
+  }
   if (ok.length > 0) await db.from("push_subscriptions").update({ last_seen_at: new Date().toISOString() }).in("id", ok);
   if (ok.length === 0 && errors.length === 0) errors.push("every device had unsubscribed; removed");
   return { sent: ok.length, errors };
+}
+
+/** A player with no device left cannot be phone-only (D-122): email comes back on.
+ *  The senders already email such a player regardless; this keeps the profile honest. */
+export async function emailBackOnIfNoDevices(db: SupabaseClient, playerId: string): Promise<boolean> {
+  const { count } = await db.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("player_id", playerId);
+  if ((count ?? 0) > 0) return false;
+  await db.from("players").update({ email_notifications: true }).eq("id", playerId).eq("email_notifications", false);
+  return true;
 }

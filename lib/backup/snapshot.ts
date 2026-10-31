@@ -32,6 +32,7 @@ export const SNAPSHOT_TABLES: TableSpec[] = [
   { name: "pot_awards", orderBy: ["id"] },
   { name: "mark_votes", orderBy: ["id"] },
   { name: "chat_messages", orderBy: ["id"] },
+  { name: "chat_reactions", orderBy: ["message_id", "player_id"] },
   { name: "moderation_actions", orderBy: ["id"] },
   { name: "support_messages", orderBy: ["id"] },
   { name: "audit_log", orderBy: ["id"] },

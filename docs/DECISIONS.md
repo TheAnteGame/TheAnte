@@ -3456,3 +3456,59 @@ If Bob should answer to Robert too, his displayed name is the place to say so
 
 **Release order:** apply 0035 → `schema:check` → deploy. The order matters: the new code
 writes to `push_queue` at night, and without the table those pushes would be lost.
+
+## D-122 — Phone only: email can go off while a phone is on (2026-10-31)
+
+**Owner's call.** On Profile, once phone notifications are on, an "Email me too" box
+appears (ticked). Unticking it turns league email off for that player — a per-player
+setting, `players.email_notifications` (migration 0036), not per device. A warning shows
+while it is off: the phone is now the only way the league reaches them, and if they turn
+ANTE off in the phone's own settings they get nothing at all — the one case the app
+cannot see, because the push service still accepts the push.
+
+**It can never mean silence from inside the app.** The rule lives in the senders
+(`emailAndPush` in `lib/notify/templates.ts`), not the UI:
+- Email off only counts while the player has at least one device. No device → email.
+- Phone only, push sent or held for the morning → no email; logged as `skipped`.
+- Phone only, push reached no device (all failed, or 404/410 pruned the last one) →
+  the email goes after all.
+- Turning phone notifications off here, or the push service forgetting the last device,
+  sets email back on, and the profile shows it at once.
+- Receipts that never push (ticket locked, application received) are not emailed to a
+  phone-only player either: they record something the player just did on screen.
+
+Known gap: a push held overnight that then fails at the 9am release does not fall back
+to email (the held row carries the push text, not the email).
+
+**Admin:** the roster's Push column adds "· no email" for phone-only players.
+
+**Release order:** apply 0036 → `schema:check` → deploy.
+
+## D-123 — Reactions in Table Talk (2026-10-31)
+
+**Five, one each.** 👍 ❤️ 😂 🔥 👎 on any player message. One reaction per player per
+message (`chat_reactions`, migration 0037, primary key message + player): picking another
+swaps it, picking yours again takes it off. Stored as a kind (`like`, `love`, `laugh`,
+`fire`, `dislike`) so the allowed list is plain text for `schema:check`.
+
+**On screen.** Chips under the message with counts; yours has the gold edge. Phone:
+press and hold a message for the picker (touch only — a mouse keeps ordinary text
+selection; on phones, message text can no longer be long-press selected). Computer:
+hover and tap the + that floats above the line. Tap a chip to add or take off yours;
+press and hold a chip (or hover it) to see who. The on-screen answer is instant
+(`useOptimistic`); the dashboard's five-second refresh is the truth.
+
+**Rules.** Approved players read reactions (names are public, §11). Writes go through
+the `reactToMessage` server action with the service role after checking the seat, the
+mute (a muted player cannot react — a reaction is a small post), and that the message
+is a visible player message — the poll-vote shape.
+
+**The author hears about it at three.** Owner's call: when three players other than
+the author have reacted, the author gets one email and one push ("3 People Reacted to
+Your Message", with the tally and the message). Once per message, ever (`reactions-<id>`
+dedupe). It goes through `emailPlayer`, so quiet hours and phone-only (D-122) apply.
+
+Also: the Table Talk help now says names work without the @ (D-121) and how to react.
+Backups include `chat_reactions`; restore accepts a backup taken before it existed.
+
+**Release order:** apply 0037 → `schema:check` → deploy.

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPlayerState } from "@/lib/player";
 import { serviceDb } from "@/lib/jobs/util";
 import { getContent } from "@/lib/content/getContent";
-import { deliver, pushConfigured } from "@/lib/notify/push";
+import { deliver, emailBackOnIfNoDevices, pushConfigured } from "@/lib/notify/push";
 
 // The profile toggle's three moves (D-120). push_subscriptions has no RLS policies,
 // so every write here is the service role — after re-checking who is signed in,
@@ -43,15 +43,29 @@ export async function savePushSubscription(sub: unknown, userAgent: string): Pro
   return { ok: !error };
 }
 
-export async function removePushSubscription(endpoint: string): Promise<{ ok: boolean }> {
+/** Turn off on this device. If it was the player's last one, email comes back on
+ *  (D-122) and the toggle is told, so the profile shows it at once. */
+export async function removePushSubscription(endpoint: string): Promise<{ ok: boolean; emailBackOn: boolean }> {
   const playerId = await me();
-  if (!playerId) return { ok: false };
-  const { error } = await serviceDb()
-    .from("push_subscriptions")
-    .delete()
-    .eq("player_id", playerId)
-    .eq("endpoint", endpoint);
-  return { ok: !error };
+  if (!playerId) return { ok: false, emailBackOn: false };
+  const db = serviceDb();
+  const { error } = await db.from("push_subscriptions").delete().eq("player_id", playerId).eq("endpoint", endpoint);
+  if (error) return { ok: false, emailBackOn: false };
+  return { ok: true, emailBackOn: await emailBackOnIfNoDevices(db, playerId) };
+}
+
+/** Email on or off (D-122). Off only while the player has a device to hear on —
+ *  never "nothing at all" from this switch. */
+export async function setEmailNotifications(on: boolean): Promise<{ ok: boolean; emailOn: boolean }> {
+  const playerId = await me();
+  if (!playerId) return { ok: false, emailOn: true };
+  const db = serviceDb();
+  if (!on) {
+    const { count } = await db.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("player_id", playerId);
+    if ((count ?? 0) === 0) return { ok: false, emailOn: true };
+  }
+  const { error } = await db.from("players").update({ email_notifications: on }).eq("id", playerId);
+  return { ok: !error, emailOn: error ? !on : on };
 }
 
 /** The proof it works, sent the moment it is switched on, to that device only. */

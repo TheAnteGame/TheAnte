@@ -142,7 +142,11 @@ export default async function Players() {
                   <td className={tdCls}>{p.status}</td>
                   <td className={`${tdCls} text-xs`}>
                     {devicesOf(p.id).length > 0 ? (
-                      devicesOf(p.id).join(", ")
+                      <>
+                        {devicesOf(p.id).join(", ")}
+                        {/* D-122: they asked for the phone only. */}
+                        {p.email_notifications === false && <span className="text-[color:var(--color-text-low)]"> · no email</span>}
+                      </>
                     ) : (
                       <span className="text-[color:var(--color-text-low)]">email only</span>
                     )}
