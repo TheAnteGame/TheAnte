@@ -987,3 +987,50 @@ textarea {
      against the composer. */
   background-position: bottom left;
 }
+
+/* ── The dashboard bar (D-125) ─────────────────────────────────────────────────
+   Sticky, but it only becomes a plate once the page moves under it: at the top it
+   sits on the table like the rest of the masthead, scrolled it frosts so the rows
+   passing beneath never fight its type. */
+.dash-bar {
+  transition: background-color 160ms ease, backdrop-filter 160ms ease;
+}
+.dash-bar[data-stuck="true"] {
+  background-color: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+
+/* The player's mark: their initial on a poker chip — gold edge spots, a felt centre.
+   The one ornament in the bar; everything around it stays quiet. */
+.chip-avatar {
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle, var(--color-surface-2) 0 56%, var(--color-gold-dim) 56% 60%, transparent 60%),
+    repeating-conic-gradient(var(--color-gold) 0 18deg, var(--color-surface-3) 18deg 36deg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  color: var(--color-text-hi);
+}
+
+/* Menus open with a short drop, never a slide across the page. */
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.menu-pop {
+  animation: menu-pop 140ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-pop {
+    animation: none;
+  }
+  .dash-bar {
+    transition: none;
+  }
+}

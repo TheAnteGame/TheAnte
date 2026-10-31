@@ -17,6 +17,7 @@ import { LeagueStats } from "@/components/dash/LeagueStats";
 import { PlayStyleCard } from "@/components/dash/PlayStyleCard";
 import { PollRefresh } from "@/components/wager/PollRefresh";
 import { HeaderMenu } from "@/components/dash/HeaderMenu";
+import { DashBar } from "@/components/dash/DashBar";
 
 // The dashboard (ANTE-PLAYER §4): header, ticker, stakes band, then two columns —
 // wager area + leaderboard left (~62%), Table Talk / news / promo / support right.
@@ -50,6 +51,8 @@ export default async function Dashboard() {
     faqLabel,
     helpLabel,
     menuAria,
+    profileLabel,
+    accountAria,
     commissioner,
   ] = await Promise.all([
     getContent("dash.header_rank_label"),
@@ -62,57 +65,61 @@ export default async function Dashboard() {
     getContent("dash.faq_link_label"),
     getContent("dash.help_label"),
     getContent("dash.menu_aria"),
+    getContent("dash.profile_label"),
+    getContent("dash.account_aria"),
     getCommissioner(),
   ]);
 
   return (
     <div className="min-h-screen">
       <PollRefresh intervalMs={5000} />
-      {/* The masthead sits in the same column as everything else, so the rail and
-          the ticker read as plates on the table rather than a browser chrome bar. */}
-      <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
-        {/* No top padding (D-055): the wrapper above already supplies pt-5, so the
-            header's own 12px only pushed the masthead further down the page. Bottom
-            padding stays, or the logo sits on the ticker. */}
-        <header className="rail flex items-start justify-between gap-4 px-6 pb-3 pt-0">
-          {/* D-124: logo with the rank box under it on the left; everything else lives
-              in HeaderMenu — a stack on a computer, one menu on a phone. */}
-          <div className="flex flex-col items-start gap-2">
-            <Link href="/dashboard" className="shrink-0">
-              <Logo alt={logoAlt} width={104} height={66} priority className="h-auto w-[83px] sm:w-[104px]" />
-            </Link>
-            <div className="well chamfer flex items-baseline gap-2 px-3 py-1.5">
-              <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
+      {/* The bar (D-125): one row, sticky, in the same column as everything else so
+          it still reads as part of the table rather than browser chrome. It only
+          frosts once the page scrolls under it (DashBar). */}
+      <DashBar>
+        <div className="rail mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:px-6">
+          <Link href="/dashboard" className="shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-gold)]">
+            <Logo alt={logoAlt} width={104} height={66} priority className="h-10 w-auto sm:h-12" />
+          </Link>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            {/* The player's standing — the one figure they always want — as the milled
+                plate it has always been, just smaller and in line. */}
+            <div className="well chamfer flex shrink-0 items-baseline gap-1.5 px-2.5 py-1 sm:gap-2 sm:px-3 sm:py-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-mid)] sm:text-[12px] sm:tracking-[0.18em]">
                 {rankLabel}
               </span>
-              <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-text-hi)]">
+              <span className="nums font-[family-name:var(--font-display)] text-[13px] font-bold text-[color:var(--color-text-hi)] sm:text-sm">
                 {standing?.rank ?? "\u2014"}
               </span>
               <span aria-hidden className="text-[color:var(--color-border)]">
                 /
               </span>
-              <span className="nums font-[family-name:var(--font-display)] text-sm font-bold text-[color:var(--color-stack)]">
+              <span className="nums font-[family-name:var(--font-display)] text-[13px] font-bold text-[color:var(--color-stack)] sm:text-sm">
                 {standing?.stack ?? "\u2014"}
               </span>
-              <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-text-mid)]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-mid)] sm:text-[12px] sm:tracking-[0.18em]">
                 {chipsLabel}
               </span>
             </div>
+            <HeaderMenu
+              name={state.player!.firstName ?? "\u2014"}
+              standing={`${rankLabel} ${standing?.rank ?? "\u2014"} \u00b7 ${standing?.stack ?? "\u2014"} ${chipsLabel}`}
+              helpLabel={helpLabel}
+              profileLabel={profileLabel}
+              menuAria={menuAria}
+              accountAria={accountAria}
+              help={[
+                { href: "/guide", label: guideLabel },
+                { href: "/how-to-play?replay=1", label: tutorialLabel },
+                { href: "/faq", label: faqLabel },
+              ]}
+              commissioner={commissioner ? { href: "/admin", label: commissionerLabel } : null}
+              logoutLabel={logoutLabel}
+            />
           </div>
-          <HeaderMenu
-            name={state.player!.firstName ?? "\u2014"}
-            helpLabel={helpLabel}
-            menuAria={menuAria}
-            help={[
-              { href: "/guide", label: guideLabel },
-              { href: "/how-to-play?replay=1", label: tutorialLabel },
-              { href: "/faq", label: faqLabel },
-            ]}
-            commissioner={commissioner ? { href: "/admin", label: commissionerLabel } : null}
-            logoutLabel={logoutLabel}
-          />
-        </header>
-
+        </div>
+      </DashBar>
+      <div className="mx-auto max-w-6xl px-4 pt-3 sm:px-6">
         <Ticker />
       </div>
 

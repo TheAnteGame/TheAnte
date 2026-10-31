@@ -3525,3 +3525,27 @@ the name, the rank box, the commissioner button and Log out wrapping on the righ
 
 `components/dash/HeaderMenu.tsx`; the break is Tailwind's `sm` (640px). New content keys
 `dash.help_label`, `dash.menu_aria`. Nothing else on the dashboard moved.
+
+## D-125 — The dashboard bar: one row, sticky, account menu (2026-10-31)
+
+Supersedes D-124's layout; same pieces. Owner: "feel and act like a professional
+commercial web app".
+
+- **One row, sticky.** 56px on a phone, 72px on a computer, still in the content column
+  (the masthead stays part of the table, not browser chrome). It is transparent at the
+  top of the page and frosts (`.dash-bar[data-stuck]`) once anything scrolls under it.
+- **Phone:** logo · rank/chips plate · ☰. The ☰ opens a sheet under the bar over a dim:
+  the player's chip, name and standing (tap → Profile), then Help (How to Play,
+  Tutorial, FAQ), Commissioner, Log out, as 48px rows. The page cannot scroll behind it.
+  Portalled to `<body>` — the bar's `backdrop-filter` would otherwise be the box fixed
+  children measure from, and the dim collapsed to nothing.
+- **Computer:** logo · plate · Help ▾ · account (chip + name ▾ → Profile, Commissioner,
+  Log out). Name, Help and Log out are no longer a stack.
+- **The chip avatar** (`.chip-avatar`): the player's initial on a poker chip, gold edge
+  spots. The one ornament in the bar.
+- **Behaviour:** tap outside, Escape or choosing an item closes; focus goes to the
+  first item on open and back to the button on Escape; Up/Down move through items;
+  a short drop animation, off under reduced motion.
+
+`components/dash/DashBar.tsx`, `components/dash/HeaderMenu.tsx`. New content keys
+`dash.profile_label`, `dash.account_aria`.

@@ -188,6 +188,8 @@ export const contentDefaults: Record<string, string> = {
   "dash.faq_link_label": "FAQ",
   "dash.help_label": "Help",
   "dash.menu_aria": "Menu",
+  "dash.profile_label": "Profile",
+  "dash.account_aria": "Your account",
   "guide.heading": "How to Play",
   "guide.intro": "ANTE is a season-long football pool. You bet chips on NFL games. The biggest stack on the last Sunday wins. Here is the whole thing in plain English.",
   "guide.back_cta": "Back to the game board",

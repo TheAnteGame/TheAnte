@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-31 (seventieth pass):** **Dashboard bar (D-125).** One sticky row that frosts
+> on scroll; phone ☰ opens a sheet; computer gets Help ▾ and an account menu with the
+> player's chip avatar. Keyboard and reduced-motion handled.
+
 > **2026-10-31 (sixty-ninth pass):** **Header cleanup (D-124).** Rank box under the logo;
 > How to Play / Tutorial / FAQ in a Help menu; on phones everything else is in a ☰ menu.
 
