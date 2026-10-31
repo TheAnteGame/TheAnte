@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildHandles, findMentioned, segmentBody, type Mentionable } from "./mentions";
+import { buildHandles, findMentioned, findNamed, segmentBody, type Mentionable } from "./mentions";
 
 const roster: Mentionable[] = [
   { id: "p1", firstName: "Robert", lastName: "Toler" },
@@ -85,5 +85,57 @@ describe("segmentBody", () => {
   it("reassembles to the original body exactly", () => {
     const body = "@RobertT and @Dana, both wrong. @Nobody too.";
     expect(segmentBody(body, handles).map((s) => s.text).join("")).toBe(body);
+  });
+});
+
+describe("findNamed (D-121)", () => {
+  // The league as it really is: two Steves, a Zack displayed as "Robert (Zack)",
+  // and a Bob who is a Robert in life but not on screen.
+  const league: Mentionable[] = [
+    { id: "zack", firstName: "Robert (Zack)", lastName: "Toler" },
+    { id: "bob", firstName: "Bob", lastName: "Toler" },
+    { id: "steveL", firstName: "Steve", lastName: "Lopez" },
+    { id: "steveM", firstName: "Steve", lastName: "Moore" },
+    { id: "dustin", firstName: "Dustin", lastName: "Gray" },
+    { id: "justin", firstName: "Justin", lastName: "Green" },
+  ];
+
+  it("hears a unique first name in plain words, any case", () => {
+    expect(findNamed("dustin you're crazy", league)).toEqual(["dustin"]);
+    expect(findNamed("Nice pick, Dustin!", league)).toEqual(["dustin"]);
+  });
+
+  it("matches whole words only", () => {
+    expect(findNamed("Justin took the over", league)).toEqual(["justin"]);
+    expect(findNamed("Dustinator strikes again", league)).toEqual([]);
+  });
+
+  it("answers to every word of the displayed first name, and only those", () => {
+    expect(findNamed("Zack is on a heater", league)).toEqual(["zack"]);
+    expect(findNamed("Robert is on a heater", league)).toEqual(["zack"]);
+    expect(findNamed("Zach is on a heater", league)).toEqual([]);
+    expect(findNamed("Bob is on a heater", league)).toEqual(["bob"]);
+  });
+
+  it("pings no Steve for a bare Steve", () => {
+    expect(findNamed("Steve, what was that?", league)).toEqual([]);
+    expect(findNamed("Steve's ticket is wild", league)).toEqual([]);
+  });
+
+  it("pings the one Steve a last initial or last name picks out", () => {
+    expect(findNamed("Steve L, what was that?", league)).toEqual(["steveL"]);
+    expect(findNamed("steve moore took the dog", league)).toEqual(["steveM"]);
+    expect(findNamed("Steve look at this", league)).toEqual([]);
+  });
+
+  it("cannot split two Roberts who share a last name; their other names can", () => {
+    const shared = [...league.filter((p) => p.id !== "bob"), { id: "bob", firstName: "Robert (Bob)", lastName: "Toler" }];
+    expect(findNamed("Robert T is up big", shared)).toEqual([]);
+    expect(findNamed("Bob and Zack both folded", shared)).toEqual(["bob", "zack"]);
+  });
+
+  it("leaves @ handles to findMentioned and names each player once", () => {
+    expect(findNamed("@Dustin", league)).toEqual([]);
+    expect(findNamed("Dustin! DUSTIN!", league)).toEqual(["dustin"]);
   });
 });

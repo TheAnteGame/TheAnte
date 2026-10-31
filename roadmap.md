@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-31 (sixty-sixth pass):** **Phone hours + names in chat (D-121).** Quiet hours
+> 10pm–9am for pushes (held, sent in the morning); week-open push at 10am Tue, final call
+> 9am Thu, new phone-only "one hour left" 11am Thu. Emails and the game clock unchanged.
+> Table Talk pings anyone named by displayed first name, no @ needed; shared names (two
+> Steves) need a last name/initial. Migration 0035 must be applied before deploy.
+
 > **2026-10-31 (sixty-fifth pass):** **Phone notifications (D-120).** Web push, per
 > device, from a Profile toggle; every league email also lands on the lock screen, email
 > unchanged. Migration 0034 + two VAPID env vars; hidden until both keys are set. SMS

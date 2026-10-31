@@ -3415,3 +3415,44 @@ that way. Never regenerate the pair once players have switched on.
 **Admin:** the roster has a Push column (device kinds, or "email only").
 
 **Release order:** apply 0034 → `schema:check` → set both keys in Vercel → deploy.
+
+## D-121 — Phones keep their own hours; Table Talk hears names without the @ (2026-10-31)
+
+**Owner's call: no buzz at 6am.** Phone notifications now have quiet hours, 10pm–9am
+league time. A push asked for inside them waits in `push_queue` (migration 0035) and the
+`push.release` job (every five minutes) sends it in the morning. Waiting, not dropping:
+an 11pm mention is still worth seeing at 9am. **Emails keep every time they had** — the
+owner was talking about phones only, and the game's clock (open, reveal, the wall) does
+not move at all.
+
+**The week's phone schedule, for a player who has not bet:**
+
+| When (MT) | Push | How |
+|---|---|---|
+| Tue 10:00am | Week n is open | The 6am email's push, held to 10am |
+| Wed 12:00pm | Reminder, 24 hours | Unchanged |
+| Thu 9:00am | Final call | The 6am email's push, held by quiet hours |
+| Thu 11:00am | One hour left | **Phone only, no email** — new cron `ante-last-hour-thu`, content keys `push.last_hour.*` |
+| Thu noon | You were folded | Unchanged (fires with the reveal) |
+
+A held reminder carries its week and is dropped if the player has a ticket in by the
+time it is due — the 10am and 9am pushes reach only people who still need them. Held
+mentions collapse to the latest one per player. Anything held more than six hours past
+its time is dropped, not sent late. Every held push is logged as `held` and updated to
+what happened.
+
+**Names in Table Talk, no @ needed.** Most of the table never typed the @. Now every word
+of a player's first name **as the app displays it** pings them — "Robert (Zack)" answers
+to Robert and Zack, nothing else (no nickname list; "Zach" does not match "Zack"). A name
+two players share pings nobody on its own (two Steves); followed by a last name or last
+initial that picks out one of them ("Steve L") it pings that one. Two players who share
+first AND last name can only be told apart by their other displayed names or by the @
+picker. The @ works exactly as before. A name-only ping reaches a player at most once per
+30 minutes; an @ is never held back. Same template and email as an @mention.
+
+**Bob/Robert.** Bob Toler is displayed as "Bob", so "Robert" pings only Robert (Zack).
+If Bob should answer to Robert too, his displayed name is the place to say so
+("Robert (Bob)") — then "Robert" is shared and pings nobody, by the same rule as Steve.
+
+**Release order:** apply 0035 → `schema:check` → deploy. The order matters: the new code
+writes to `push_queue` at night, and without the table those pushes would be lost.

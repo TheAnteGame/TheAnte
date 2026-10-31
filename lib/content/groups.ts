@@ -28,6 +28,7 @@ const CONTENT_GROUPS: Record<string, GroupInfo> = {
   awards: { title: "Season awards", where: "Award names and descriptions." },
   promo: { title: "Promo box", where: "Your announcement slot on the dashboard. Leave the heading empty and the box does not show." },
   notify: { title: "Emails", where: "Subject lines and bodies of the emails the app sends players." },
+  push: { title: "Phone notifications", where: "Notifications that go to phones only, with no email beside them — the Thursday 11am one-hour warning." },
   sms: { title: "SMS", where: "The text-message opt-in wording. SMS is not switched on yet (D-001)." },
   error: { title: "Error messages", where: "Generic failure messages shown when something goes wrong." },
   empty: { title: "Empty states", where: "What a screen says when there is nothing to show yet." },

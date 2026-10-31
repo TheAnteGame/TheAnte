@@ -1,7 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import webpush from "web-push";
+import { DateTime } from "luxon";
 import type { EmailDoc } from "./render";
+import { pushReleaseAt } from "./quiet";
 
 // Phone notifications by web push (D-120). A push is never its own message: it is
 // the email it rides beside, cut down to a lock-screen line — the subject as the
@@ -63,6 +65,15 @@ export function pushFromDoc(subject: string, doc: EmailDoc): PushMessage {
   };
 }
 
+/** When a push may reach a phone (D-121). Quiet hours always apply; these add to them. */
+export interface PushTiming {
+  /** Hold a morning push until this hour, league time (the week-open push: 10). */
+  notBeforeHour?: number;
+  /** A reminder: if the player has a ticket in this week by the time the push is
+   *  due, it is not sent. Only matters for a push that was held. */
+  unlessTicketFor?: string;
+}
+
 export async function pushPlayer(
   db: SupabaseClient,
   playerId: string,
@@ -70,6 +81,7 @@ export async function pushPlayer(
   logKey: string,
   message: PushMessage,
   dedupe: boolean,
+  timing?: PushTiming,
 ): Promise<void> {
   if (!pushConfigured()) return;
   if (NOT_PUSHED.some((k) => templateKey.startsWith(k))) return;
@@ -87,9 +99,38 @@ export async function pushPlayer(
       .eq("player_id", playerId)
       .eq("channel", "push")
       .eq("template_key", logKey)
-      .eq("status", "sent")
+      .in("status", ["sent", "held"])
       .limit(1);
     if (existing && existing.length > 0) return;
+  }
+
+  // Quiet hours (D-121): the push waits in push_queue and the push.release job sends
+  // it in the morning. The log row is written now, as "held", so the dedupe above
+  // sees it and a re-run cannot queue it twice.
+  const releaseAt = pushReleaseAt(DateTime.now(), timing?.notBeforeHour);
+  if (releaseAt) {
+    const { data: log } = await db
+      .from("notification_log")
+      .insert({
+        player_id: playerId,
+        channel: "push",
+        template_key: logKey,
+        body: `${message.title} — ${message.body}`,
+        status: "held",
+      })
+      .select("id")
+      .single();
+    await db.from("push_queue").insert({
+      player_id: playerId,
+      log_id: log?.id ?? null,
+      log_key: logKey,
+      title: message.title,
+      body: message.body,
+      url: message.url,
+      deliver_after: releaseAt.toISOString(),
+      unless_ticket_week: timing?.unlessTicketFor ?? null,
+    });
+    return;
   }
 
   const result = await deliver(db, subs, message);

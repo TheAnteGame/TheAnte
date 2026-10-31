@@ -96,5 +96,46 @@ export function segmentBody(body: string, handles: Handle[]): Array<{ text: stri
   return out;
 }
 
+/** Players named in plain words, no "@" needed (D-121). Most of the table never
+ *  types the @; they write "Dustin, you're crazy". So every word of a player's first
+ *  name AS DISPLAYED counts — "Robert (Zack)" answers to Robert and to Zack — and
+ *  nothing else does: no nickname list, no guessing.
+ *
+ *  A name more than one player answers to (two Steves) pings nobody on its own; a
+ *  wrong buzz is worse than none. Followed by a last name or last initial that picks
+ *  out exactly one of them ("Steve L", "Steve Lastname"), it pings that one. Two
+ *  Robert Tolers can only be told apart by their other names, or by the @ picker. */
+export function findNamed(body: string, roster: Mentionable[]): string[] {
+  const owners = new Map<string, Mentionable[]>();
+  for (const p of roster) {
+    const words = new Set((p.firstName ?? "").toLowerCase().match(/[a-z]{2,}/g) ?? []);
+    for (const w of words) owners.set(w, [...(owners.get(w) ?? []), p]);
+  }
+
+  const words = [...body.matchAll(/[A-Za-z]+/g)];
+  const found: string[] = [];
+  words.forEach((m, i) => {
+    // "@Steve…" belongs to findMentioned, which knows the handles.
+    if (body[(m.index ?? 0) - 1] === "@") return;
+    const sharers = owners.get(m[0].toLowerCase());
+    if (!sharers) return;
+    let who: Mentionable | undefined = sharers.length === 1 ? sharers[0] : undefined;
+    if (!who) {
+      // The word after, unless it is the "s" of "Steve's".
+      const after = words[i + 1];
+      const next = after && !"'’".includes(body[(after.index ?? 0) - 1]) ? after[0].toLowerCase() : undefined;
+      const picked = next
+        ? sharers.filter((p) => {
+            const last = clean(p.lastName).toLowerCase();
+            return last.length > 0 && (next === last || next === last[0]);
+          })
+        : [];
+      if (picked.length === 1) who = picked[0];
+    }
+    if (who && !found.includes(who.id)) found.push(who.id);
+  });
+  return found;
+}
+
 /** A mail storm is not engagement. */
 export const MAX_MENTIONS_PER_MESSAGE = 5;

@@ -284,6 +284,9 @@ export const contentDefaults: Record<string, string> = {
   "mail.week_blocked.subject": "ANTE: Week {week} Did Not Open",
   "notify.reminder": "Week {week}: {hours_left} hours to the wall, and your name is on the waiting list.",
   "notify.final_call": "Final call for Week {week}. Submit by noon MST or you're folded — and you still owe the ante.",
+  // Phones only, Thursday 11am (D-121) — there is no email for this one.
+  "push.last_hour.title": "One Hour Left for Week {week}",
+  "push.last_hour.body": "Bet by noon or you're folded — and you still owe the ante.",
   "notify.nudge":
     "{first_name} — every player who has already put a ticket in can see your name sitting on the waiting list.\n\nThursday noon is the wall. Miss it and you are folded automatically: you still pay the ante, and a fold can never win the Pot.",
 

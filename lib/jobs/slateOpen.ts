@@ -371,6 +371,9 @@ async function sendWeekOpenMail(
         leaders,
       }),
       `notify.slate_open:w${weekNumber}:${p.id}`,
+      // The email goes at 6am; the phone waits for 10am, and skips anyone who has
+      // bet by then (D-121).
+      { notBeforeHour: 10, unlessTicketFor: weekId },
     );
   }
 }

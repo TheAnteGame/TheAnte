@@ -4,7 +4,7 @@ import { contentDefaults } from "@/lib/content/defaults";
 import { send } from "./index";
 import { render, type EmailDoc } from "./render";
 import { templateDoc } from "./docs";
-import { pushBody, pushFromDoc, pushPath, pushPlayer, pushTitle } from "./push";
+import { pushBody, pushFromDoc, pushPath, pushPlayer, pushTitle, type PushTiming } from "./push";
 
 // Template rendering + logged sends. Templates are content-managed (notify.* keys);
 // variables are a WHITELIST passed by the calling job — that is how the blackout
@@ -46,7 +46,7 @@ export async function emailPlayer(
   subject: string,
   vars: Record<string, string | number>,
   dedupeKey?: string,
-  opts?: { allowFreeText?: boolean; eyebrow?: string; headline?: string; cta?: { label: string; href: string; sub?: string } },
+  opts?: { allowFreeText?: boolean; eyebrow?: string; headline?: string; cta?: { label: string; href: string; sub?: string }; push?: PushTiming },
 ): Promise<void> {
   const logKey = dedupeKey ?? templateKey;
 
@@ -99,6 +99,7 @@ export async function emailPlayer(
     logKey,
     { title: pushTitle(subject), body: pushBody(body), url: pushPath(opts?.cta?.href) },
     Boolean(dedupeKey),
+    opts?.push,
   );
 }
 
@@ -147,6 +148,7 @@ export async function emailDoc(
   subject: string,
   doc: EmailDoc,
   dedupeKey?: string,
+  push?: PushTiming,
 ): Promise<void> {
   const logKey = dedupeKey ?? templateKey;
   if (player.email && !(dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) {
@@ -163,5 +165,5 @@ export async function emailDoc(
     });
   }
 
-  await pushPlayer(db, player.id, templateKey, logKey, pushFromDoc(subject, doc), Boolean(dedupeKey));
+  await pushPlayer(db, player.id, templateKey, logKey, pushFromDoc(subject, doc), Boolean(dedupeKey), push);
 }
