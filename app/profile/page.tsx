@@ -5,6 +5,8 @@ import { createAnonServerClient, createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { getPlayerState } from "@/lib/player";
 import { ProfileForm } from "@/components/ProfileForm";
+import { PushToggle } from "@/components/PushToggle";
+import { pushConfigured } from "@/lib/notify/push";
 
 // Edit own profile (ANTE-PLAYER §3.2). Phone changes go through Clerk's own flow,
 // never an admin write. Name changes post nothing publicly.
@@ -44,6 +46,16 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
     submitLabel,
     errorGeneric,
     logoAlt,
+    pushLabel,
+    pushHelp,
+    pushOn,
+    pushOff,
+    pushTurnOff,
+    pushWorking,
+    pushIosSteps,
+    pushBlocked,
+    pushUnsupported,
+    pushFailed,
   ] = await Promise.all([
     getContent("profile.heading"),
     getContent("profile.first_name_label"),
@@ -63,6 +75,16 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
     getContent("profile.submit_label"),
     getContent("profile.error_generic"),
     getContent("home.logo_alt"),
+    getContent("profile.push_label"),
+    getContent("profile.push_help"),
+    getContent("profile.push_on"),
+    getContent("profile.push_off"),
+    getContent("profile.push_turn_off"),
+    getContent("profile.push_working"),
+    getContent("profile.push_ios_steps"),
+    getContent("profile.push_blocked"),
+    getContent("profile.push_unsupported"),
+    getContent("profile.push_failed"),
   ]);
 
   const { error } = await searchParams;
@@ -105,6 +127,24 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
         }}
         showError={error === "1"}
       />
+      {/* Hidden until both VAPID keys are set, so the code can ship before them (D-120). */}
+      {pushConfigured() && (
+        <PushToggle
+          publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!}
+          copy={{
+            label: pushLabel,
+            help: pushHelp,
+            on: pushOn,
+            off: pushOff,
+            turnOff: pushTurnOff,
+            working: pushWorking,
+            iosSteps: pushIosSteps,
+            blocked: pushBlocked,
+            unsupported: pushUnsupported,
+            failed: pushFailed,
+          }}
+        />
+      )}
     </main>
   );
 }

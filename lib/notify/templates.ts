@@ -4,6 +4,7 @@ import { contentDefaults } from "@/lib/content/defaults";
 import { send } from "./index";
 import { render, type EmailDoc } from "./render";
 import { templateDoc } from "./docs";
+import { pushBody, pushFromDoc, pushPath, pushPlayer, pushTitle } from "./push";
 
 // Template rendering + logged sends. Templates are content-managed (notify.* keys);
 // variables are a WHITELIST passed by the calling job — that is how the blackout
@@ -47,20 +48,7 @@ export async function emailPlayer(
   dedupeKey?: string,
   opts?: { allowFreeText?: boolean; eyebrow?: string; headline?: string; cta?: { label: string; href: string; sub?: string } },
 ): Promise<void> {
-  if (!player.email) return;
-
-  // Idempotency: one send per (player, dedupe key), checked against the log.
   const logKey = dedupeKey ?? templateKey;
-  if (dedupeKey) {
-    const { data: existing } = await db
-      .from("notification_log")
-      .select("id")
-      .eq("player_id", player.id)
-      .eq("template_key", logKey)
-      .in("status", ["sent", "queued"])
-      .limit(1);
-    if (existing && existing.length > 0) return;
-  }
 
   const raw = await template(db, templateKey);
   const body = fill(raw, vars);
@@ -86,19 +74,46 @@ export async function emailPlayer(
   // These used to send bare text: a player's inbox showed a branded document for a
   // ticket confirmation and an unstyled paragraph for the reminder ten minutes later.
   // The commissioner's edited words are the body; the envelope comes free.
-  const { html, text } = render(
-    templateDoc({ eyebrow: opts?.eyebrow ?? "ANTE", headline: opts?.headline ?? subject.replace(/^ANTE:\s*/, ""), body, cta: opts?.cta }),
+  if (player.email && !(dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) {
+    const { html, text } = render(
+      templateDoc({ eyebrow: opts?.eyebrow ?? "ANTE", headline: opts?.headline ?? subject.replace(/^ANTE:\s*/, ""), body, cta: opts?.cta }),
+    );
+    const result = await send("email", templateKey, player.email, { subject, body: text, html });
+    await db.from("notification_log").insert({
+      player_id: player.id,
+      channel: "email",
+      template_key: logKey,
+      body: text,
+      status: result.status,
+      provider_message_id: result.providerMessageId ?? null,
+      error: result.error ?? null,
+    });
+  }
+
+  // The same words on their phones (D-120), deduped on their own channel so a push
+  // that failed is retried even when the email already went.
+  await pushPlayer(
+    db,
+    player.id,
+    templateKey,
+    logKey,
+    { title: pushTitle(subject), body: pushBody(body), url: pushPath(opts?.cta?.href) },
+    Boolean(dedupeKey),
   );
-  const result = await send("email", templateKey, player.email, { subject, body: text, html });
-  await db.from("notification_log").insert({
-    player_id: player.id,
-    channel: "email",
-    template_key: logKey,
-    body: text,
-    status: result.status,
-    provider_message_id: result.providerMessageId ?? null,
-    error: result.error ?? null,
-  });
+}
+
+/** Idempotency: one email per (player, dedupe key), checked against the log. Scoped
+ *  to the email channel — a push row under the same key must not stand in for it. */
+async function alreadyEmailed(db: SupabaseClient, playerId: string, logKey: string): Promise<boolean> {
+  const { data: existing } = await db
+    .from("notification_log")
+    .select("id")
+    .eq("player_id", playerId)
+    .eq("channel", "email")
+    .eq("template_key", logKey)
+    .in("status", ["sent", "queued"])
+    .limit(1);
+  return Boolean(existing && existing.length > 0);
 }
 
 export async function emailAllApproved(
@@ -133,28 +148,20 @@ export async function emailDoc(
   doc: EmailDoc,
   dedupeKey?: string,
 ): Promise<void> {
-  if (!player.email) return;
   const logKey = dedupeKey ?? templateKey;
-  if (dedupeKey) {
-    const { data: existing } = await db
-      .from("notification_log")
-      .select("id")
-      .eq("player_id", player.id)
-      .eq("template_key", logKey)
-      .in("status", ["sent", "queued"])
-      .limit(1);
-    if (existing && existing.length > 0) return;
+  if (player.email && !(dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) {
+    const { html, text } = render(doc);
+    const result = await send("email", templateKey, player.email, { subject, body: text, html });
+    await db.from("notification_log").insert({
+      player_id: player.id,
+      channel: "email",
+      template_key: logKey,
+      body: text,
+      status: result.status,
+      provider_message_id: result.providerMessageId ?? null,
+      error: result.error ?? null,
+    });
   }
 
-  const { html, text } = render(doc);
-  const result = await send("email", templateKey, player.email, { subject, body: text, html });
-  await db.from("notification_log").insert({
-    player_id: player.id,
-    channel: "email",
-    template_key: logKey,
-    body: text,
-    status: result.status,
-    provider_message_id: result.providerMessageId ?? null,
-    error: result.error ?? null,
-  });
+  await pushPlayer(db, player.id, templateKey, logKey, pushFromDoc(subject, doc), Boolean(dedupeKey));
 }

@@ -79,6 +79,21 @@ export const contentDefaults: Record<string, string> = {
   "profile.chat_side": "Side",
   "profile.submit_label": "Continue",
   "profile.error_generic": "That didn't take. Try again.",
+  "profile.push_label": "Phone notifications",
+  "profile.push_help":
+    "Everything the league emails you, on your lock screen too: the week opening, reminders before the deadline, the reveal. Email keeps coming either way. Turn it on for each phone or computer you use.",
+  "profile.push_on": "Notifications are on for this device",
+  "profile.push_off": "Turn on notifications",
+  "profile.push_turn_off": "Turn off",
+  "profile.push_working": "One moment…",
+  "profile.push_ios_steps":
+    "On iPhone, add The Ante to your home screen first: tap the Share button in Safari, choose Add to Home Screen, then open The Ante from that icon and come back here.",
+  "profile.push_blocked":
+    "Notifications are blocked for The Ante on this device. On iPhone: Settings, Notifications, The Ante, Allow Notifications. On Android: tap the icon beside the web address, then Permissions, Notifications. Then reload this page.",
+  "profile.push_unsupported": "This browser can't show notifications. Email still reaches you.",
+  "profile.push_failed": "That didn't take. Try again, or reload the page first.",
+  "profile.push_test_title": "Notifications are on",
+  "profile.push_test_body": "This is how the league will reach you. Week openings, reminders and the reveal land here.",
 
   // How-to-play tutorial (gate between profile complete and dashboard)
   "howto.heading": "How this works",

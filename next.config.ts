@@ -7,6 +7,19 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/rules": ["./docs/build spec/ANTE-RULEBOOK.md"],
   },
+  // The service worker must never be served stale, or a fix to it waits on a
+  // browser cache nobody can clear from here (D-120).
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

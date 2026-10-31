@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-10-31 (sixty-fifth pass):** **Phone notifications (D-120).** Web push, per
+> device, from a Profile toggle; every league email also lands on the lock screen, email
+> unchanged. Migration 0034 + two VAPID env vars; hidden until both keys are set. SMS
+> deferred to 2027 (toll-free route). Needs a real iPhone + Android check after deploy.
+
 > **2026-10-27 (sixty-fourth pass):** **Play-style numbers you can bet (D-119).** Typical
 > bet (a real bet size), new "Bets over 10" row, whole-number games and underdogs, no
 > repeated tip; standings heading says "Click a column to sort".

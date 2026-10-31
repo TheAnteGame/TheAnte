@@ -3384,3 +3384,34 @@ top 4 are winning" summary stays, now with the typical bet.
 
 **Standings:** "Click a column to sort" sits at the right of the heading bar —
 players did not know sorting by the week column on a Sunday is the live leaderboard.
+
+## D-120 — Phone notifications by web push; SMS waits for next season (2026-10-31)
+
+**Why not SMS now.** Twilio toll-free verification is free and the cheapest SMS route
+(~$35–50 a season at October 2026 list prices), but approval takes up to two weeks and
+half the season is gone. D-001's SMS plan stands for 2027 — use toll-free, not 10DLC.
+
+**What shipped.** A profile toggle, "Phone notifications", per device. Ticking it
+brings up the browser's own Allow prompt; the device's subscription goes in
+`push_subscriptions` (migration 0034, service role only, like `notification_log`) and a
+test notification arrives at once. iPhone players see the Add to Home Screen steps
+first — iOS gives push only to a home-screen install — so the site now has a manifest,
+square icons from the logo, and `public/sw.js` (receive and open, no offline cache).
+
+**A push is the email, cut down.** `emailPlayer` and `emailDoc` — the only two ways the
+app emails anyone — now also push: the subject (minus "ANTE: ") as the title, the inbox
+preview as the body, the email's last button as the tap target (last, because a poll
+email's first buttons are one-tap votes). So the blackout holds by construction: no
+push says anything its email did not. Email always still goes; receipts for something
+the player just did (ticket, application) do not push. Push and email are deduped on
+their own channels, so a failed push retries even after its email went. 404/410 from
+the push service deletes the device. A switched-on device re-states its subscription
+once a day on any signed-in page, because iOS drops them silently.
+
+**Off until configured.** With `NEXT_PUBLIC_VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` unset
+the toggle is hidden and nothing queries the table — CI and the torture harness run
+that way. Never regenerate the pair once players have switched on.
+
+**Admin:** the roster has a Push column (device kinds, or "email only").
+
+**Release order:** apply 0034 → `schema:check` → set both keys in Vercel → deploy.

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Archivo, Chakra_Petch } from "next/font/google";
 import { getPlayerState } from "@/lib/player";
+import { pushConfigured } from "@/lib/notify/push";
+import { PushRenew } from "@/components/PushRenew";
 import "./globals.css";
 
 // D-006: Google Fonts only, self-hosted via next/font. Display = Chakra Petch
@@ -24,6 +26,9 @@ export const metadata: Metadata = {
   title: "ANTE",
   description:
     "A season-long NFL chip pool. Everyone starts with 500. Nobody sees a pick until everyone is locked in. Biggest stack on the last Sunday wins.",
+  // Home-screen install (D-120): the icon iOS uses, and the name under it.
+  icons: { apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "ANTE", statusBarStyle: "black" },
 };
 
 // The browser's own chrome (Safari/Chrome address bar, PWA title bar) follows the
@@ -60,7 +65,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <ClerkProvider>
       <html lang="en" data-theme={dataTheme} className={`${archivo.variable} ${chakraPetch.variable}`}>
-        <body className="antialiased">{children}</body>
+        <body className="antialiased">
+          {children}
+          {state?.player && pushConfigured() && <PushRenew publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!} />}
+        </body>
       </html>
     </ClerkProvider>
   );

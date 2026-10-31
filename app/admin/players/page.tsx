@@ -36,6 +36,12 @@ export default async function Players() {
     db.from("tickets").select("player_id, submitted_at, week_id, is_fold").order("submitted_at", { ascending: false }),
   ]);
 
+  // Phone notifications (D-120): who has a device switched on, so the commissioner
+  // can see who only gets email and tell them, instead of guessing.
+  const { data: pushDevices } = await db.from("push_subscriptions").select("player_id, user_agent");
+  const devicesOf = (id: string) =>
+    (pushDevices ?? []).filter((d) => d.player_id === id).map((d) => deviceKind(d.user_agent));
+
   // Revealed weeks, newest first — the spine of the deadweight count (§14).
   const { data: revealed } = await db
     .from("weeks")
@@ -114,6 +120,7 @@ export default async function Players() {
                 <th className={thCls}>Stack</th>
                 <th className={thCls}>Shove</th>
                 <th className={thCls}>Status</th>
+                <th className={thCls}>Push</th>
                 <th className={thCls}>Last submitted</th>
               </tr>
             </thead>
@@ -133,6 +140,13 @@ export default async function Players() {
                   <td className={`${tdCls} nums`}>{stackOf(p.id)}</td>
                   <td className={tdCls}>{p.shove_used_week === null ? "held" : `Wk ${p.shove_used_week}`}</td>
                   <td className={tdCls}>{p.status}</td>
+                  <td className={`${tdCls} text-xs`}>
+                    {devicesOf(p.id).length > 0 ? (
+                      devicesOf(p.id).join(", ")
+                    ) : (
+                      <span className="text-[color:var(--color-text-low)]">email only</span>
+                    )}
+                  </td>
                   <td className={`${tdCls} text-xs text-[color:var(--color-text-low)]`}>
                     {lastSubmit(p.id) ? DateTime.fromISO(lastSubmit(p.id)!).setZone(LEAGUE_TZ).toFormat("ccc h:mma") : "never"}
                   </td>
@@ -255,4 +269,15 @@ export default async function Players() {
       </Section>
     </div>
   );
+}
+
+/** A readable device name from the browser string saved at switch-on. */
+function deviceKind(ua: string | null): string {
+  if (!ua) return "device";
+  if (/iPhone|iPod/.test(ua)) return "iPhone";
+  if (/iPad/.test(ua)) return "iPad";
+  if (/Android/.test(ua)) return "Android";
+  if (/Macintosh/.test(ua)) return "Mac";
+  if (/Windows/.test(ua)) return "Windows";
+  return "device";
 }
