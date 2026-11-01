@@ -1,4 +1,4 @@
-import { LIMIT_DIVISOR, PAYOUT_CAP, PAYOUT_FLOOR, ROUNDING_STEP } from "./constants";
+import { LIMIT_DIVISOR, PAYOUT_CAP, PAYOUT_FLOOR, ROUNDING_STEP, UNANIMOUS_FLOOR_FROM_WEEK } from "./constants";
 
 export function floorTo10(n: number): number {
   return Math.floor(n / ROUNDING_STEP) * ROUNDING_STEP;
@@ -28,11 +28,19 @@ export function isFelt(stackPreAnte: number, ante: number): boolean {
   return stackPreAnte < ante;
 }
 
-/** §5 — payout = against ÷ with, clamped to [0.25, 2.50]; nobody on the other side
- *  settles at even money. Exact rational — floats never touch chip math (§4.4). */
-export function multiplierFor(withCount: number, againstCount: number): { num: number; den: number } {
+/** §5 — payout = against ÷ with, clamped to [0.25, 2.50]. Nobody on the other side
+ *  settled at even money through Week 8 and pays the floor from Week 9 (D-127), so the
+ *  week is required: a re-settlement must price a week by the rule it was played under.
+ *  Exact rational — floats never touch chip math (§4.4). */
+export function multiplierFor(
+  withCount: number,
+  againstCount: number,
+  weekNumber: number,
+): { num: number; den: number } {
   if (withCount <= 0) throw new Error("with-count includes the bettor and can never be zero (§5)");
-  if (againstCount === 0) return { num: 1, den: 1 };
+  if (againstCount === 0) {
+    return weekNumber >= UNANIMOUS_FLOOR_FROM_WEEK ? { ...PAYOUT_FLOOR } : { num: 1, den: 1 };
+  }
   // raw = against/with; clamp by cross-multiplication to stay in integers
   if (againstCount * PAYOUT_FLOOR.den < withCount * PAYOUT_FLOOR.num) return { ...PAYOUT_FLOOR };
   if (againstCount * PAYOUT_CAP.den > withCount * PAYOUT_CAP.num) return { ...PAYOUT_CAP };

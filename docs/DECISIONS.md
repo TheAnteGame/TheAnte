@@ -3568,3 +3568,58 @@ at under a third of the pixels per second. The setting now means the time to cro
 computer's rail (`REFERENCE_RAIL_PX = 1152`) on every screen, so text moves at the
 same speed everywhere; a phone just shows less of it at once. Computer speed is
 unchanged.
+
+## D-127 — Unanimous sides pay the floor; the Pot always pays half its antes (2026-11-01, rulebook v1.6)
+
+A mid-season rule change, made by the owner: 2026 is a beta season, run to find what
+needs changing. §13 says rules change only in the offseason, and D-110 withdrew a fold
+penalty on exactly that ground; this is the deliberate exception, and it is written
+here and in the rulebook rather than slipped into the code.
+
+**What the first seven weeks showed.** A side nobody opposed paid 1× (§5 v1.5) — the
+most crowded side on the board paid better than 5-against-1 chalk (0.25×). With no
+losers across the game, every chip of it came out of the Pot: those bets won 78% of the
+time and netted +1,140 chips, close to every ante collected in Weeks 1–7. The table paid
+out more than it took in during four of seven weeks (by up to 178), and the Pots in
+Weeks 2–5 were 52, 72, 108 and 38. The simulation assumed 7.6 bettors per game at 12
+players; this league averages about 6 at 14, so one-sided games are far more common.
+
+The first shove of the season (Week 8) made it acute: a shove pays even money out of the
+Pot, a winning one is bigger than a week of antes, and a book-odds simulation of Week 8
+gave an 82% chance of no Pot that week if the shove won, and 41% of no Pot in Week 9.
+
+**The rules (constants in `lib/engine/constants.ts`):**
+
+- **From Week 9, a unanimous side pays the floor, 0.25×** (`UNANIMOUS_FLOOR_FROM_WEEK`).
+  A lone bettor on a game nobody else touched counts as unanimous too. A shove still pays
+  even money on any side (§8).
+- **From Week 8, the Pot pays at least half that week's net antes** (`POT_MINIMUM_FROM_WEEK`,
+  `potMinimumFor`) — antes charged at slate open less any shove refund, floored. If the
+  balance is short the award is made anyway; the shortfall joins the marker, and later
+  Pots pay it back with everything above their own minimum. Folds-only weeks still award
+  nothing.
+
+**Why Week 8 keeps even money.** Its tickets locked, and its board has said "pays 1.00×"
+since the reveal. D-069's promise is that the board never quotes a number settlement
+won't pay, so Week 8's prices are left alone; only how its Pot is paid changed, which
+moves no ticket's payout. Both rules are gated by week number, so re-settling any
+earlier week replays exactly what was paid.
+
+**Effect, replayed on Weeks 1–7 and simulated for Weeks 8–18.** The minimum does not
+change what the Pot pays over a stretch of weeks — it moves chips from the weeks after a
+bad one into the bad one (a winning Week 8 shove: Week 8 15 → ~100, Week 10 ~390 → ~330,
+total unchanged). The unanimous fix roughly doubles weekly Pots (~205–240 → ~400) and is
+what lets a marker get paid back at all: without it the Pot loses ~40 chips a week.
+
+`multiplierFor` now takes the week (required, so no caller can price a week by the
+wrong rule): settlement, the projection, the reveal board and the reveal email.
+`settleWeek` takes `antesCollected` and returns `pool`, which the job writes to
+`weeks.pot_before` so the Pot math panel can say a week paid its minimum. Copy:
+`guide.payout_body`, `guide.pot_body`, `faq.a4`, `potmath.marker`, new
+`potmath.pool_minimum`. The torture script's planted legacy fold penalty now lands on
+the biggest live stack — on a fixed seat it pushed a 1-chip shover to 0 once the new
+rules changed how the season played out. No migration.
+
+**Next (owner, 2026-11-01): a shove reserve** — lost shoves pay into it and winning
+shoves are paid from it first, so shoves fund each other instead of the weekly Pot.
+Not built yet.

@@ -1,7 +1,7 @@
 # ANTE
 ### The complete rules
 
-*Version 1.5 — frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MST. The hours did not change, the zone did — see D-089. 1.4 added a 50-chip fold penalty from Week 3 — D-096. 1.5, Week 4, withdraws it: the league had not settled it, and §13 forbids changing a rule mid-season. A fold costs the ante and nothing more — D-110.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
+*Version 1.6 — the 2026 beta season. (1.6, Week 8: two mid-season changes made by the owner, who runs 2026 as a beta — the one exception §13 has ever had, and D-127 records why. From Week 9 a side nobody opposed pays the floor, not even money; from Week 8 the Pot always pays at least half its week's antes. No locked ticket pays a chip differently: Week 8 settles at the prices its board showed.) Version 1.5 was frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MST. The hours did not change, the zone did — see D-089. 1.4 added a 50-chip fold penalty from Week 3 — D-096. 1.5, Week 4, withdraws it: the league had not settled it, and §13 forbids changing a rule mid-season. A fold costs the ante and nothing more — D-110.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
 
 ANTE is a season-long NFL pool where you bet chips instead of making picks. Everyone starts with 500. Each week you spread chips across the games you like but what you get paid depends on how many people agreed with you. Take the side everyone took and you barely get paid. Take the side almost nobody took and you get paid double. Nobody sees a single pick until every player is locked in, so every week you're guessing what your friends are about to do. Biggest stack on the last Sunday wins.
 
@@ -117,7 +117,7 @@ This is the engine of the whole game. One line of arithmetic:
 
 > ### Your payout = players against you ÷ players with you
 > Never less than **0.25×**. Never more than **2.50×**.
-> **If nobody took the other side, it settles at even money (1×).**
+> **If nobody took the other side, it pays the floor (0.25×).** *(From Week 9, rulebook 1.6. Through Week 8 it settled at even money.)*
 
 **You count yourself.** "With you" always includes you, so the bottom of that fraction is never zero. Alone on a side against four is 4 ÷ 1.
 
@@ -263,7 +263,11 @@ Some weeks the table pays out more than it took in — the underdogs come throug
 
 The Pot covers it. And when the Pot can't cover it, **the Pot goes negative and carries as a marker.** Next week's antes pay the marker down first, and only what's left over is awarded. If the marker swallows the whole Pot, **nobody wins one that week** — it's announced, and it becomes a story.
 
-That's rare — about one week in fifty-seven — and it has never exceeded a few hundred chips in simulation. It exists so the promise in §5 stays literally true: no chip is ever created, and none is ever destroyed. The table is simply into the Pot for a week.
+It exists so the promise in §5 stays literally true: no chip is ever created, and none is ever destroyed. The table is simply into the Pot for a week.
+
+**From Week 8 (rulebook 1.6), the Pot always pays at least half of that week's antes**, rounded down — even from under water. Whatever it comes up short is added to the marker, and later Pots pay the marker back with everything above their own minimum. A winning shove is bigger than a week of antes, so without this one shove could leave the league with no Pot for two weeks running.
+
+The simulation called markers rare — about one week in fifty-seven, never more than a few hundred chips. In 2026 the table paid out more than it took in during four of the first seven weeks, by as much as 178 chips, because a side nobody opposed paid even money out of the Pot with nobody across the game to fund it. That is why 1.6 changed both rules.
 
 ### How the Pot connects to the multipliers
 

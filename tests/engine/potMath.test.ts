@@ -52,6 +52,7 @@ const base = (over: Partial<SettleWeekInput>): SettleWeekInput => ({
   players: [],
   potBalance: 0,
   potSplit: [100],
+  antesCollected: 0,
   ...over,
 });
 

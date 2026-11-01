@@ -48,6 +48,26 @@ export const BET_STEP = 10; // §3 — becomes 1 on the felt (§9)
 export const PAYOUT_FLOOR = { num: 1, den: 4 }; // 0.25×
 export const PAYOUT_CAP = { num: 5, den: 2 }; // 2.50×
 
+/** §5 v1.6 (D-127) — from this week on, a side nobody took the other side of pays the
+ *  floor, not even money. A unanimous side is the most crowded a side can be, and with
+ *  no losers across the game every chip of its old 1× came out of the Pot: +1,140 chips
+ *  in Weeks 1–7, close to every ante collected. Earlier weeks keep even money, so a
+ *  re-settlement of Weeks 1–8 replays exactly what their boards showed. */
+export const UNANIMOUS_FLOOR_FROM_WEEK = 9;
+
+/** §7 v1.6 (D-127) — from this week on the Pot always pays at least half of the week's
+ *  antes, even from under water; the shortfall joins the marker and later Pots pay it
+ *  back above the same minimum. A winning shove is bigger than a week of antes, so
+ *  without this one shove could empty the Pot for two weeks running. */
+export const POT_MINIMUM_FROM_WEEK = 8;
+export const POT_MINIMUM_SHARE = { num: 1, den: 2 };
+
+/** The least a week's Pot pays (D-127): half its net antes, floored to a chip. */
+export function potMinimumFor(week: number, antesCollected: number): number {
+  if (week < POT_MINIMUM_FROM_WEEK || antesCollected <= 0) return 0;
+  return Math.floor((antesCollected * POT_MINIMUM_SHARE.num) / POT_MINIMUM_SHARE.den);
+}
+
 /** §7 — places paid: one per eight players, snapshotted at slate open. */
 export const POT_PLACES: ReadonlyArray<{ min: number; max: number; split: readonly number[] }> = [
   { min: 0, max: 15, split: [100] },

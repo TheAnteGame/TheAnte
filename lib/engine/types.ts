@@ -101,6 +101,9 @@ export interface SettleWeekResult {
   /** Chips the table didn't pay back — retained by the Pot this week. */
   swept: number;
   potAwards: Array<{ playerId: string; place: number; amount: number }>;
+  /** What the award was computed from: the Pot's balance, or its minimum when the
+   *  balance fell short (D-127). Equal to the balance whenever no minimum applied. */
+  pool: number;
   /** Pot balance after award. Negative = the marker carries (§7). */
   potAfter: number;
   /** Shove tickets whose game voided: card returned, ante recharged (§14). */

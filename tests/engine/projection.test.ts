@@ -14,7 +14,7 @@ const outcomes = (o: Record<string, ProjectionOutcome>) => new Map(Object.entrie
 describe("projectWeek", () => {
   it("carries an undecided game as at risk, neither won nor lost", () => {
     const tickets: ProjectionTicket[] = [{ playerId: "a", isShove: false, bets: [bet("g1", "away", 20)] }];
-    const p = projectWeek({ tickets, outcomes: new Map() }).get("a")!;
+    const p = projectWeek({ weekNumber: 1, tickets, outcomes: new Map() }).get("a")!;
     expect(p).toMatchObject({ profit: 0, lost: 0, atRisk: 20, returnable: 20, decided: 0, total: 1 });
   });
 
@@ -26,7 +26,7 @@ describe("projectWeek", () => {
       { playerId: "c", isShove: false, bets: [bet("g1", "home", 10)] },
       { playerId: "d", isShove: false, bets: [bet("g1", "home", 10)] },
     ];
-    const res = projectWeek({ tickets, outcomes: outcomes({ g1: { kind: "final", winner: "away" } }) });
+    const res = projectWeek({ weekNumber: 1, tickets, outcomes: outcomes({ g1: { kind: "final", winner: "away" } }) });
     expect(res.get("a")).toMatchObject({ profit: 50, lost: 0, returnable: 20, atRisk: 0, decided: 1 });
     // The three who were wrong lose the full stake and get nothing back.
     expect(res.get("b")).toMatchObject({ profit: 0, lost: 10, returnable: 0, atRisk: 0 });
@@ -37,7 +37,7 @@ describe("projectWeek", () => {
       { playerId: "a", isShove: false, bets: [bet("g1", "away", 50)] },
       { playerId: "b", isShove: false, bets: [bet("g1", "home", 10)] },
     ];
-    const res = projectWeek({ tickets, outcomes: outcomes({ g1: { kind: "final", winner: "home" } }) });
+    const res = projectWeek({ weekNumber: 1, tickets, outcomes: outcomes({ g1: { kind: "final", winner: "home" } }) });
     expect(res.get("a")).toMatchObject({ profit: 0, lost: 50, returnable: 0 });
   });
 
@@ -47,6 +47,7 @@ describe("projectWeek", () => {
       { playerId: "b", isShove: false, bets: [bet("g1", "home", 10), bet("g2", "away", 10)] },
     ];
     const res = projectWeek({
+      weekNumber: 1,
       tickets,
       outcomes: outcomes({ g1: { kind: "final", winner: "tie" }, g2: { kind: "void", reason: "cancelled" } }),
     });
@@ -59,7 +60,7 @@ describe("projectWeek", () => {
       { playerId: "shover", isShove: true, bets: [bet("g1", "away", 480)] },
       ...["b", "c", "d", "e"].map((id) => ({ playerId: id, isShove: false, bets: [bet("g1", "home", 10)] })),
     ];
-    const res = projectWeek({ tickets, outcomes: outcomes({ g1: { kind: "final", winner: "away" } }) });
+    const res = projectWeek({ weekNumber: 1, tickets, outcomes: outcomes({ g1: { kind: "final", winner: "away" } }) });
     expect(res.get("shover")).toMatchObject({ profit: 480, returnable: 480 });
   });
 
@@ -71,6 +72,7 @@ describe("projectWeek", () => {
       { playerId: "z", isShove: false, bets: [bet("g1", "away", 10), bet("g2", "away", 10), bet("g3", "away", 10)] },
     ];
     const res = projectWeek({
+      weekNumber: 1,
       tickets,
       outcomes: outcomes({
         g1: { kind: "final", winner: "home" },
@@ -88,6 +90,7 @@ describe("projectWeek", () => {
       { playerId: "c", isShove: false, bets: [bet("g1", "home", 10), bet("g3", "home", 10)] },
     ];
     const res = projectWeek({
+      weekNumber: 1,
       tickets,
       outcomes: outcomes({
         g1: { kind: "final", winner: "away" }, // a alone vs b,c  -> 2/1
@@ -95,19 +98,28 @@ describe("projectWeek", () => {
         g3: { kind: "pending" },
       }),
     });
-    const byHand = profitFor(30, multiplierFor(1, 2)) + profitFor(20, multiplierFor(2, 0));
+    const byHand = profitFor(30, multiplierFor(1, 2, 1)) + profitFor(20, multiplierFor(2, 0, 1));
     expect(res.get("a")).toMatchObject({ profit: byHand, lost: 0, atRisk: 10, decided: 2, total: 3 });
   });
 
   it("a fold has no bets and therefore no projection movement", () => {
-    const res = projectWeek({ tickets: [{ playerId: "a", isShove: false, bets: [] }], outcomes: new Map() });
+    const res = projectWeek({ weekNumber: 1, tickets: [{ playerId: "a", isShove: false, bets: [] }], outcomes: new Map() });
     expect(res.get("a")).toMatchObject({ profit: 0, lost: 0, atRisk: 0, returnable: 0, decided: 0, total: 0 });
   });
 
   it("treats a game flagged final with no usable outcome as still pending", () => {
     // The loader maps a scoreless 'final' to pending rather than guessing a winner.
     const tickets: ProjectionTicket[] = [{ playerId: "a", isShove: false, bets: [bet("g1", "away", 40)] }];
-    const res = projectWeek({ tickets, outcomes: outcomes({ g1: { kind: "pending" } }) });
+    const res = projectWeek({ weekNumber: 1, tickets, outcomes: outcomes({ g1: { kind: "pending" } }) });
     expect(res.get("a")).toMatchObject({ atRisk: 40, decided: 0 });
+  });
+});
+
+describe("the projection prices a week by its own rule (D-127)", () => {
+  it("a unanimous side projects at even money in Week 8 and at the floor from Week 9", () => {
+    const tickets: ProjectionTicket[] = [{ playerId: "a", isShove: false, bets: [{ gameId: "g1", side: "away", chips: 40 }] }];
+    const won = new Map<string, ProjectionOutcome>([["g1", { kind: "final", winner: "away" }]]);
+    expect(projectWeek({ weekNumber: 8, tickets, outcomes: won }).get("a")!.profit).toBe(40);
+    expect(projectWeek({ weekNumber: 9, tickets, outcomes: won }).get("a")!.profit).toBe(10);
   });
 });

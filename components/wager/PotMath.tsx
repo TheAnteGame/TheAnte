@@ -111,7 +111,7 @@ export async function PotMath({
   const places = new Set(standings.filter((s) => s.award > 0).map((s) => s.place)).size;
   const rosterCount = weekRow?.active_count_snapshot ?? (tickets ?? []).length;
 
-  const [heading, rule, placesLine, poolLine, paidLine, rolledLine, rolledAll, markerLine, gainLabel, tookLabel, foldedLabel, splitNote, youLabel, roomLabel] =
+  const [heading, rule, placesLine, poolLine, poolMinimumLine, paidLine, rolledLine, rolledAll, markerLine, gainLabel, tookLabel, foldedLabel, splitNote, youLabel, roomLabel] =
     await Promise.all([
       getContent("potmath.heading", { week: week.number }),
       getContent("potmath.rule"),
@@ -129,6 +129,7 @@ export async function PotMath({
               split: breakdown.split.map((p) => `${p}%`).join(" / "),
             }),
       getContent("potmath.pool", { pool: pool ?? 0 }),
+      getContent("potmath.pool_minimum", { pool: pool ?? 0 }),
       getContent("potmath.paid", { awarded: awardedShown }),
       getContent("potmath.rolled", { rolled: (pool ?? 0) - awardedShown }),
       getContent("potmath.rolled_all"),
@@ -230,11 +231,14 @@ export async function PotMath({
           )
         ) : (
           <>
-            {pool !== null && `${poolLine} `}
+            {/* A paid week that still ends under water paid its minimum (D-127): the
+                pool was the minimum, not anything the Pot held. */}
+            {pool !== null && `${marker > 0 ? poolMinimumLine : poolLine} `}
             {paidLine}{" "}
             {pool !== null && pool - awardedShown > 0 && (
               <span className="text-[color:var(--color-gold)]">{rolledLine}</span>
             )}
+            {marker > 0 && <span className="text-[color:var(--color-gold)]"> {markerLine}</span>}
           </>
         )}
       </p>

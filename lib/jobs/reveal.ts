@@ -296,7 +296,7 @@ async function sendRevealMail(db: SupabaseClient, weekId: string, weekNumber: nu
         const withCount = h[b.side as "away" | "home"];
         const against = b.side === "away" ? h.home : h.away;
         // §8 — a shove pays even money, no multiplier, ever. Same rule settleWeek uses.
-        return { chips: b.chips, multiplier: t.is_shove ? { num: 1, den: 1 } : multiplierFor(withCount, against) };
+        return { chips: b.chips, multiplier: t.is_shove ? { num: 1, den: 1 } : multiplierFor(withCount, against, weekNumber) };
       });
       const take = maxTake(priced);
       return {

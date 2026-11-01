@@ -54,6 +54,8 @@ export interface PlayerProjection {
  *  multipliers match the board exactly — they were fixed when the last ticket landed
  *  and cannot move again. */
 export function projectWeek(input: {
+  /** Prices follow the week's own rule — unanimous sides changed in Week 9 (D-127). */
+  weekNumber: number;
   tickets: ProjectionTicket[];
   outcomes: Map<string, ProjectionOutcome>;
 }): Map<string, PlayerProjection> {
@@ -93,7 +95,7 @@ export function projectWeek(input: {
         const against = b.side === "away" ? h.home : h.away;
         // §8 — a shove is even money, never the crowd price. The same rule settleWeek
         // applies, and the same one the reveal board had to be corrected for.
-        const m = t.isShove ? { num: 1, den: 1 } : multiplierFor(h[b.side], against);
+        const m = t.isShove ? { num: 1, den: 1 } : multiplierFor(h[b.side], against, input.weekNumber);
         p.profit += profitFor(b.chips, m);
         p.returnable += b.chips;
         continue;

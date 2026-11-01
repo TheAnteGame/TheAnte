@@ -14,6 +14,10 @@
  * Pure computation — no database, no app. Deterministic seed.
  */
 import { multiplierFor } from "@/lib/engine/core";
+import { UNANIMOUS_FLOOR_FROM_WEEK } from "@/lib/engine/constants";
+
+/** Price slates by the current rule — unanimous sides pay the floor since D-127. */
+const STUDY_WEEK = UNANIMOUS_FLOOR_FROM_WEEK;
 
 const GAMES = 15;
 const SLATES = 4000;
@@ -118,7 +122,7 @@ function run(players: number, mix: Record<Style, number>, betsPerPlayer: number,
       let sawFloor = false;
       for (const { g, side } of slip) {
         const h = heads[g];
-        const m = multiplierFor(h[side], side === "home" ? h.away : h.home);
+        const m = multiplierFor(h[side], side === "home" ? h.away : h.home, STUDY_WEEK);
         const v = m.num / m.den;
         if (v >= 2.5) sawCap = true;
         if (v >= 2.0) sawBig = true;
@@ -138,7 +142,7 @@ function run(players: number, mix: Record<Style, number>, betsPerPlayer: number,
         const withC = h[side];
         if (withC === 0) continue;
         const againstC = side === "home" ? h.away : h.home;
-        const m = multiplierFor(withC, againstC);
+        const m = multiplierFor(withC, againstC, STUDY_WEEK);
         const v = m.num / m.den;
         for (let k = 0; k < withC; k++) {
           prices.push(v);

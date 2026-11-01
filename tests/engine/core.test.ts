@@ -68,21 +68,29 @@ describe("payouts (§5 worked table)", () => {
     [7, 15, 15, 7, "2.14×"],
     [15, 7, 7, 15, "0.47×"],
   ])("with %i against %i → %i/%i (%s)", (w, a, num, den, display) => {
-    const m = multiplierFor(w, a);
+    const m = multiplierFor(w, a, 9);
     expect(m).toEqual({ num, den });
     expect(formatMultiplier(m)).toBe(display);
   });
 
-  it("nobody on the other side settles at even money (§5)", () => {
-    expect(multiplierFor(4, 0)).toEqual({ num: 1, den: 1 });
+  it("nobody on the other side settled at even money through Week 8 (§5 v1.5)", () => {
+    expect(multiplierFor(4, 0, 1)).toEqual({ num: 1, den: 1 });
+    expect(multiplierFor(4, 0, 8)).toEqual({ num: 1, den: 1 });
+  });
+
+  it("from Week 9 a unanimous side pays the floor, a lone bettor included (D-127)", () => {
+    expect(multiplierFor(4, 0, 9)).toEqual({ num: 1, den: 4 });
+    expect(multiplierFor(1, 0, 18)).toEqual({ num: 1, den: 4 });
+    // 5–0 can no longer out-pay 5–1: total agreement is the most crowded a side gets.
+    expect(multiplierFor(5, 0, 9)).toEqual(multiplierFor(5, 1, 9));
   });
 
   it("the floor binds: deep chalk never pays under 0.25×", () => {
-    expect(multiplierFor(20, 1)).toEqual({ num: 1, den: 4 });
+    expect(multiplierFor(20, 1, 1)).toEqual({ num: 1, den: 4 });
   });
 
   it("with-count can never be zero — you count yourself", () => {
-    expect(() => multiplierFor(0, 3)).toThrow();
+    expect(() => multiplierFor(0, 3, 1)).toThrow();
   });
 
   it("payouts floor to whole chips; the remainder is the Pot's (§14)", () => {

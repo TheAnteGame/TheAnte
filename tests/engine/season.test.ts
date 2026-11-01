@@ -138,6 +138,10 @@ function runSeason(seed: number) {
       })),
       potBalance: atReveal.pot,
       potSplit: potSplitForCount(slate.activeCountSnapshot),
+      // Net antes: charged at slate open, less shove refunds at the reveal (D-127).
+      antesCollected: ledger
+        .filter((e) => e.account !== null && (e.kind === "ante" || e.kind === "ante_refund") && e.reason.startsWith(`Week ${week} `))
+        .reduce((s, e) => s - e.amount, 0),
     });
     ledger.push(...result.entries);
     for (const id of result.returnedShoves) shoveUsed.set(id, null); // the card comes back (§14)

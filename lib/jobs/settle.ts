@@ -108,12 +108,16 @@ export async function settleWeekRecord(
   // Scoped to this week and earlier: a re-settlement replays history, and history
   // did not include the weeks that come after it (D-023).
   const stacks = await stacksByPlayer(db, week.number);
-  const weekEntries = await fetchAllRows<{ player_id: string | null; amount: number }>((from, to) =>
-    db.from("ledger_entries").select("player_id, amount").eq("week_id", week.id).order("id").range(from, to),
+  const weekEntries = await fetchAllRows<{ player_id: string | null; kind: string; amount: number }>((from, to) =>
+    db.from("ledger_entries").select("player_id, kind, amount").eq("week_id", week.id).order("id").range(from, to),
   );
   const weekDelta = new Map<string, number>();
+  // Net antes this week — charged at slate open, less any shove refund at the reveal.
+  // Sets the Pot's minimum (D-127). Player side only: the Pot side mirrors it.
+  let antesCollected = 0;
   for (const e of weekEntries) {
     if (e.player_id) weekDelta.set(e.player_id, (weekDelta.get(e.player_id) ?? 0) + e.amount);
+    if (e.player_id && (e.kind === "ante" || e.kind === "ante_refund")) antesCollected -= e.amount;
   }
 
   const { data: playerRows } = await db.from("players").select("id, status").in("status", ["approved", "deactivated"]);
@@ -133,6 +137,7 @@ export async function settleWeekRecord(
     players: enginePlayers,
     potBalance: stacks.get("__pot__") ?? 0,
     potSplit: potSplitForCount(week.active_count_snapshot ?? 0),
+    antesCollected,
   });
 
   // THE assertion — full ledger plus the would-be entries, before any write. Paged:
@@ -210,7 +215,9 @@ export async function settleWeekRecord(
       // at week creation with pre-ante semantics — this settlement write is the one
       // that must win, and any week settled by code older than this line still carries
       // the slate-open figure (review D-036).
-      pot_before: result.potAfter + potAwarded,
+      // From Week 8 that can be the Pot's minimum rather than its balance (D-127): the
+      // figure the award was actually split from, which is what the Pot math panel needs.
+      pot_before: result.pool,
       marker: result.potAfter < 0 ? -result.potAfter : 0,
     })
     .eq("id", week.id);

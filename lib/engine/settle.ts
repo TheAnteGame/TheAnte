@@ -1,3 +1,4 @@
+import { potMinimumFor } from "./constants";
 import { multiplierFor, profitFor } from "./core";
 import type {
   BetSettlement,
@@ -19,13 +20,15 @@ export interface SettleWeekInput {
   potBalance: number;
   /** The split snapshotted at slate open (§7) — never recomputed at award time. */
   potSplit: readonly number[];
+  /** This week's antes net of shove refunds — what sets the Pot's minimum (D-127). */
+  antesCollected: number;
 }
 
 /** §14 steps 6–8: settle straight-up, recharge voided shoves, floor the felt from the
  *  Pot, then award the Pot from its own balance — which is what makes marker paydown
  *  and rollovers automatic: a negative balance awards nothing and carries (§7). */
 export function settleWeek(input: SettleWeekInput): SettleWeekResult {
-  const { weekNumber, tickets, games, players, potSplit } = input;
+  const { weekNumber, tickets, games, players, potSplit, antesCollected } = input;
   const gameById = new Map(games.map((g) => [g.id, g]));
   const entries: EngineLedgerEntry[] = [];
   const bets: BetSettlement[] = [];
@@ -58,7 +61,7 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
       const withCount = h[b.side];
       const againstCount = b.side === "away" ? h.home : h.away;
       // A shove always pays even money — no multiplier, ever (§8).
-      const multiplier = t.isShove ? { num: 1, den: 1 } : multiplierFor(withCount, againstCount);
+      const multiplier = t.isShove ? { num: 1, den: 1 } : multiplierFor(withCount, againstCount, weekNumber);
 
       let result: BetSettlement["result"];
       let payout = 0;
@@ -136,11 +139,16 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
   // §7 — award. Eligibility: submitted a live ticket (folders out; a ticket whose
   // games all returned still counts). Distinct gain levels take places in order;
   // ties split that place's share evenly, floored; every leftover chip rolls.
+  // From Week 8 the Pot never pays less than half the week's antes (D-127). When the
+  // balance can't cover that, the award is still made and the account goes (further)
+  // under: the shortfall is a marker like any other, paid back by later Pots above the
+  // same minimum. Chips stay conserved — the Pot's account simply carries the debt.
   const eligible = new Set(tickets.filter((t) => !t.isFold).map((t) => t.playerId));
   const potAwards: SettleWeekResult["potAwards"] = [];
+  const minimum = potMinimumFor(weekNumber, antesCollected);
+  const pool = eligible.size > 0 && minimum > 0 && minimum > potBalance ? minimum : potBalance;
 
-  if (potBalance > 0 && eligible.size > 0) {
-    const pool = potBalance;
+  if (pool > 0 && eligible.size > 0) {
     const byGain = new Map<number, string[]>();
     for (const id of eligible) {
       const g = gains.get(id);
@@ -164,7 +172,8 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
     });
     potBalance -= awarded;
   }
-  // potBalance <= 0: nobody wins one this week; the marker (or the rolled Pot) carries.
+  // pool <= 0 (only before Week 8, or with no live ticket): nobody wins one this week;
+  // the marker (or the rolled Pot) carries.
 
-  return { bets, entries, gains, swept, potAwards, potAfter: potBalance, returnedShoves };
+  return { bets, entries, gains, swept, potAwards, pool, potAfter: potBalance, returnedShoves };
 }

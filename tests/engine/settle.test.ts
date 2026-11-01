@@ -23,6 +23,7 @@ const baseInput = (over: Partial<SettleWeekInput>): SettleWeekInput => ({
   players: [],
   potBalance: 0,
   potSplit: [100],
+  antesCollected: 0,
   ...over,
 });
 
@@ -243,5 +244,73 @@ describe("no fold penalty (§3 v1.5, D-110)", () => {
     expect(r.entries.filter((e) => e.account === "a")).toEqual([]);
     expect(r.entries.some((e) => e.kind === "fold_penalty")).toBe(false);
     expect(r.potAfter).toBe(10);
+  });
+});
+
+describe("unanimous sides and the Pot minimum (§5, §7 v1.6, D-127)", () => {
+  // Week 8's real shape: a shove wins on a side nobody opposed, and the Pot is far
+  // smaller than the shove. 297 staked; the Pot holds 195 of antes plus the stake.
+  const shove = (id: string, chips: number): EngineTicket => ({
+    playerId: id,
+    isFold: false,
+    isShove: true,
+    bets: [{ gameId: "g1", side: "away", chips }],
+    committedStake: chips,
+    pendingRefund: 15,
+  });
+  const players = [
+    { id: "s", stackPreAnte: 297, stackAtReveal: 0 },
+    { id: "b", stackPreAnte: 500, stackAtReveal: 465 },
+  ];
+  const tickets = [shove("s", 297), ticket("b", [["g2", "home", 20]])];
+  const games = [finalGame("g1", "away"), finalGame("g2", "away")];
+  const input = (weekNumber: number) =>
+    baseInput({ weekNumber, tickets, games, players, potBalance: 195 + 297 + 20, antesCollected: 195 });
+
+  it("before Week 8 a Pot under water pays nothing and the marker carries", () => {
+    const r = settleWeek(input(7));
+    // Pot: 512 in, 594 back to the shover → −82. Nobody wins one.
+    expect(r.pool).toBe(-82);
+    expect(r.potAwards).toEqual([]);
+    expect(r.potAfter).toBe(-82);
+  });
+
+  it("from Week 8 it still pays half the antes, and the shortfall joins the marker", () => {
+    const r = settleWeek(input(8));
+    expect(r.pool).toBe(97); // floor(195 / 2)
+    expect(r.potAwards).toEqual([{ playerId: "s", place: 1, amount: 97 }]);
+    expect(r.potAfter).toBe(-82 - 97);
+    // Conserved: every chip the award paid out is the Pot's debt, nothing minted.
+    expect(r.entries.reduce((s, e) => s + e.amount, 0)).toBe(0);
+  });
+
+  it("a Pot already above its minimum pays its balance, exactly as before", () => {
+    const r = settleWeek(baseInput({ weekNumber: 12, tickets, games, players, potBalance: 1000, antesCollected: 195 }));
+    expect(r.pool).toBe(1000 - 594);
+    expect(r.potAwards[0].amount).toBe(406);
+  });
+
+  it("nobody with a live ticket means no award, minimum or not", () => {
+    const fold = (id: string): EngineTicket => ({ playerId: id, isFold: true, isShove: false, bets: [], committedStake: null, pendingRefund: null });
+    const r = settleWeek(baseInput({ weekNumber: 10, tickets: [fold("b")], players: [players[1]], potBalance: -50, antesCollected: 280 }));
+    expect(r.potAwards).toEqual([]);
+    expect(r.potAfter).toBe(-50);
+  });
+
+  it("a shove still pays even money on a unanimous side after Week 9 (§8)", () => {
+    const r = settleWeek({ ...input(9), potBalance: 10_000 });
+    expect(r.bets.find((b) => b.playerId === "s")).toMatchObject({ result: "won", payout: 297, multiplier: { num: 1, den: 1 } });
+  });
+
+  it("a unanimous side paid even money in Week 8 and pays the floor from Week 9", () => {
+    const pair = [ticket("a", [["g1", "away", 30]]), ticket("c", [["g1", "away", 20]])];
+    const ps = [
+      { id: "a", stackPreAnte: 500, stackAtReveal: 455 },
+      { id: "c", stackPreAnte: 500, stackAtReveal: 465 },
+    ];
+    const at = (weekNumber: number) =>
+      settleWeek(baseInput({ weekNumber, tickets: pair, games: [finalGame("g1", "away")], players: ps, potBalance: 1000 })).bets;
+    expect(at(8).map((b) => b.payout)).toEqual([30, 20]);
+    expect(at(9).map((b) => b.payout)).toEqual([7, 5]); // 30 × 0.25 → 7, 20 × 0.25 → 5
   });
 });

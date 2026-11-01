@@ -39,7 +39,7 @@ export const loadProjection = cache(async (db: SupabaseClient): Promise<WeekProj
   // stacks with every Week 3 stake still missing and ranked the folders on top (D-110).
   const { data: week } = await db
     .from("weeks")
-    .select("id, revealed_at, settled_at")
+    .select("id, number, revealed_at, settled_at")
     .eq("phase", "revealed")
     .order("number", { ascending: true })
     .limit(1)
@@ -99,7 +99,7 @@ export const loadProjection = cache(async (db: SupabaseClient): Promise<WeekProj
 
   return {
     weekId: week.id,
-    byPlayer: projectWeek({ tickets: projTickets, outcomes }),
+    byPlayer: projectWeek({ weekNumber: week.number, tickets: projTickets, outcomes }),
     gamesIn,
     gamesTotal: (games ?? []).length,
   };

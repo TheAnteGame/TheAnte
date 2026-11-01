@@ -85,7 +85,7 @@ export async function RevealBoard({
     const away = entries.filter((e) => e.side === "away");
     const home = entries.filter((e) => e.side === "home");
     const price = (withCount: number, againstCount: number) =>
-      withCount === 0 ? null : formatMultiplier(multiplierFor(withCount, againstCount));
+      withCount === 0 ? null : formatMultiplier(multiplierFor(withCount, againstCount, week.number));
     return {
       id: g.id,
       away: g.away_team,
@@ -122,7 +122,7 @@ export async function RevealBoard({
             return {
               chips: b.chips,
               // §8 — a shove is even money, never the crowd price.
-              multiplier: t.is_shove ? { num: 1, den: 1 } : multiplierFor(h.count, against.count),
+              multiplier: t.is_shove ? { num: 1, den: 1 } : multiplierFor(h.count, against.count, week.number),
             };
           }),
       ).total,

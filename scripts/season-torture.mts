@@ -863,8 +863,13 @@ async function main() {
     // cascade refuses BEFORE writing a single reversal.
     if (week === 17 && lateTargetId) {
       const { data: w17 } = await service.from("weeks").select("id").eq("number", week).single();
+      // The planted row is synthetic, so it goes on the biggest live stack. Planting it
+      // on a fixed seat put a 1-chip player (a lost shove) at 0 — a stack §9 forbids and
+      // the real penalty never produced, since it settled with the felt floor after it.
+      const bPlant = await balances();
+      const plantId = [...bPlant.stacks].filter(([id]) => !removedIds.has(id)).sort((a, b) => b[1] - a[1])[0][0];
       const { error: fpErr } = await service.from("ledger_entries").insert([
-        { player_id: lateTargetId, week_id: w17!.id, kind: "fold_penalty", amount: -1, reason: "torture: planted legacy fold penalty", idempotency_key: "d110-planted" },
+        { player_id: plantId, week_id: w17!.id, kind: "fold_penalty", amount: -1, reason: "torture: planted legacy fold penalty", idempotency_key: "d110-planted" },
         { player_id: null, week_id: w17!.id, kind: "fold_penalty", amount: 1, reason: "torture: planted legacy fold penalty, Pot side", idempotency_key: "d110-planted" },
       ]);
       check(!fpErr, `D-110 planting fold_penalty rows failed: ${fpErr?.message}`);
