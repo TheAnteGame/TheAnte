@@ -4,6 +4,7 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
 import { potBreakdown } from "@/lib/stats/potMath";
+import { SHOVE_RULES_FROM_WEEK } from "@/lib/engine/constants";
 import { PlayerTip } from "../ui/PlayerTip";
 
 // "How did Frank win the week?" (§7/§14). The settled panel named the winner and the
@@ -34,7 +35,7 @@ export async function PotMath({
       .select("id, number, active_count_snapshot, marker, pot_before, pot_awarded")
       .eq("id", week.id)
       .maybeSingle(),
-    db.from("tickets").select("player_id, is_fold").eq("week_id", week.id),
+    db.from("tickets").select("player_id, is_fold, is_shove").eq("week_id", week.id),
     fetchAllRows<{ player_id: string | null; kind: string; amount: number }>((f, t) =>
       db.from("ledger_entries").select("player_id, kind, amount").eq("week_id", week.id).order("id").range(f, t),
     ),
@@ -67,11 +68,15 @@ export async function PotMath({
     weekRow?.pot_before != null ? Number(weekRow.pot_before) : marker > 0 ? -marker : null;
 
   const foldedBy = new Map((tickets ?? []).map((t) => [t.player_id, t.is_fold]));
+  // From Week 9 a shover is out of that week's Pot too (D-128).
+  const shovedOut = new Set(
+    week.number >= SHOVE_RULES_FROM_WEEK ? (tickets ?? []).filter((t) => t.is_shove).map((t) => t.player_id) : [],
+  );
   const breakdown = potBreakdown({
     entries: [...gain.entries()].map(([id, g]) => ({
       playerId: id,
       gain: g,
-      eligible: foldedBy.get(id) === false,
+      eligible: foldedBy.get(id) === false && !shovedOut.has(id),
     })),
     pool: pool ?? 0,
     // Settlement uses potSplitForCount(active_count_snapshot) — the head count frozen at
@@ -111,7 +116,7 @@ export async function PotMath({
   const places = new Set(standings.filter((s) => s.award > 0).map((s) => s.place)).size;
   const rosterCount = weekRow?.active_count_snapshot ?? (tickets ?? []).length;
 
-  const [heading, rule, placesLine, poolLine, poolMinimumLine, paidLine, rolledLine, rolledAll, markerLine, gainLabel, tookLabel, foldedLabel, splitNote, youLabel, roomLabel] =
+  const [heading, rule, placesLine, poolLine, poolMinimumLine, paidLine, rolledLine, rolledAll, markerLine, gainLabel, tookLabel, foldedLabel, shovedLabel, splitNote, youLabel, roomLabel] =
     await Promise.all([
       getContent("potmath.heading", { week: week.number }),
       getContent("potmath.rule"),
@@ -137,6 +142,7 @@ export async function PotMath({
       getContent("potmath.gain_label"),
       getContent("potmath.took_label"),
       getContent("potmath.folded_label"),
+      getContent("potmath.shoved_label"),
       getContent("potmath.split_note"),
       getContent("potmath.you"),
       getContent("potmath.room_label"),
@@ -195,7 +201,7 @@ export async function PotMath({
                 </PlayerTip>
                 {isMe && <span className="ml-2 text-[12px] uppercase tracking-wider text-[color:var(--color-gold)]">{youLabel}</span>}
                 {!s.eligible && (
-                  <span className="ml-2 text-[12px] text-[color:var(--color-text-low)]">{foldedLabel}</span>
+                  <span className="ml-2 text-[12px] text-[color:var(--color-text-low)]">{shovedOut.has(s.playerId) ? shovedLabel : foldedLabel}</span>
                 )}
                 {s.sharedBy > 1 && s.award > 0 && (
                   <span className="ml-2 text-[12px] text-[color:var(--color-text-low)]">

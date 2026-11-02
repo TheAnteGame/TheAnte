@@ -1,4 +1,4 @@
-import { potMinimumFor } from "./constants";
+import { potMinimumFor, SHOVE_RULES_FROM_WEEK } from "./constants";
 import { multiplierFor, profitFor } from "./core";
 import type {
   BetSettlement,
@@ -136,14 +136,17 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
   let potBalance = input.potBalance;
   for (const e of entries) if (e.account === null) potBalance += e.amount;
 
-  // §7 — award. Eligibility: submitted a live ticket (folders out; a ticket whose
-  // games all returned still counts). Distinct gain levels take places in order;
+  // §7 — award. Eligibility: submitted a live ticket (folders out, and from Week 9
+  // shovers; a ticket whose games all returned still counts). Distinct gain levels take places in order;
   // ties split that place's share evenly, floored; every leftover chip rolls.
   // From Week 8 the Pot never pays less than half the week's antes (D-127). When the
   // balance can't cover that, the award is still made and the account goes (further)
   // under: the shortfall is a marker like any other, paid back by later Pots above the
   // same minimum. Chips stay conserved — the Pot's account simply carries the debt.
-  const eligible = new Set(tickets.filter((t) => !t.isFold).map((t) => t.playerId));
+  // From Week 9 a shover is out of that week's Pot (D-128): the Pot already paid the
+  // shove, and a doubled stack is nearly always the week's biggest gain.
+  const shoversOut = weekNumber >= SHOVE_RULES_FROM_WEEK;
+  const eligible = new Set(tickets.filter((t) => !t.isFold && !(shoversOut && t.isShove)).map((t) => t.playerId));
   const potAwards: SettleWeekResult["potAwards"] = [];
   const minimum = potMinimumFor(weekNumber, antesCollected);
   const pool = eligible.size > 0 && minimum > 0 && minimum > potBalance ? minimum : potBalance;

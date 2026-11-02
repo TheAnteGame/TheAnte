@@ -7,6 +7,8 @@ import {
   multiplierFor,
   potSplitForCount,
   profitFor,
+  shoveCeiling,
+  shoveEligible,
 } from "@/lib/engine";
 
 describe("ante tiers (§2)", () => {
@@ -115,5 +117,17 @@ describe("pot places (§7)", () => {
     [55, [33, 27, 20, 13, 7]],
   ])("%i players → %j", (count, split) => {
     expect(potSplitForCount(count)).toEqual(split);
+  });
+});
+
+describe("who may shove (§8 v1.7, D-128)", () => {
+  it("anyone with the card through Week 8", () => {
+    expect(shoveEligible(8, 2000, 470)).toBe(true);
+  });
+  it("from Week 9, only at or under 70% of the median", () => {
+    expect(shoveEligible(9, 329, 470)).toBe(true); // 70% of 470 = 329
+    expect(shoveEligible(9, 330, 470)).toBe(false);
+    expect(shoveEligible(9, 1, 470)).toBe(true); // the felt may still shove its chip
+    expect(shoveCeiling(470)).toBe(329);
   });
 });

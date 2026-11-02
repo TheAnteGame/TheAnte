@@ -170,7 +170,7 @@ export const contentDefaults: Record<string, string> = {
   "howto.viz_felt_note": "A cold season never zeroes out \u2014 the last chip is protected, and you're still dealt in every week.",
   "howto.shove_title": "The Shove",
   "howto.shove_body":
-    "Once a season you can push your entire stack onto one game. One team, everything you have. A shove always pays even money: win and you double, lose and you're on the felt.",
+    "Once a season you can push your entire stack onto one game. One team, everything you have. A shove always pays even money: win and you double, lose and you're on the felt. From Week 9 it's only for trailing stacks, one player a week, and the shover sits out that week's Pot.",
   "howto.fold_title": "Folding",
   "howto.fold_body":
     "Don't like the slate? Fold. You sit the week out, pay only the ante, and keep the rest of your stack. A fold never wins the Pot \u2014 but it never loses big either.",
@@ -215,9 +215,9 @@ export const contentDefaults: Record<string, string> = {
   "guide.pot_title": "The Pot",
   "guide.flow_title": "Your bets and the Pot are two different things",
   "guide.flow_body": "Two things happen every week and they are easy to mix up. First, your bets: chips move between you and the other players who bet the same games. Nothing is created \u2014 what you win, somebody else lost. Second, the Pot: everyone's ante goes into it, and at the end of the week the whole thing goes to whoever gained the most chips. So your bets decide how far your stack moves, and the Pot is the prize for moving it the most. Playing it safe keeps you alive, but it almost never wins a Pot.",
-  "guide.pot_body": "Every ante that week goes into the Pot, and none of it disappears. It goes to whoever gained the most chips that week \u2014 your ante counts in that, so you can win the Pot on a week you finished down, as long as everyone else finished down further. You have to have turned in a ticket: folding pays you nothing. In a league of 8 to 15, one player takes the whole Pot. Bigger leagues pay more places \u2014 one for every 8 players. If every single person folds, nothing is awarded and the Pot rolls into next week. From Week 8 the Pot always pays at least half of that week\u2019s antes \u2014 even on a week the table paid out more than it took in. Anything it comes up short is carried, and later Pots pay it back.",
+  "guide.pot_body": "Every ante that week goes into the Pot, and none of it disappears. It goes to whoever gained the most chips that week \u2014 your ante counts in that, so you can win the Pot on a week you finished down, as long as everyone else finished down further. You have to have turned in a ticket: folding pays you nothing, and from Week 9 neither does shoving. In a league of 8 to 15, one player takes the whole Pot. Bigger leagues pay more places \u2014 one for every 8 players. If every single person folds, nothing is awarded and the Pot rolls into next week. From Week 8 the Pot always pays at least half of that week\u2019s antes \u2014 even on a week the table paid out more than it took in. Anything it comes up short is carried, and later Pots pay it back.",
   "guide.shove_title": "The shove",
-  "guide.shove_body": "Once a season you can go all in. You pick one game and push your whole stack onto it. It ignores the house limit \u2014 that is the point. You pay no ante that week, and you make no other bets. A shove always pays even money: win and you double your stack. Lose and you are on the felt. Nobody sees it coming until the reveal.",
+  "guide.shove_body": "Once a season you can go all in. You pick one game and push your whole stack onto it. It ignores the house limit \u2014 that is the point. You pay no ante that week, and you make no other bets. A shove always pays even money: win and you double your stack. Lose and you are on the felt. Nobody sees it coming until the reveal. From Week 9 three things change. Only a stack at or under 70% of the league median when the week opens can shove \u2014 if yours is bigger, you won't see the option. Only one player can shove each week: the first one in gets it, and anyone after is told someone already has and keeps their shove for another week. And a shover can't win that week's Pot \u2014 it goes to the best week among everyone else.",
   "guide.felt_title": "The felt",
   "guide.felt_body": "Your stack can never drop below 1 chip. If your stack falls below one full ante, you are on the felt. You stop paying the ante, and the 5-game minimum goes away \u2014 bet what you have, on whatever you want. You are not out. Nobody in this league is ever out.",
   "guide.win_title": "How you win the season",
@@ -244,7 +244,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.shove_mode_cta": "The shove",
   "dash.wager.shove_spent_label": "Shove spent — Week {week}",
   "dash.wager.shove_commit_note": "You'll push {stake}, including the {ante} ante coming back at the reveal.",
-  "dash.wager.shove_dark_note": "Nobody will know until the reveal. Not even the Commissioner.",
+  "dash.wager.shove_dark_note": "Nobody will know it was you until the reveal. Not even the Commissioner.",
   "dash.wager.spread_note":
     "FAV and DOG are the sportsbooks' favorite and underdog, set when the slate opens. There is no spread to beat: you are picking who wins outright, and what you win is set by how the room split (rulebook \u00a75).",
   "dash.wager.submit_tooltip":
@@ -254,10 +254,10 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.shove_arm_title": "Use your shove?",
   "dash.wager.shove_arm_body":
     "A shove pushes your entire stack onto one game, at even money — win and you double, lose and you're on the felt. You get one per season, and using it replaces your other bets this week.",
-  "dash.wager.shove_arm_note": "This only arms it. You still pick your game and confirm before anything is committed.",
+  "dash.wager.shove_arm_note": "This only arms it. You still pick your game and confirm before anything is committed. Only one player can shove each week \u2014 if someone already has, you\u2019ll be told when you submit, and your shove stays yours. A shover can\u2019t win that week\u2019s Pot.",
   "dash.wager.shove_arm_cta": "Arm the shove",
   "dash.wager.shove_tooltip":
-    "Once a season: push your whole stack onto one game. Win and it pays big. Lose and you're on the felt. Nobody sees it until the reveal.",
+    "Once a season, for trailing stacks: push your whole stack onto one game. Win and you double. Lose and you're on the felt. One shove per week across the league.",
   "dash.wager.at_label": "at",
   "dash.wager.raise_hint":
     "Back a team by pressing it. Every press raises your stake. To take a bet back, press the ✕ beside your chips — or keep pressing past {max}.",
@@ -375,10 +375,10 @@ export const contentDefaults: Record<string, string> = {
     "You're folded automatically at the deadline. You still pay the ante, and a fold can never win the Pot. Miss three weeks running with no ticket at all and the Commissioner may remove you under the deadweight rule \u2014 your chips are then split evenly across everyone still playing. Submitting anything, even a fold you chose, resets that count to zero.",
   "faq.q8": "Who wins the weekly Pot?",
   "faq.a8":
-    "Whoever GAINS the most chips that week, ante included \u2014 not the biggest stack. Every ante in the league is in it, and in bigger leagues it pays more places.",
+    "Whoever GAINS the most chips that week, ante included \u2014 not the biggest stack. Every ante in the league is in it, and in bigger leagues it pays more places. Folders can't win it, and from Week 9 neither can that week's shover.",
   "faq.q9": "What's the shove?",
   "faq.a9":
-    "Once a season you can push your entire stack onto one game. It always pays even money: win and you double, lose and you're on the felt.",
+    "Once a season you can push your entire stack onto one game. It always pays even money: win and you double, lose and you're on the felt. From Week 9 it's for trailing stacks \u2014 at or under 70% of the league median when the week opens \u2014 only one player can shove each week, and a shover can't win that week's Pot.",
   "faq.q10": "Can I go broke and get knocked out?",
   "faq.a10":
     "Not by losing. Your last chip is protected, you're dealt into every week, and on the felt you bet 1-chip slips until you climb back. The only way out of this league is not turning up at all \u2014 three straight weeks without a ticket and the Commissioner may remove the seat (\u00a714).",
@@ -486,6 +486,7 @@ export const contentDefaults: Record<string, string> = {
   "potmath.gain_label": "Week gain",
   "potmath.took_label": "Took",
   "potmath.folded_label": "Folded — not eligible",
+  "potmath.shoved_label": "Shoved — not eligible",
   "potmath.split_note": "Place {place} split {ways} ways.",
   "potmath.you": "You",
   "potmath.room_label": "The room",

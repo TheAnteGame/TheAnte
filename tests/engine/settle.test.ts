@@ -314,3 +314,41 @@ describe("unanimous sides and the Pot minimum (§5, §7 v1.6, D-127)", () => {
     expect(at(9).map((b) => b.payout)).toEqual([7, 5]); // 30 × 0.25 → 7, 20 × 0.25 → 5
   });
 });
+
+describe("the shover sits out the Pot from Week 9 (§7 v1.7, D-128)", () => {
+  const shove: EngineTicket = {
+    playerId: "s",
+    isFold: false,
+    isShove: true,
+    bets: [{ gameId: "g1", side: "away", chips: 300 }],
+    committedStake: 300,
+    pendingRefund: 15,
+  };
+  const players = [
+    { id: "s", stackPreAnte: 300, stackAtReveal: 0 },
+    { id: "b", stackPreAnte: 500, stackAtReveal: 455 },
+    { id: "c", stackPreAnte: 500, stackAtReveal: 465 },
+  ];
+  const tickets = [shove, ticket("b", [["g2", "home", 30]]), ticket("c", [["g2", "away", 20]])];
+  const games = [finalGame("g1", "away"), finalGame("g2", "home")];
+  const at = (weekNumber: number) =>
+    settleWeek(baseInput({ weekNumber, tickets, games, players, potBalance: 2000, antesCollected: 30 }));
+
+  it("in Week 8 the winning shover's doubled stack takes the Pot", () => {
+    expect(at(8).potAwards.map((a) => a.playerId)).toEqual(["s"]);
+  });
+
+  it("from Week 9 the Pot goes to the best week among everyone else", () => {
+    const r = at(9);
+    expect(r.potAwards.map((a) => a.playerId)).toEqual(["b"]);
+    // The shove itself is untouched: still doubled, at even money.
+    expect(r.bets.find((b) => b.playerId === "s")).toMatchObject({ result: "won", payout: 300 });
+    expect(r.entries.reduce((s, e) => s + e.amount, 0)).toBe(0);
+  });
+
+  it("a week where only the shover played awards nothing and the Pot rolls", () => {
+    const r = settleWeek(baseInput({ weekNumber: 9, tickets: [shove], games, players: [players[0]], potBalance: 500, antesCollected: 0 }));
+    expect(r.potAwards).toEqual([]);
+    expect(r.potAfter).toBe(500 - 600);
+  });
+});

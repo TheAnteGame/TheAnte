@@ -5,7 +5,7 @@ import { leanFor } from "@/lib/board/lean";
 import { BoardHeader } from "./BoardHeader";
 import { useRouter } from "next/navigation";
 import { submitWager } from "@/app/actions/wager";
-import { tierForWeek } from "@/lib/engine";
+import { shoveEligible, tierForWeek } from "@/lib/engine";
 import { ChipStack } from "@/components/chip/PokerChip";
 
 // The most-used surface in the product, built for a phone on a Wednesday night
@@ -424,7 +424,8 @@ export function BetSlip({ weekId, weekNumber, ante, games, snapshot, medianSnaps
         )}
 
         <div className="ml-auto">
-          {shoveUsedWeek === null ? (
+          {shoveUsedWeek === null && !shoveEligible(weekNumber, stackPreAnte, medianSnapshot) ? null : shoveUsedWeek === null ? (
+            // From Week 9 only a trailing stack sees the shove at all (D-128).
             withTip(
               copy.shoveTooltip,
               <button

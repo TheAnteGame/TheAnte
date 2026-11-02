@@ -3623,3 +3623,41 @@ rules changed how the season played out. No migration.
 **Next (owner, 2026-11-01): a shove reserve** — lost shoves pay into it and winning
 shoves are paid from it first, so shoves fund each other instead of the weekly Pot.
 Not built yet.
+
+## D-128 — The shove is the trailing player's move (2026-11-01, rulebook v1.7, from Week 9)
+
+A second mid-season change by the owner, under the same beta exception as D-127.
+
+**What prompted it.** Week 8's shove won (LV, 297 doubled). The Pot couldn't cover it, paid
+its 97-chip minimum, and the shover — whose doubled stack was the week's biggest gain —
+won that too. A stress test of Weeks 9–18 on the real engine (each player's own betting
+history, room herding calibrated to 2026, shovers backing a big favorite) found, under the
+v1.6 rules: about 10 more shoves, two or more in the same week 2–3 times, players near the
+top shoving in Weeks 17–18 to grab the title, the Pot in debt by ~1,000 typically and
+~5,000 in the worst case, and a shover champion 78–99% of the time.
+
+**The rules (all gated `SHOVE_RULES_FROM_WEEK = 9`):**
+
+- **Eligibility: stack ≤ 70% of the median** (`SHOVE_MEDIAN_SHARE`, `shoveEligible`),
+  both pre-ante from the slate-open snapshot (`week_players.stack_pre_ante`,
+  `weeks.median_snapshot`). Above the line the bet slip doesn't show the shove at all.
+- **One per week.** The first submitted stands. `submit_ticket` takes a per-week advisory
+  lock and asks `ante.week_shove_taken` — SECURITY DEFINER because RLS hides every other
+  ticket until the reveal. It answers one bit (someone has / nobody has), only to a player
+  who could shove right now, which is exactly what pressing submit would tell them. The
+  owner chose that honest answer over a silent failure; it never says who or which game.
+  A refused shover keeps the card.
+- **The shover can't win that week's Pot** (`settleWeek`; the Pot math panel labels the
+  row "Shoved — not eligible"). Voided shoves are out too — one sentence, no exceptions.
+
+**Effect (stress test, 5,000 seasons per case).** Realistic: shoves 9.9 → 5.8, weeks with
+2+ shoves 2.7 → 0, Pot debt 1,063 → 258, season ending in debt 80% → 32%. Worst case
+(every eligible player shoves at once, every shove wins): debt ~4,800 → ~1,000. Neither
+figure includes the Pot exclusion, which was decided after the test and only helps. Ending
+the season in debt is acceptable to the owner: season close already writes off an
+outstanding marker (§8.10). The owner chose this over a seeded shove reserve.
+
+Migration 0038 (replaces `submit_ticket`, adds `ante.week_shove_taken`). Copy:
+`dash.wager.shove_arm_note`, `shove_tooltip`, `shove_dark_note`, `guide.shove_body`,
+`guide.pot_body`, `howto.shove_body`, `faq.a8`, `faq.a9`, new `potmath.shoved_label`. The
+torture season shoves through the new rules and probes both refusals every week from 9.

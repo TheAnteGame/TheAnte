@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-01 (seventy-third pass):** **Shove rules, beta season (D-128, rulebook
+> v1.7, from Week 9).** Only a stack at or under 70% of the median can shove; one shove per
+> week league-wide (later tries are told someone already shoved); the shover can't win
+> that week's Pot. Migration 0038 must be applied to production before Week 9 opens.
+
 > **2026-11-01 (seventy-second pass):** **Rule change, beta season (D-127, rulebook
 > v1.6).** From Week 9 a side nobody opposed pays 0.25×, not 1×; from Week 8 the Pot
 > always pays at least half its antes, any shortfall carried as a marker. Week 8 keeps

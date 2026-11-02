@@ -56,7 +56,7 @@ const { resettleFromWeek } = await import("../lib/jobs/resettle");
 const { recomputeOpenWeek } = await import("../lib/jobs/recomputeWeek");
 const { admitToOpenWeek } = await import("../lib/jobs/admit");
 const { houseLimit } = await import("../lib/engine/core");
-const { SLATE_MARGIN_MINUTES } = await import("../lib/engine/constants");
+const { SLATE_MARGIN_MINUTES, SHOVE_RULES_FROM_WEEK, shoveEligible } = await import("../lib/engine/constants");
 const { computeRemoval } = await import("../lib/engine/removal");
 const { removeSeat } = await import("../lib/jobs/removeSeat");
 const { assertInvariants } = await import("../lib/engine/invariants");
@@ -256,6 +256,7 @@ async function main() {
   }
 
   const shoveWeekByPlayer = new Map<string, number>();
+const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempted
   let preFingerprint = "";
 
   // ── The deadweight seat (D-041, §14) ──────────────────────────────────────────
@@ -463,6 +464,12 @@ async function main() {
     const potBeforeSubmissions = (await balances()).pot;
     const folded: number[] = [];
     let shoves = 0;
+    // D-128 probes, once each per week from Week 9: a second shove is refused, and so is
+    // a shove from a stack above 70% of the median.
+    let probedSecondShove = false;
+    let probedBigShove = false;
+    const shoveRulesOn = week >= SHOVE_RULES_FROM_WEEK;
+    const underLine = (stack: number) => shoveEligible(week, stack, Number(weekRow.median_snapshot ?? 0));
 
     if (week === 13 && !lateDeadweightId) {
       const b13 = await balances();
@@ -488,7 +495,35 @@ async function main() {
       }
       const me = asPlayer(subs[i]);
 
-      const wantShove = !shoveWeekByPlayer.has(pid) && rand() < 0.05 && snap.stack_pre_ante >= 1;
+      const holdsCard = !shoveWeekByPlayer.has(pid);
+      // From Week 9 a trailing stack shoves far more often, so the one-per-week rule and
+      // the Pot exclusion actually get exercised; above the line it never tries for real.
+      const wantShove =
+        holdsCard &&
+        rand() < (shoveRulesOn ? 0.3 : 0.05) &&
+        snap.stack_pre_ante >= 1 &&
+        underLine(Number(snap.stack_pre_ante)) &&
+        !(shoveRulesOn && shoves > 0);
+
+      if (shoveRulesOn && holdsCard && Number(snap.stack_pre_ante) >= 1) {
+        const tryShove = () =>
+          me.rpc("submit_ticket", {
+            p_week_id: weekRow.id,
+            p_is_shove: true,
+            p_bets: [{ game_id: slateGames[0].id, side: "away", chips: Number(snap.stack_pre_ante) }],
+          });
+        if (!probedSecondShove && shoves > 0 && underLine(Number(snap.stack_pre_ante))) {
+          probedSecondShove = true;
+          shoveProbes.second++;
+          const { error } = await tryShove();
+          check(/already shoved this week/.test(error?.message ?? ""), `week ${week} D-128: a second shove was not refused: ${error?.message ?? "accepted"}`);
+        } else if (!probedBigShove && !underLine(Number(snap.stack_pre_ante))) {
+          probedBigShove = true;
+          shoveProbes.big++;
+          const { error } = await tryShove();
+          check(/trailing stacks/.test(error?.message ?? ""), `week ${week} D-128: a shove above 70% of the median was not refused: ${error?.message ?? "accepted"}`);
+        }
+      }
       let bets: Array<{ game_id: string; side: string; chips: number }>;
       let isShove = false;
 
@@ -678,6 +713,14 @@ async function main() {
     }
     const settle = await settleCurrentWeek(service);
     check(settle.status === "succeeded", `week ${week} settlement (${JSON.stringify(settle.detail)})`);
+    if (week >= SHOVE_RULES_FROM_WEEK) {
+      // D-128: at most one shove, and the Pot never pays it.
+      const { data: wkShoves } = await service.from("tickets").select("player_id").eq("week_id", weekRow.id).eq("is_shove", true);
+      check((wkShoves ?? []).length <= 1, `week ${week} D-128: ${(wkShoves ?? []).length} shoves in one week`);
+      const { data: wkAwards } = await service.from("pot_awards").select("player_id").eq("week_id", weekRow.id);
+      const shoverIds = new Set((wkShoves ?? []).map((t) => t.player_id));
+      check(!(wkAwards ?? []).some((a) => shoverIds.has(a.player_id)), `week ${week} D-128: the shover won the Pot`);
+    }
     if (week === 16 && lateDeadweightId) {
       const bs = await balances();
       check((bs.stacks.get(lateDeadweightId) ?? -1) === 0, `D-110 settlement put chips back into the removed seat: ${bs.stacks.get(lateDeadweightId)}`);
@@ -907,6 +950,9 @@ async function main() {
 
   const b = await balances();
   console.log(`\nFinal: total=${b.total} pot=${b.pot} min_stack=${Math.min(...b.stacks.values())} max_stack=${Math.max(...b.stacks.values())}`);
+  // A probe that never ran proves nothing — make silence a failure, not a pass.
+  check(shoveProbes.second > 0 && shoveProbes.big > 0, `D-128 probes never ran: ${JSON.stringify(shoveProbes)}`);
+  console.log(`D-128 shove probes refused: ${shoveProbes.second} second-shove, ${shoveProbes.big} above-the-line`);
   console.log(`${failures === 0 ? "✅ SEASON CLEAN" : `❌ ${failures} FAILURES`} — ${((Date.now() - START) / 1000).toFixed(1)}s`);
   process.exit(failures === 0 ? 0 : 1);
 }

@@ -1,7 +1,7 @@
 # ANTE
 ### The complete rules
 
-*Version 1.6 — the 2026 beta season. (1.6, Week 8: two mid-season changes made by the owner, who runs 2026 as a beta — the one exception §13 has ever had, and D-127 records why. From Week 9 a side nobody opposed pays the floor, not even money; from Week 8 the Pot always pays at least half its week's antes. No locked ticket pays a chip differently: Week 8 settles at the prices its board showed.) Version 1.5 was frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MST. The hours did not change, the zone did — see D-089. 1.4 added a 50-chip fold penalty from Week 3 — D-096. 1.5, Week 4, withdraws it: the league had not settled it, and §13 forbids changing a rule mid-season. A fold costs the ante and nothing more — D-110.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
+*Version 1.7 — the 2026 beta season. (1.7, Week 9: the shove becomes the trailing player's move — only a stack at or under 70% of the median can shove, one shove per week league-wide, and the shover can't win that week's Pot. D-128. 1.6, Week 8: two mid-season changes made by the owner, who runs 2026 as a beta — the one exception §13 has ever had, and D-127 records why. From Week 9 a side nobody opposed pays the floor, not even money; from Week 8 the Pot always pays at least half its week's antes. No locked ticket pays a chip differently: Week 8 settles at the prices its board showed.) Version 1.5 was frozen for the 2026 season. (1.3, Week 2: the league keeps Mountain time; every clock below is MST. The hours did not change, the zone did — see D-089. 1.4 added a 50-chip fold penalty from Week 3 — D-096. 1.5, Week 4, withdraws it: the league had not settled it, and §13 forbids changing a rule mid-season. A fold costs the ante and nothing more — D-110.) This text is versioned alongside the code and is not editable from the admin console; §13 forbids changing a rule mid-season, and that has to be true of the rules themselves. The deadweight rule (§13, §14) was added in the preseason, before the Week 1 deadline locked the roster — the last moment the rules can legitimately move.*
 
 ANTE is a season-long NFL pool where you bet chips instead of making picks. Everyone starts with 500. Each week you spread chips across the games you like but what you get paid depends on how many people agreed with you. Take the side everyone took and you barely get paid. Take the side almost nobody took and you get paid double. Nobody sees a single pick until every player is locked in, so every week you're guessing what your friends are about to do. Biggest stack on the last Sunday wins.
 
@@ -255,7 +255,7 @@ The weighting stays steep on purpose. Spreading the Pot evenly across the top th
 - **If every single player folded, nothing is awarded and the whole Pot rolls into next week.** Two quiet weeks in a row makes the third one enormous.
 - **Every share rounds down to a whole chip and the leftovers roll into next week's Pot.** A 240-chip Pot paying 67/33 hands out 160 and 79; the last chip rolls.
 - Ties for a place split that place's share evenly, rounding down. Odd chips roll into next week.
-- Shovers are eligible.
+- **From Week 9 (rulebook 1.7), the week's shover is not eligible.** The Pot already paid the shove, and a doubled stack is nearly always the week's biggest gain — without this rule the same Pot paid the shover twice. The Pot goes to the best week among everyone else. (Through Week 8, shovers were eligible.)
 
 ### The marker
 
@@ -288,6 +288,14 @@ The multipliers create the variance. The Pot is the prize that variance competes
 - **You pay no ante the week you shove.** Nothing left to ante with. The ante has already come out by the time anybody submits (§14), so it is **refunded back out of the Pot — at the reveal, with everything else.** The amount you push in is locked when you submit and is the stack you held before the ante; the chips simply don't visibly move until the room opens. Nothing about the Pot may twitch while the blackout is on (§6). Win and you double the pre-ante stack.
 - **No other bets that week.** The shove is the whole ticket.
 - **A shove always pays even money — 1×.** No multiplier, ever.
+
+**From Week 9 (rulebook 1.7), three more rules:**
+
+- **The shove is for trailing stacks.** You can shove only if your stack is **at or under 70% of the league median** when the week opens — both measured before the ante, from the slate-open snapshot (§14). Above that line the option doesn't appear.
+- **One shove per week, league-wide.** The first one submitted stands. Anyone who tries after it is told, honestly, that someone has already shoved this week — not who, not which game — and keeps their shove for another week.
+- **The shover can't win that week's Pot** (§7).
+
+Why: a winning shove is paid out of the Pot, and in 2026 one shove was bigger than a week of antes. A stress test of the rest of the season had several shoves landing in the same week and the Pot thousands of chips under water by Week 18. Limiting it to trailing stacks and one a week keeps it the comeback it was meant to be.
 
 That last rule is balance, not flavor. If shoves paid the fade multiplier, everyone would shove a 2.5× in Week 1. The house does not offer odds on desperation.
 

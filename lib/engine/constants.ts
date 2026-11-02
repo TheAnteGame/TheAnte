@@ -68,6 +68,27 @@ export function potMinimumFor(week: number, antesCollected: number): number {
   return Math.floor((antesCollected * POT_MINIMUM_SHARE.num) / POT_MINIMUM_SHARE.den);
 }
 
+/** §8 v1.7 (D-128) — from this week on the shove is the trailing player's move: one per
+ *  week league-wide, only for a stack at or under 70% of the slate-open median, and a
+ *  shover can't win that week's Pot. A winning shove is paid from the Pot, and doubling
+ *  is nearly always the week's biggest gain, so without the last rule the same Pot paid
+ *  the shover twice. Weeks 1–8 keep the old rules, so a re-settlement replays them. */
+export const SHOVE_RULES_FROM_WEEK = 9;
+export const SHOVE_MEDIAN_SHARE = { num: 7, den: 10 };
+
+/** Whether a stack may shove at all this week (D-128). Both figures are pre-ante, from
+ *  the slate-open snapshot. Integer cross-multiplication: no floats near chips. The
+ *  card (once per season) and the one-per-week limit are checked separately. */
+export function shoveEligible(week: number, stackPreAnte: number, medianSnapshot: number): boolean {
+  if (week < SHOVE_RULES_FROM_WEEK) return true;
+  return stackPreAnte * SHOVE_MEDIAN_SHARE.den <= medianSnapshot * SHOVE_MEDIAN_SHARE.num;
+}
+
+/** The most a stack may hold and still shove this week, for display (D-128). */
+export function shoveCeiling(medianSnapshot: number): number {
+  return Math.floor((medianSnapshot * SHOVE_MEDIAN_SHARE.num) / SHOVE_MEDIAN_SHARE.den);
+}
+
 /** §7 — places paid: one per eight players, snapshotted at slate open. */
 export const POT_PLACES: ReadonlyArray<{ min: number; max: number; split: readonly number[] }> = [
   { min: 0, max: 15, split: [100] },
