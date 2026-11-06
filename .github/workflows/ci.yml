@@ -68,9 +68,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Pinned to the CLI the stack is developed on. "latest" became 3.x on 2026-11-06,
+      # which refuses config.toml's [inbucket] section while 2.98 refuses its
+      # replacement, so the two cannot share one config: move both together.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.98.2
       # Docker is preinstalled on ubuntu-latest; this brings up Postgres + PostgREST
       # + auth with every migration applied, which is also a from-scratch proof that
       # the migration chain still builds a working database.
