@@ -5,8 +5,8 @@
 // in turn, newest first, then the next from each, and so on — every source that
 // carries the team gets a turn before any source gets a second.
 //
-// Deliberately a ROTATION, not a shuffle. The dashboard re-renders every five
-// seconds, so a random pick would deal a different eight on every poll and the
+// Deliberately a ROTATION, not a shuffle. The dashboard re-renders every minute
+// and whenever the room moves, so a random pick would deal a different eight on every poll and the
 // fader would jump mid-headline. A rotation is stable between polls and still
 // stops one prolific feed owning the box.
 

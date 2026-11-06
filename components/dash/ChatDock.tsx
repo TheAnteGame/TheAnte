@@ -13,7 +13,7 @@ import type { ChatPosition } from "@/lib/chat/unread";
 //   bar     desktop: full-width strip         phone: the same bar
 //   side    desktop: tab on the right edge    phone: the same tab, opens full screen
 //
-// Open/closed lives in localStorage so it survives the five-second refresh and the
+// Open/closed lives in localStorage so it survives the page refresh and the
 // next visit. Opening marks the room read (a server action); while open, every
 // refresh that brings new messages marks them read too, so the badge only ever
 // counts what was said while the dock was shut. The tab title carries the count so

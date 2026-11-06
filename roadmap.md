@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-06 (seventy-fourth pass):** **Outage and the refresh (D-129).** Supabase
+> restricted the project for Free-plan egress (Nov 5, 22:38 UTC → owner upgraded to Pro
+> Nov 6). Cause: a 5-second dashboard refresh re-reading the season. Now 60 s while
+> visible, paused when hidden, plus a 10-second chat fingerprint check.
+
 > **2026-11-01 (seventy-third pass):** **Shove rules, beta season (D-128, rulebook
 > v1.7, from Week 9).** Only a stack at or under 70% of the median can shove; one shove per
 > week league-wide (later tries are told someone already shoved); the shover can't win

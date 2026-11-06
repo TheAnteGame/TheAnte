@@ -18,8 +18,8 @@ const ON_MS = 6000; // long enough to actually read a headline
 const OFF_MS = 2000;
 
 export function NewsFader({ items, sourceLabel, startAt = 0 }: { items: Item[]; sourceLabel: string; startAt?: number }) {
-  // Frozen at mount. The dashboard calls router.refresh() every five seconds and hands
-  // this a freshly fetched array; when a story lands the ORDER shifts, and the visible
+  // Frozen at mount. The dashboard calls router.refresh() every minute (sooner when
+  // the room moves) and hands this a freshly fetched array; when a story lands the ORDER shifts, and the visible
   // headline would change mid-beat. News can wait for the next real page load.
   const [list] = useState<Item[]>(items);
   // Where the loop starts, frozen at mount like the list (D-114): server and client

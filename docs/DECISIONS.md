@@ -3661,3 +3661,26 @@ Migration 0038 (replaces `submit_ticket`, adds `ante.week_shove_taken`). Copy:
 `dash.wager.shove_arm_note`, `shove_tooltip`, `shove_dark_note`, `guide.shove_body`,
 `guide.pot_body`, `howto.shove_body`, `faq.a8`, `faq.a9`, new `potmath.shoved_label`. The
 torture season shoves through the new rules and probes both refusals every week from 9.
+
+## D-129 — The page refreshes once a minute; chat has its own small check (2026-11-06)
+
+**What happened.** On 2026-11-05 at 22:38 UTC Supabase restricted the project for
+exceeding the Free plan's monthly egress, and every signed-in page and job failed until
+the owner upgraded to Pro the next morning. Week 9 was untouched: all 14 tickets were in
+and it had revealed at 17:28 UTC. Thursday night's score synced on the first run after.
+
+**Why.** The dashboard and the results board called `router.refresh()` every five
+seconds (sixty when hidden), and the wager area added a second fifteen-second poll on
+top. Every refresh re-renders server components that read the whole season — ledger,
+tickets, bets (LeagueStats, PlayStyleCard, standings) — about 0.5–1 MB a time, so one
+open tab cost roughly 0.4–0.7 GB an hour.
+
+**Now.** `PollRefresh` defaults to `PAGE_REFRESH_MS` (60 s) while visible and stops
+entirely while hidden, refreshing at once on return. The wager area's own poll is gone.
+`ChatPulse` asks the `chatPulse` action every 10 s for a fingerprint of the room — newest
+visible message id, reaction count and latest time, poll-vote count and latest time —
+and refreshes the page early only when it moved, so Table Talk stays as quick as before
+for a few hundred bytes a check. Scores sync every five minutes, so nothing on the board
+updates faster than the new refresh anyway. Roughly a 95%+ cut. A further step, if ever
+needed: cache the season stats between reveals and settlements.
+

@@ -9,6 +9,7 @@ import { PotMath } from "@/components/wager/PotMath";
 import { RevealBoard } from "@/components/wager/RevealBoard";
 import { TableTalk } from "@/components/dash/TableTalk";
 import { PollRefresh } from "@/components/wager/PollRefresh";
+import { ChatPulse } from "@/components/dash/ChatPulse";
 
 // The results page (D-022). The reveal's table is 15 games wide and never fitted the
 // dashboard's 62% column, so it lives here at full width — and the whole sequence,
@@ -85,8 +86,9 @@ export default async function WeekResults({
       {/* Bottom padding keeps the docked chat strip off the last panel (D-093). */}
       <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 pt-6 sm:px-6">{body}</main>
       {/* The room rides along to the board (D-093): same dock, same position setting,
-          same five-second poll as the dashboard, so the trash talk keeps up. */}
-      <PollRefresh intervalMs={5000} />
+          same refresh and chat check as the dashboard, so the trash talk keeps up. */}
+      <PollRefresh />
+      <ChatPulse />
       <TableTalk playerId={player.id} chatPosition={player.chatPosition} />
     </div>
   );

@@ -4,7 +4,6 @@ import { createUserClient } from "@/lib/db/supabase";
 import { getContent } from "@/lib/content/getContent";
 import { LEAGUE_TZ } from "@/lib/time";
 import { BetSlip, type SlipCopy } from "./BetSlip";
-import { PollRefresh } from "./PollRefresh";
 import { PotMath } from "./PotMath";
 import { SettledResults } from "./SettledResults";
 import Link from "next/link";
@@ -130,8 +129,9 @@ export async function WagerArea({
     const inCount = (waiting ?? []).length - out.length;
     return (
       <Titled heading={heading} pastWeek={pastWeek} pastLabel={pastLabel}>
-        {/* The waiting-on list is the ONE thing allowed to move during the blackout (§6). */}
-        <PollRefresh intervalMs={15000} />
+        {/* The waiting-on list is the ONE thing allowed to move during the blackout (§6).
+            The page that hosts this keeps it current; a second poll here only doubled
+            every refresh (D-129). */}
         <p className="text-[color:var(--color-text-hi)]">{submittedMessage}</p>
         <p className="mt-4 text-sm text-[color:var(--color-text-mid)]">
           {inCount} of {(waiting ?? []).length} in — {waitingLabel}{" "}

@@ -102,8 +102,8 @@ export async function postChatMessage(formData: FormData): Promise<PostResult> {
 }
 
 /** The dock was opened, or was open when new messages arrived (D-086): stamp the
- *  player's own read mark. Self-update under RLS; no revalidation — the dashboard's
- *  five-second poll picks it up, and the dock shows zero while open regardless. */
+ *  player's own read mark. Self-update under RLS; no revalidation — the page's next
+ *  refresh picks it up, and the dock shows zero while open regardless. */
 export async function markChatRead(): Promise<void> {
   const { userId } = await auth();
   if (!userId) return;
@@ -177,4 +177,29 @@ async function notifyReactions(authorId: string, messageId: string, body: string
       cta: { label: "See the room", href: "https://theantegame.com/dashboard" },
     },
   );
+}
+
+/** A fingerprint of the room, for ChatPulse (D-129): the newest visible message, and
+ *  the count and latest time of reactions and poll votes. A few hundred bytes, where a
+ *  page refresh re-reads the season. The client compares it with the last one and
+ *  refreshes only when it moved. Messages and reactions read as the player under RLS;
+ *  votes go through the service client exactly as TableTalk tallies them — an
+ *  aggregate, never who voted for what. Null when there is no seat to answer for. */
+export async function chatPulse(): Promise<string | null> {
+  const { userId } = await auth();
+  if (!userId) return null;
+  const db = createUserClient();
+  const [{ data: newest, error }, reactions, votes] = await Promise.all([
+    db.from("chat_messages").select("id").eq("is_system", false).is("hidden_at", null).order("created_at", { ascending: false }).limit(1),
+    db.from("chat_reactions").select("created_at", { count: "exact" }).order("created_at", { ascending: false }).limit(1),
+    serviceDb().from("poll_votes").select("voted_at", { count: "exact" }).order("voted_at", { ascending: false }).limit(1),
+  ]);
+  if (error) return null;
+  return [
+    newest?.[0]?.id ?? "-",
+    reactions.count ?? 0,
+    reactions.data?.[0]?.created_at ?? "-",
+    votes.count ?? 0,
+    votes.data?.[0]?.voted_at ?? "-",
+  ].join("|");
 }

@@ -16,6 +16,7 @@ import { SupportBox } from "@/components/dash/SupportBox";
 import { LeagueStats } from "@/components/dash/LeagueStats";
 import { PlayStyleCard } from "@/components/dash/PlayStyleCard";
 import { PollRefresh } from "@/components/wager/PollRefresh";
+import { ChatPulse } from "@/components/dash/ChatPulse";
 import { HeaderMenu } from "@/components/dash/HeaderMenu";
 import { DashBar } from "@/components/dash/DashBar";
 
@@ -72,7 +73,8 @@ export default async function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      <PollRefresh intervalMs={5000} />
+      <PollRefresh />
+      <ChatPulse />
       {/* The bar (D-125): one row, sticky, in the same column as everything else so
           it still reads as part of the table rather than browser chrome. It only
           frosts once the page scrolls under it (DashBar). */}
