@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-07 (seventy-fifth pass):** **The Pot is the week's antes (D-130, rulebook
+> v1.8, from Week 9).** Pot = antes + whatever the table kept, never less than the
+> antes; the debt (365 after Week 8) is never repaid and never shown to players — the
+> band, ticker and results show the week's Pot; only the console shows the account.
+
 > **2026-11-06 (seventy-fourth pass):** **Outage and the refresh (D-129).** Supabase
 > restricted the project for Free-plan egress (Nov 5, 22:38 UTC → owner upgraded to Pro
 > Nov 6). Cause: a 5-second dashboard refresh re-reading the season. Now 60 s while

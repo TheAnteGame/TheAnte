@@ -3684,3 +3684,33 @@ for a few hundred bytes a check. Scores sync every five minutes, so nothing on t
 updates faster than the new refresh anyway. Roughly a 95%+ cut. A further step, if ever
 needed: cache the season stats between reveals and settlements.
 
+## D-130 — The Pot is the week's antes plus what the table kept; the debt is never repaid (2026-11-07, rulebook v1.8, from Week 9)
+
+**Why.** After Week 8 the Pot's account sat 365 under (Steve's winning shove plus the
+97-chip minimum). The dashboard and ticker showed the raw balance, so Week 9 opened with
+"Pot −155" (−365 + 210 antes), and under D-127 Week 9 would have paid only its 105-chip
+minimum, the rest going to repay the debt. The owner: the Pot should be what everybody
+put in that week, the debt should be invisible, and in this beta it should not be paid
+off at all — let it grow; the shove is not planned for next year.
+
+**The rule (`POT_PAYS_ANTES_FROM_WEEK = 9`, `weeklyPotFor`).** From Week 9 a week's Pot
+pays `max(balance, antes + max(0, sweep))`: its net antes (charged at slate open, less any
+shove refund, plus any voided-shove recharge) plus the sweep when the table kept chips.
+A table that came up short leaves the antes untouched and deepens the account instead. A
+positive balance — a roll, rounding — still pays out whole. The owner asked that the
+table's kept chips go to the Pot on top of the antes rather than into the background,
+with the working shown, so no chip is handed out without a reason: those chips are what
+losing bets put in beyond what the winners on those games were owed (§5, "The house
+keeps nothing"). The D-127 minimum now applies to Week 8 alone.
+
+**What players see.** `potShown` (dashboard Pot box, ticker): an unsettled week shows
+its net antes (or a bigger balance), a settled week what it paid; never negative, never
+a debt. The results breakdown says "This week's Pot: 210 from antes + 46 the table kept
+= 256" (or just the antes), and no longer prints a marker line on any week. The settled
+card shows the Pot winner whenever there is one — it used to print the marker instead,
+which hid Steve's Week 8 award. The ticker's marker item is gone from Week 9. The
+commissioner console still shows the account balance and the marker, reworded. Copy:
+`band.pot_tip`, `guide.pot_body`, new `potmath.pool_antes` / `potmath.pool_antes_kept`;
+removed `potmath.marker`, `settled.pot_marker`. No migration; Week 9 is the first week
+settled under it (Monday 2026-11-09).
+

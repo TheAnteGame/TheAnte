@@ -99,7 +99,9 @@ export default async function Ops() {
           <Stat label="Balance" value={pot} accent="gold" />
           {week && week.marker > 0 && (
             <p className="border border-[color:var(--color-gold-dim)] px-3 py-2 text-sm text-[color:var(--color-gold)]">
-              The table is into the Pot for {week.marker} (Week {week.number}). Next week&apos;s antes pay it down first (§7).
+              The Pot&apos;s account is {week.marker} under (Week {week.number}). Players never see it: from Week 9
+              every Pot pays its own antes plus what the table kept, the debt is not paid back, and season close
+              writes it off (D-130).
             </p>
           )}
         </div>

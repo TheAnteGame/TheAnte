@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/db/fetchAll";
+import { POT_PAYS_ANTES_FROM_WEEK, weeklyPotFor } from "@/lib/engine/constants";
 
 // What "the Pot" actually is, in one place (D-070).
 //
@@ -50,6 +51,33 @@ export async function potBalance(db: SupabaseClient): Promise<number> {
     0,
   );
 }
+
+/** The Pot players are shown for a week (D-130). From Week 9 the Pot is that week's
+ *  antes plus whatever the table keeps, and any debt the account carries is the
+ *  commissioner's business, not the room's — so a negative balance never reaches a
+ *  player. Before settlement that is the week's net antes (or the balance, if a roll
+ *  makes it bigger: what settlement will pay at least); once settled, what it paid.
+ *  Earlier weeks keep the account balance, exactly as they were shown at the time.
+ *  The commissioner console keeps reading `potBalance`. */
+export async function potShown(
+  db: SupabaseClient,
+  week: { id: string; number: number; settled_at: string | null; pot_before: number | null },
+): Promise<number> {
+  if (week.number < POT_PAYS_ANTES_FROM_WEEK) return potBalance(db);
+  if (week.settled_at) return Math.max(0, Number(week.pot_before ?? 0));
+  const [rows, open] = await Promise.all([potRows(db), unsettledWeekIds(db)]);
+  let balance = 0;
+  let antes = 0;
+  for (const e of rows) {
+    if (!(e.kind === "bet_stake" && e.week_id && open.has(e.week_id))) balance += e.amount;
+    if (e.week_id === week.id && ANTE_KINDS.has(e.kind)) antes += e.amount;
+  }
+  return Math.max(0, weeklyPotFor({ antes, swept: 0, balance }));
+}
+
+/** The Pot side of an ante: charged at slate open, refunded to a shover at the reveal,
+ *  charged again if the shove's game was voided. Their sum is the week's net antes. */
+const ANTE_KINDS = new Set(["ante", "ante_refund", "ante_recharge"]);
 
 /** Chips staked across the league in one week, straight off the ledger so it can
  *  never disagree with what actually left the stacks. Zero before the reveal, which

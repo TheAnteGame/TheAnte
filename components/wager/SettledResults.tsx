@@ -82,13 +82,12 @@ export async function SettledResults({
     });
   }
 
-  const [heading, deltaLabel, potLabel, potNone, potMarker, stackLabel, rankLabel, wonLabel, lostLabel, returnedLabel] =
+  const [heading, deltaLabel, potLabel, potNone, stackLabel, rankLabel, wonLabel, lostLabel, returnedLabel] =
     await Promise.all([
       getContent("settled.heading", { week: week.number }),
       getContent("settled.delta_label"),
       getContent("settled.pot_label"),
       getContent("settled.pot_none"),
-      getContent("settled.pot_marker", { marker: week.marker }),
       getContent("settled.stack_label"),
       getContent("settled.rank_label"),
       getContent("settled.won_label"),
@@ -162,9 +161,9 @@ export async function SettledResults({
       </div>
 
       <p className="px-4 py-3 text-sm">
-        {week.marker > 0 ? (
-          <span className="text-[color:var(--color-gold)]">{potMarker}</span>
-        ) : potWinners.length > 0 ? (
+        {/* The Pot's debt is the commissioner's to see (D-130). A week can end under
+            water and still have paid a winner — Week 8 did — so the winners always win. */}
+        {potWinners.length > 0 ? (
           <span className="text-[color:var(--color-text-mid)]">
             {potLabel}:{" "}
             <span className="text-[color:var(--color-gold)]">

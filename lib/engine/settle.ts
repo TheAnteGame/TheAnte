@@ -1,4 +1,4 @@
-import { potMinimumFor, SHOVE_RULES_FROM_WEEK } from "./constants";
+import { POT_PAYS_ANTES_FROM_WEEK, potMinimumFor, SHOVE_RULES_FROM_WEEK, weeklyPotFor } from "./constants";
 import { multiplierFor, profitFor } from "./core";
 import type {
   BetSettlement,
@@ -139,17 +139,26 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
   // §7 — award. Eligibility: submitted a live ticket (folders out, and from Week 9
   // shovers; a ticket whose games all returned still counts). Distinct gain levels take places in order;
   // ties split that place's share evenly, floored; every leftover chip rolls.
-  // From Week 8 the Pot never pays less than half the week's antes (D-127). When the
-  // balance can't cover that, the award is still made and the account goes (further)
-  // under: the shortfall is a marker like any other, paid back by later Pots above the
-  // same minimum. Chips stay conserved — the Pot's account simply carries the debt.
+  // Week 8 paid at least half its antes (D-127). From Week 9 the Pot pays all of them
+  // plus whatever the table kept (D-130), whatever the account owes. Either way, when
+  // the balance can't cover it the award is still made and the account goes (further)
+  // under. Chips stay conserved — the Pot's account simply carries the debt.
   // From Week 9 a shover is out of that week's Pot (D-128): the Pot already paid the
   // shove, and a doubled stack is nearly always the week's biggest gain.
   const shoversOut = weekNumber >= SHOVE_RULES_FROM_WEEK;
   const eligible = new Set(tickets.filter((t) => !t.isFold && !(shoversOut && t.isShove)).map((t) => t.playerId));
   const potAwards: SettleWeekResult["potAwards"] = [];
   const minimum = potMinimumFor(weekNumber, antesCollected);
-  const pool = eligible.size > 0 && minimum > 0 && minimum > potBalance ? minimum : potBalance;
+  // A voided shove's ante comes back at settlement (above); it is this week's ante too.
+  const recharged = entries.filter((e) => e.account === null && e.kind === "ante_recharge").reduce((s, e) => s + e.amount, 0);
+  const pool =
+    eligible.size === 0
+      ? potBalance
+      : weekNumber >= POT_PAYS_ANTES_FROM_WEEK
+        ? weeklyPotFor({ antes: antesCollected + recharged, swept, balance: potBalance })
+        : minimum > 0 && minimum > potBalance
+          ? minimum
+          : potBalance;
 
   if (pool > 0 && eligible.size > 0) {
     const byGain = new Map<number, string[]>();
@@ -175,7 +184,8 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
     });
     potBalance -= awarded;
   }
-  // pool <= 0 (only before Week 8, or with no live ticket): nobody wins one this week;
+  // pool <= 0 (before Week 8, a week with no antes and no sweep, or no live ticket):
+  // nobody wins one this week;
   // the marker (or the rolled Pot) carries.
 
   return { bets, entries, gains, swept, potAwards, pool, potAfter: potBalance, returnedShoves };

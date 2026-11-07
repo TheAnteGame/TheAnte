@@ -352,3 +352,44 @@ describe("the shover sits out the Pot from Week 9 (§7 v1.7, D-128)", () => {
     expect(r.potAfter).toBe(500 - 600);
   });
 });
+
+describe("from Week 9 the Pot is the week's antes plus what the table kept (§7 v1.8, D-130)", () => {
+  // Two players, 15 ante each, entering with the Pot's account 365 under.
+  const players = [
+    { id: "a", stackPreAnte: 500, stackAtReveal: 475 },
+    { id: "b", stackPreAnte: 500, stackAtReveal: 435 },
+  ];
+  const tickets = [ticket("a", [["g1", "away", 10]]), ticket("b", [["g1", "home", 50]])];
+  const at = (weekNumber: number, winner: "away" | "home") =>
+    settleWeek(
+      baseInput({ weekNumber, tickets, games: [finalGame("g1", winner)], players, potBalance: -365 + 30 + 60, antesCollected: 30 }),
+    );
+
+  it("the table kept 40: the Pot pays 30 + 40, and the debt is not paid down", () => {
+    const r = at(9, "away"); // a wins 10 at 1x; b's 50 is lost → the table keeps 40
+    expect(r.swept).toBe(40);
+    expect(r.pool).toBe(70);
+    expect(r.potAwards).toEqual([{ playerId: "a", place: 1, amount: 70 }]);
+    expect(r.potAfter).toBe(-365);
+  });
+
+  it("the table came up short by 40: the Pot still pays its 30 antes, and the debt grows", () => {
+    const r = at(9, "home"); // b wins 50 at 1x; a's 10 is lost → the table is 40 short
+    expect(r.swept).toBe(-40);
+    expect(r.pool).toBe(30);
+    expect(r.potAfter).toBe(-365 - 40);
+    expect(r.entries.reduce((s, e) => s + e.amount, 0)).toBe(0);
+  });
+
+  it("a balance bigger than antes plus sweep (a roll) is still paid out whole", () => {
+    const r = settleWeek(
+      baseInput({ weekNumber: 10, tickets, games: [finalGame("g1", "away")], players, potBalance: 500 + 30 + 60, antesCollected: 30 }),
+    );
+    expect(r.pool).toBe(500 + 30 + 40);
+    expect(r.potAfter).toBe(0);
+  });
+
+  it("Week 8 keeps its half-the-antes minimum", () => {
+    expect(at(8, "home").pool).toBe(15);
+  });
+});

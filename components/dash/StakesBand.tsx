@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { createUserClient } from "@/lib/db/supabase";
-import { potBalance as truePotBalance, wageredInWeek } from "@/lib/stats/pot";
+import { potShown, wageredInWeek } from "@/lib/stats/pot";
 import { getContent } from "@/lib/content/getContent";
 import { ANTE_TIERS, tierForWeek } from "@/lib/engine";
 import { LEAGUE_TZ } from "@/lib/time";
@@ -76,7 +76,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
 
   const { data: week } = await db
     .from("weeks")
-    .select("id, number, ante, phase, deadline_at, median_snapshot")
+    .select("id, number, ante, phase, deadline_at, median_snapshot, settled_at, pot_before")
     .in("phase", ["open", "revealed", "settled"])
     .order("number", { ascending: false })
     .limit(1)
@@ -124,7 +124,7 @@ export async function StakesBand({ playerId }: { playerId: string }) {
   const boardOpen = week.phase !== "open";
 
   const [potBalance, wagered, { data: snap }, { data: myTicket }] = await Promise.all([
-    truePotBalance(db),
+    potShown(db, week),
     boardOpen ? wageredInWeek(db, week.id) : Promise.resolve(0),
     // stack_pre_ante joins the read purely so the limit tooltip can say WHICH cap is
     // binding — the bet slip already works this out; the band never said it out loud.

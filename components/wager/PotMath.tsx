@@ -4,7 +4,7 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
 import { potBreakdown } from "@/lib/stats/potMath";
-import { SHOVE_RULES_FROM_WEEK } from "@/lib/engine/constants";
+import { POT_PAYS_ANTES_FROM_WEEK, SHOVE_RULES_FROM_WEEK } from "@/lib/engine/constants";
 import { PlayerTip } from "../ui/PlayerTip";
 
 // "How did Frank win the week?" (§7/§14). The settled panel named the winner and the
@@ -32,7 +32,7 @@ export async function PotMath({
   const [{ data: weekRow }, { data: tickets }, entries, { data: players }, { data: potAwards }, teamNames] = await Promise.all([
     db
       .from("weeks")
-      .select("id, number, active_count_snapshot, marker, pot_before, pot_awarded")
+      .select("id, number, active_count_snapshot, marker, pot_before, pot_awarded, pot_swept")
       .eq("id", week.id)
       .maybeSingle(),
     db.from("tickets").select("player_id, is_fold, is_shove").eq("week_id", week.id),
@@ -56,6 +56,15 @@ export async function PotMath({
   }
 
   const marker = Number(weekRow?.marker ?? 0);
+  // From Week 9 the Pot is the week's antes plus whatever the table kept (D-130), and
+  // this panel shows exactly that sum. The debt behind it is never shown to the room.
+  let weekAntes = 0;
+  for (const e of entries) {
+    if (e.player_id !== null && (e.kind === "ante" || e.kind === "ante_refund" || e.kind === "ante_recharge")) {
+      weekAntes -= Number(e.amount);
+    }
+  }
+  const kept = Math.max(0, Number(weekRow?.pot_swept ?? 0));
 
   // The pool is the Pot's balance at award time, which settlement now records. It is NOT
   // recoverable from this week's rows alone — the Pot carries across weeks (§7), so
@@ -116,7 +125,8 @@ export async function PotMath({
   const places = new Set(standings.filter((s) => s.award > 0).map((s) => s.place)).size;
   const rosterCount = weekRow?.active_count_snapshot ?? (tickets ?? []).length;
 
-  const [heading, rule, placesLine, poolLine, poolMinimumLine, paidLine, rolledLine, rolledAll, markerLine, gainLabel, tookLabel, foldedLabel, shovedLabel, splitNote, youLabel, roomLabel] =
+  const antesBuilt = week.number >= POT_PAYS_ANTES_FROM_WEEK && pool !== null && pool === weekAntes + kept;
+  const [heading, rule, placesLine, poolLine, poolMinimumLine, poolAntesLine, paidLine, rolledLine, rolledAll, gainLabel, tookLabel, foldedLabel, shovedLabel, splitNote, youLabel, roomLabel] =
     await Promise.all([
       getContent("potmath.heading", { week: week.number }),
       getContent("potmath.rule"),
@@ -135,10 +145,12 @@ export async function PotMath({
             }),
       getContent("potmath.pool", { pool: pool ?? 0 }),
       getContent("potmath.pool_minimum", { pool: pool ?? 0 }),
+      kept > 0
+        ? getContent("potmath.pool_antes_kept", { antes: weekAntes, kept, pool: pool ?? 0 })
+        : getContent("potmath.pool_antes", { antes: weekAntes }),
       getContent("potmath.paid", { awarded: awardedShown }),
       getContent("potmath.rolled", { rolled: (pool ?? 0) - awardedShown }),
       getContent("potmath.rolled_all"),
-      getContent("potmath.marker", { marker }),
       getContent("potmath.gain_label"),
       getContent("potmath.took_label"),
       getContent("potmath.folded_label"),
@@ -230,21 +242,18 @@ export async function PotMath({
       <p className="px-4 py-3 text-sm text-[color:var(--color-text-mid)]">
         {placesLine}{" "}
         {awardedShown === 0 ? (
-          marker > 0 ? (
-            <span className="text-[color:var(--color-gold)]">{markerLine}</span>
-          ) : (
-            <span className="text-[color:var(--color-gold)]">{rolledAll}</span>
-          )
+          <span className="text-[color:var(--color-gold)]">{rolledAll}</span>
         ) : (
           <>
-            {/* A paid week that still ends under water paid its minimum (D-127): the
-                pool was the minimum, not anything the Pot held. */}
-            {pool !== null && `${marker > 0 ? poolMinimumLine : poolLine} `}
+            {/* From Week 9 the Pot is built from this week alone (D-130). Week 8 paid
+                its minimum from under water (D-127): the pool was the minimum, not
+                anything the Pot held. Neither line mentions the debt. */}
+            {pool !== null &&
+              `${antesBuilt ? poolAntesLine : week.number < POT_PAYS_ANTES_FROM_WEEK && marker > 0 ? poolMinimumLine : poolLine} `}
             {paidLine}{" "}
             {pool !== null && pool - awardedShown > 0 && (
               <span className="text-[color:var(--color-gold)]">{rolledLine}</span>
             )}
-            {marker > 0 && <span className="text-[color:var(--color-gold)]"> {markerLine}</span>}
           </>
         )}
       </p>

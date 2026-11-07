@@ -5,7 +5,8 @@ import { LEAGUE_TZ } from "@/lib/time";
 import { TickerMarquee, type TickerItem } from "./TickerMarquee";
 import { DEFAULT_ACCENT, DEFAULT_SPEED, DEFAULT_TEXT, clampSpeed, colorCss } from "@/lib/ticker/style";
 import { leaderFrom } from "@/lib/ticker/leader";
-import { potBalance as truePotBalance } from "@/lib/stats/pot";
+import { potShown } from "@/lib/stats/pot";
+import { POT_PAYS_ANTES_FROM_WEEK } from "@/lib/engine/constants";
 import { loadProjection, withProjection } from "@/lib/stats/standings";
 
 // The blended rail (ADMIN §0, §4.5): one ordered list a player never has to parse —
@@ -25,7 +26,7 @@ export async function Ticker() {
       .eq("hidden", false),
     db
       .from("weeks")
-      .select("id, number, phase, deadline_at, revealed_at, marker")
+      .select("id, number, phase, deadline_at, revealed_at, marker, settled_at, pot_before")
       .in("phase", ["open", "revealed", "settled"])
       .order("number", { ascending: false })
       .limit(1)
@@ -47,8 +48,9 @@ export async function Ticker() {
   // System items — league facts, generated on the poll cadence (ADMIN §4.5.3).
   const system: Array<{ text: string; priority: number }> = [];
   if (week) {
-    // The Pot, less stakes still in escrow (D-070) — never the raw account.
-    const potBalance = await truePotBalance(db);
+    // The week's Pot as players see it (D-130) — never the raw account, which holds
+    // escrowed stakes (D-070) and, from Week 9, a debt the room never sees.
+    const potBalance = await potShown(db, week);
 
     if (week.phase === "open" && sysOn("deadline")) {
       const deadline = DateTime.fromISO(week.deadline_at).setZone(LEAGUE_TZ);
@@ -73,7 +75,9 @@ export async function Ticker() {
       }
     }
     if (sysOn("pot")) system.push({ text: await getContent("ticker.pot", { pot: potBalance }), priority: 1 });
-    if (week.marker > 0 && sysOn("marker")) {
+    // The marker is the commissioner's to see from Week 9 (D-130), not the room's.
+    const markerShown = week.number < POT_PAYS_ANTES_FROM_WEEK ? week.marker : 0;
+    if (markerShown > 0 && sysOn("marker")) {
       system.push({ text: await getContent("ticker.marker", { marker: week.marker }), priority: 2 });
     }
     if (

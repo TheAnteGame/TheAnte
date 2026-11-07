@@ -62,10 +62,25 @@ export const UNANIMOUS_FLOOR_FROM_WEEK = 9;
 export const POT_MINIMUM_FROM_WEEK = 8;
 export const POT_MINIMUM_SHARE = { num: 1, den: 2 };
 
-/** The least a week's Pot pays (D-127): half its net antes, floored to a chip. */
+/** The least a week's Pot pays (D-127): half its net antes, floored to a chip. Week 8
+ *  only — from Week 9 the Pot pays all of them (D-130, `POT_PAYS_ANTES_FROM_WEEK`). */
 export function potMinimumFor(week: number, antesCollected: number): number {
   if (week < POT_MINIMUM_FROM_WEEK || antesCollected <= 0) return 0;
   return Math.floor((antesCollected * POT_MINIMUM_SHARE.num) / POT_MINIMUM_SHARE.den);
+}
+
+/** §7 v1.8 (D-130) — from this week on, a week's Pot is that week's antes plus whatever
+ *  the table kept, never less than the antes and never paid down by an old debt. When
+ *  the table comes up short, or a winning shove is paid, the Pot's account goes under
+ *  and stays there: the 2026 beta carries the debt and writes it off at season close
+ *  (§8.10) rather than shrinking later Pots to repay it. A positive balance — a roll,
+ *  rounding — is still paid out whole, as it always was. */
+export const POT_PAYS_ANTES_FROM_WEEK = 9;
+
+/** What a week's Pot pays from Week 9 (D-130): its antes, plus the sweep when the table
+ *  kept chips, or the account's own balance if that is bigger. */
+export function weeklyPotFor(input: { antes: number; swept: number; balance: number }): number {
+  return Math.max(input.balance, input.antes + Math.max(0, input.swept));
 }
 
 /** §8 v1.7 (D-128) — from this week on the shove is the trailing player's move: one per

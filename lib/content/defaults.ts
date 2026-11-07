@@ -215,7 +215,7 @@ export const contentDefaults: Record<string, string> = {
   "guide.pot_title": "The Pot",
   "guide.flow_title": "Your bets and the Pot are two different things",
   "guide.flow_body": "Two things happen every week and they are easy to mix up. First, your bets: chips move between you and the other players who bet the same games. Nothing is created \u2014 what you win, somebody else lost. Second, the Pot: everyone's ante goes into it, and at the end of the week the whole thing goes to whoever gained the most chips. So your bets decide how far your stack moves, and the Pot is the prize for moving it the most. Playing it safe keeps you alive, but it almost never wins a Pot.",
-  "guide.pot_body": "Every ante that week goes into the Pot, and none of it disappears. It goes to whoever gained the most chips that week \u2014 your ante counts in that, so you can win the Pot on a week you finished down, as long as everyone else finished down further. You have to have turned in a ticket: folding pays you nothing, and from Week 9 neither does shoving. In a league of 8 to 15, one player takes the whole Pot. Bigger leagues pay more places \u2014 one for every 8 players. If every single person folds, nothing is awarded and the Pot rolls into next week. From Week 8 the Pot always pays at least half of that week\u2019s antes \u2014 even on a week the table paid out more than it took in. Anything it comes up short is carried, and later Pots pay it back.",
+  "guide.pot_body": "Every ante that week goes into the Pot, and none of it disappears. It goes to whoever gained the most chips that week \u2014 your ante counts in that, so you can win the Pot on a week you finished down, as long as everyone else finished down further. You have to have turned in a ticket: folding pays you nothing, and from Week 9 neither does shoving. In a league of 8 to 15, one player takes the whole Pot. Bigger leagues pay more places \u2014 one for every 8 players. If every single person folds, nothing is awarded and the Pot rolls into next week. From Week 9 the Pot is that week\u2019s antes, plus whatever the table kept \u2014 when the losing bets came to more than the winners were paid, the difference goes in on top. It is never less than the antes, even on a week the table paid out more than it took in.",
   "guide.shove_title": "The shove",
   "guide.shove_body": "Once a season you can go all in. You pick one game and push your whole stack onto it. It ignores the house limit \u2014 that is the point. You pay no ante that week, and you make no other bets. A shove always pays even money: win and you double your stack. Lose and you are on the felt. Nobody sees it coming until the reveal. From Week 9 three things change. Only a stack at or under 70% of the league median when the week opens can shove \u2014 if yours is bigger, you won't see the option. Only one player can shove each week: the first one in gets it, and anyone after is told someone already has and keeps their shove for another week. And a shover can't win that week's Pot \u2014 it goes to the best week among everyone else.",
   "guide.felt_title": "The felt",
@@ -320,7 +320,7 @@ export const contentDefaults: Record<string, string> = {
   "band.ante_tip":
     "The ante is what it costs to play each week. It comes out of your stack by itself on Tuesday morning and goes into the Pot. It goes up as the season goes on: 10 chips in Weeks 1–4, 15 in Weeks 5–9, 20 in Weeks 10–14, and 30 in Weeks 15–18.",
   "band.pot_tip":
-    "The Pot is everyone's antes put together. On Monday night it goes to the player who gained the most chips that week — not the player with the biggest stack. If you fold, you can't win it. It can go up or down a little each week, depending on how the bets turn out.",
+    "The Pot is everyone's antes put together. On Monday night it goes to the player who gained the most chips that week — not the player with the biggest stack. If you fold, you can't win it. When the losing bets come to more than the winners are paid, the table keeps the difference and it goes into the Pot on top of the antes. It is never less than the antes.",
   "band.your_wager_tip":
     "How many chips you bet this week, all your games added together. If you folded, it shows nothing.",
   "band.in_play_tip":
@@ -463,7 +463,6 @@ export const contentDefaults: Record<string, string> = {
   "settled.delta_label": "Your week, ante included",
   "settled.pot_label": "The Pot",
   "settled.pot_none": "Nobody took the Pot this week. It rolls.",
-  "settled.pot_marker": "The table is into the Pot for {marker}. The marker carries.",
   "settled.stack_label": "Your stack",
   "settled.rank_label": "Rank",
   "settled.won_label": "Won",
@@ -479,10 +478,11 @@ export const contentDefaults: Record<string, string> = {
   "potmath.one_place": "{players} playing, one place paid.",
   "potmath.pool": "The Pot held {pool}.",
   "potmath.pool_minimum": "The Pot came up short, so it paid its minimum \u2014 half this week\u2019s antes: {pool}.",
+  "potmath.pool_antes": "This week\u2019s Pot was the antes: {antes}.",
+  "potmath.pool_antes_kept": "This week\u2019s Pot: {antes} from antes + {kept} the table kept = {pool}.",
   "potmath.paid": "{awarded} paid out.",
   "potmath.rolled": "{rolled} could not be split evenly, so it rolls to next week.",
   "potmath.rolled_all": "Nothing was paid, so all of it rolls.",
-  "potmath.marker": "The Pot is under water by {marker}. Later Pots pay it back, and from Week 8 every week still pays at least half its antes.",
   "potmath.gain_label": "Week gain",
   "potmath.took_label": "Took",
   "potmath.folded_label": "Folded — not eligible",
