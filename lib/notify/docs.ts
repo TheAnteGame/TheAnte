@@ -241,11 +241,24 @@ export function templateDoc(v: {
     .split(/\n\s*\n/)
     .map((t) => t.trim())
     .filter(Boolean);
-  const blocks: Block[] = paras.map((text, i) => ({ kind: i === 0 ? "lead" : "para", text }) as Block);
+  // A paragraph that is only a Markdown image — ![alt](src), or [![alt](src)](href) to
+  // make it a link — renders as a picture (D-133). Everything else stays words.
+  const IMG = /^!\[([^\]]*)\]\((https:\/\/\S+?)\)$/;
+  const LINKED = /^\[!\[([^\]]*)\]\((https:\/\/\S+?)\)\]\((https:\/\/\S+?)\)$/;
+  let first = true;
+  const blocks: Block[] = paras.map((text) => {
+    const linked = text.match(LINKED);
+    if (linked) return { kind: "image", alt: linked[1], src: linked[2], href: linked[3] } as Block;
+    const img = text.match(IMG);
+    if (img) return { kind: "image", alt: img[1], src: img[2] } as Block;
+    const b = { kind: first ? "lead" : "para", text } as Block;
+    first = false;
+    return b;
+  });
   if (v.cta) blocks.push({ kind: "cta", ...v.cta });
   blocks.push(WHY);
   return {
-    preheader: paras[0]?.slice(0, 140) ?? v.headline,
+    preheader: paras.find((t) => !t.startsWith("![") && !t.startsWith("[!["))?.slice(0, 140) ?? v.headline,
     eyebrow: v.eyebrow,
     headline: v.headline,
     blocks,

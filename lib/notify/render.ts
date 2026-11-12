@@ -38,6 +38,9 @@ export type Block =
   | { kind: "table"; caption?: string; head: string[]; rows: string[][] }
   | { kind: "note"; title?: string; text: string }
   | { kind: "cta"; label: string; href: string; sub?: string }
+  /** A picture, optionally a link (D-133). Absolute https URL; never the only way to a fact —
+   *  the plain-text rendering prints the alt text and the link instead. */
+  | { kind: "image"; src: string; alt: string; href?: string }
   | { kind: "signoff"; name: string; role: string; paras: string[] }
   | { kind: "rule" };
 
@@ -111,6 +114,10 @@ function htmlBlock(b: Block): string {
           ? `<p class="t-low" style="margin:15px 0 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:${C.low};">${b.sub}</p>`
           : ""
       }</td></tr>`;
+    case "image": {
+      const img = `<img src="${esc(b.src)}" alt="${esc(b.alt)}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;border-radius:10px;" />`;
+      return `<tr><td bgcolor="${C.card}" class="bg-card px" style="background-color:${C.card};${pad}padding-top:4px;padding-bottom:18px;" align="center">${b.href ? `<a href="${esc(b.href)}" style="text-decoration:none;">${img}</a>` : img}</td></tr>`;
+    }
     case "signoff":
       return `<tr><td bgcolor="${C.well}" class="bg-well px" style="background-color:${C.well};${pad}padding-top:30px;padding-bottom:30px;border-left:3px solid ${C.gold};"><p class="t-gold" style="margin:0 0 14px 0;font-family:${SANS};font-size:12px;letter-spacing:3px;text-transform:uppercase;color:${C.gold};font-weight:700;">Why I built this</p>${b.paras
         .map(
@@ -198,6 +205,8 @@ function textBlock(b: Block): string {
       return [b.title ? b.title.toUpperCase() : "", strip(b.text)].filter(Boolean).join("\n");
     case "cta":
       return [`${b.label.toUpperCase()}: ${b.href}`, b.sub ? strip(b.sub) : ""].filter(Boolean).join("\n");
+    case "image":
+      return b.href ? `[${b.alt}] ${b.href}` : `[${b.alt}]`;
     case "signoff":
       return ["WHY I BUILT THIS", ...b.paras.map(strip), `${b.name} - ${b.role}`].join("\n\n");
     case "rule":

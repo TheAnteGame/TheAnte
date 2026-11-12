@@ -3860,3 +3860,16 @@ Week 18 sweep. Conservation, the blackout and identical re-settlement must stay 
 
 **Off switch.** Unset `ANTE_PLAY_RESULTS_URL` and the console section disappears. Rows
 already posted stay — the ledger is append-only.
+
+## D-133 — Pictures in league emails (2026-11-11)
+
+**Why.** The owner wants the ANTE Play announcement to carry each game's artwork, inside
+the league's own email template, without breaking it.
+
+**What.** A new `image` block in `lib/notify/render.ts`: one picture, full card width (520
+px), optional link, rounded corners, no layout change around it. In a broadcast body
+(`templateDoc`, D-068/D-088), a paragraph that is *only* a Markdown image becomes a
+picture — `![alt](https://…)`, or `[![alt](https://…)](https://…)` to make it a link.
+Only `https` images; anything else stays text. The plain-text rendering prints
+`[alt] link`, so nobody gets a blank (D-056 parity), and the inbox preview line skips
+image paragraphs. Tests: `lib/notify/image.test.ts`.
