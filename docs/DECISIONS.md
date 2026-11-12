@@ -3803,3 +3803,60 @@ with two or more entrants in that game.
 
 **First live week.** Week 10 (entries open at the Week 10 reveal, close Sunday 2026-11-15
 11am MST). Week 9 was skipped: the build wasn't ready in time.
+
+## D-132 — Side-game settlement: how ANTE Play winnings reach the ledger (2026-11-11, DESIGN — not built)
+
+**Status.** Design for the owner's review. Nothing is built. Must be built, torture-tested
+and migrated before the first side-game payout (Week 10, Monday 2026-11-16 night).
+
+**The split.** ANTE Play decides *who won*; Ante decides *what moves*. ANTE Play publishes
+each game's final order (entrants, ranked, ties marked) on a read-only results page once
+the week is over. Ante's commissioner console reads it, works out every chip, shows a
+preview, and the commissioner presses **Post side-game results**. Ante writes the whole
+game in one insert with its own key, behind its own commissioner check, exactly like
+every other console write (ANTE-ADMIN §1). ANTE Play never holds an Ante write key, and
+no shared secret is needed.
+
+**Why not just debit and credit players.** Ante treats every ledger row with no player as
+the Pot (`stacksByPlayer`, `lib/stats/pot.ts`, the reveal, slate-open and settle jobs,
+`computeBalances`). A house that can go negative, and a tie remainder that waits for next
+week, both need somewhere to live that is *not* a player and *not* the Pot. Booking them
+as owner-less rows would silently fold them into the Pot — the D-023 class of leak that
+only the torture test sees.
+
+**Ledger changes (migration 0039).**
+- New column `ledger_entries.account text`, null for every existing row. Allowed values:
+  `play_house`, `play_pool_bingo`, `play_pool_crunch`. A row with an `account` must have
+  no `player_id`. The Pot is now "no player **and** no account".
+- New kinds `play_entry`, `play_payout`, `play_house` (widening `ledger_entries_kind_check`,
+  verified by `npm run schema:check`).
+- Every Pot reader adds `account is null`; `computeBalances` returns the side accounts
+  separately; conservation becomes stacks + Pot + house + pools = buy-ins × 500.
+- Rows are tagged with the game's `week_id`, and the settle job's weekly delta skips
+  `play_*` kinds, so a re-settlement of that week can never count side-game chips as
+  weekly gain or let them decide the Pot (D-130 untouched).
+
+**What one game posts (all in one insert, idempotency key `play:<game>:<week>`).**
+- Every entrant: `play_entry` −10 to that game's pool.
+- Two or more entrants: the pool pays the winner(s) `play_payout` — entries plus any
+  rollover already sitting in the pool. A tie splits it in whole chips; the remainder stays
+  in the pool for next week.
+- One entrant: a win pays 20 (10 back from the pool, 10 from `play_house`); a loss moves
+  the 10 from the pool to the house. Rollover is never touched in a solo week.
+- Week 18: anything left in a pool moves to the house.
+- An entrant whose stack can't cover 10 at posting is dropped and the order closes up
+  behind them (D-131 rule 9). The preview shows it before anything is written.
+
+**When.** Only after Ante's own settlement of that week (`settled_at` set). Any time after
+that is safe for the Pot, because the rows sit outside the weekly delta.
+
+**Players see it** as a line in their chip history ("Gridiron Bingo, Week 10: +60") —
+labels added for the three new kinds.
+
+**Tests.** The torture season gains side-game weeks: a contested game, a solo win and a
+solo loss against the house, a three-way tie with a remainder that rolls and is paid the
+next week, a dropped entrant, a re-settlement of a week with side-game rows, and the
+Week 18 sweep. Conservation, the blackout and identical re-settlement must stay green.
+
+**Off switch.** Unset `ANTE_PLAY_RESULTS_URL` and the console section disappears. Rows
+already posted stay — the ledger is append-only.
