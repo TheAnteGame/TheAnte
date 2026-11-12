@@ -91,6 +91,8 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     partsAnte,
     partsPot,
     partsOther,
+    partsSideEntry,
+    partsSideWin,
   ] = await Promise.all([
     db.from("players").select("id, first_name, last_name, favorite_team").eq("id", id).maybeSingle(),
     // The whole table in one read: this player's own figures, and the roster the
@@ -131,6 +133,8 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
     getContent("player.parts_ante"),
     getContent("player.parts_pot"),
     getContent("player.parts_other"),
+    getContent("player.parts_play_entry"),
+    getContent("player.parts_play_payout"),
   ]);
   if (!who) notFound();
 
@@ -312,6 +316,8 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                               [partsAnte, parts.ante, false],
                               [partsPot, parts.pot, true],
                               [partsOther, parts.other, false],
+                              [partsSideEntry, parts.sideEntry, false],
+                              [partsSideWin, parts.sideWin, false],
                             ] as Array<[string, number, boolean]>)
                               .filter(([, v]) => v !== 0)
                               .map(([label, v, gold], i) => (

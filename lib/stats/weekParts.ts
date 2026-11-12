@@ -15,6 +15,10 @@ export interface WeekParts {
   pot: number;
   /** Corrections, the §9 floor chip, markers, the fold penalty — rare, never hidden. */
   other: number;
+  /** Side-game entries (D-132): 10 a game, outside the main game. */
+  sideEntry: number;
+  /** Side-game winnings (D-132): a pool or the house paying out. */
+  sideWin: number;
   total: number;
 }
 
@@ -22,12 +26,14 @@ const BET_KINDS = new Set(["bet_stake", "bet_return", "bet_payout"]);
 const ANTE_KINDS = new Set(["ante", "ante_refund", "ante_recharge"]);
 
 export function weekParts(entries: Array<{ kind: string; amount: number }>): WeekParts {
-  const parts: WeekParts = { bets: 0, ante: 0, pot: 0, other: 0, total: 0 };
+  const parts: WeekParts = { bets: 0, ante: 0, pot: 0, other: 0, sideEntry: 0, sideWin: 0, total: 0 };
   for (const e of entries) {
     parts.total += e.amount;
     if (BET_KINDS.has(e.kind)) parts.bets += e.amount;
     else if (ANTE_KINDS.has(e.kind)) parts.ante += e.amount;
     else if (e.kind === "pot_award") parts.pot += e.amount;
+    else if (e.kind === "play_entry") parts.sideEntry += e.amount;
+    else if (e.kind === "play_payout" || e.kind === "play_house") parts.sideWin += e.amount;
     else parts.other += e.amount;
   }
   return parts;

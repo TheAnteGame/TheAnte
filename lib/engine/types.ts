@@ -41,11 +41,20 @@ export interface EngineGame {
   outcome: GameOutcome;
 }
 
-/** Two-sided ledger movement. account null = the Pot's own account (§9). buy_in is
+/** The side-game accounts (D-132). Neither a player nor the Pot: the house may go
+ *  negative, and a pool holds a tie remainder until the next contested week. */
+export type SideAccount = "play_house" | "play_pool_bingo" | "play_pool_crunch";
+export const SIDE_ACCOUNTS: readonly SideAccount[] = ["play_house", "play_pool_bingo", "play_pool_crunch"];
+
+/** Two-sided ledger movement. account null = the Pot's own account (§9) — unless
+ *  `side` is set, in which case the row belongs to that side-game account and
+ *  `account` must be null (D-132; ledger_entries.account in the database). buy_in is
  *  the single exception: one-sided, it mints the league's chips. Conservation is
  *  sum(all amounts) === 500 × buy-ins, checked by assertInvariants. */
 export interface EngineLedgerEntry {
   account: string | null;
+  /** D-132: a side-game account. Absent/null on every non-side-game row. */
+  side?: SideAccount | null;
   kind:
     | "buy_in"
     | "ante"
@@ -62,7 +71,10 @@ export interface EngineLedgerEntry {
     | "sweep"
     | "season_close"
     | "removal"
-    | "fold_penalty";
+    | "fold_penalty"
+    | "play_entry"
+    | "play_payout"
+    | "play_house";
   amount: number; // signed integer chips
   reason: string;
 }

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeSlateOpen } from "@/lib/engine";
 import type { EnginePlayer } from "@/lib/engine";
 import { fetchAllRows } from "@/lib/db/fetchAll";
+import { isSideGameKind } from "@/lib/engine/sideGames";
 import { stacksByPlayer, type JobOutcome } from "./util";
 
 // Recompute an OPEN week's opening figures from the stacks it should have opened on
@@ -85,11 +86,11 @@ export async function recomputeOpenWeek(db: SupabaseClient): Promise<JobOutcome>
     return { status: "failed", detail: { reason: "felt status would change — the antes would differ", players: feltChanged.map((id) => nameOf.get(id) ?? id) } };
   }
 
-  const posted = await fetchAllRows<{ player_id: string | null; amount: number }>((f, t) =>
-    db.from("ledger_entries").select("player_id, amount").eq("week_id", week.id).order("id").range(f, t),
+  const posted = await fetchAllRows<{ player_id: string | null; kind: string; amount: number }>((f, t) =>
+    db.from("ledger_entries").select("player_id, kind, amount").eq("week_id", week.id).order("id").range(f, t),
   );
   const postedBy = new Map<string, number>();
-  for (const e of posted) if (e.player_id) postedBy.set(e.player_id, (postedBy.get(e.player_id) ?? 0) + e.amount);
+  for (const e of posted) if (e.player_id && !isSideGameKind(e.kind)) postedBy.set(e.player_id, (postedBy.get(e.player_id) ?? 0) + e.amount);
   const expectedBy = new Map<string, number>();
   for (const e of slate.entries) if (e.account) expectedBy.set(e.account, (expectedBy.get(e.account) ?? 0) + e.amount);
   const anteMismatch = seated.filter((id) => (postedBy.get(id) ?? 0) !== (expectedBy.get(id) ?? 0));

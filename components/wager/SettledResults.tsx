@@ -1,6 +1,7 @@
 import { createUserClient } from "@/lib/db/supabase";
 import { BoardHeader } from "./BoardHeader";
 import { fetchAllRows } from "@/lib/db/fetchAll";
+import { isSideGameKind } from "@/lib/engine/sideGames";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
 import { PlayerTip } from "../ui/PlayerTip";
@@ -33,8 +34,8 @@ export async function SettledResults({
       .eq("week_id", week.id)
       .eq("player_id", playerId)
       .maybeSingle(),
-    fetchAllRows<{ player_id: string | null; amount: number }>((f, t) =>
-      db.from("ledger_entries").select("player_id, amount").eq("week_id", week.id).order("id").range(f, t),
+    fetchAllRows<{ player_id: string | null; kind: string; amount: number }>((f, t) =>
+      db.from("ledger_entries").select("player_id, kind, amount").eq("week_id", week.id).order("id").range(f, t),
     ).then((rows) => ({ data: rows })),
     db.from("pot_awards").select("player_id, place, amount").eq("week_id", week.id),
     db.from("standings").select("stack, rank").eq("player_id", playerId).maybeSingle(),
@@ -44,7 +45,8 @@ export async function SettledResults({
     .filter((a) => a.player_id === playerId)
     .reduce((s, a) => s + a.amount, 0);
   const myDelta =
-    (entries ?? []).filter((e) => e.player_id === playerId).reduce((s, e) => s + e.amount, 0) - potDelta;
+    // The week's own result: side games (D-132) carry the week's id but are not its play.
+    (entries ?? []).filter((e) => e.player_id === playerId && !isSideGameKind(e.kind)).reduce((s, e) => s + e.amount, 0) - potDelta;
 
   interface BetRow {
     id: string;

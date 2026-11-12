@@ -5,10 +5,11 @@ import {
   potSplitForCount,
   settleWeek,
   InvariantViolation,
+  isSideGameKind,
 } from "@/lib/engine";
 import type { EngineGame, EngineLedgerEntry, EngineTicket } from "@/lib/engine";
 import { fetchAllRows } from "@/lib/db/fetchAll";
-import { stacksByPlayer, type JobOutcome } from "./util";
+import { fullLedgerForEngine, stacksByPlayer, type JobOutcome } from "./util";
 import { alertCommissioner } from "./alert";
 
 // settle.week (ANTE-ADMIN §5): runs when every on-slate game is final or void.
@@ -116,6 +117,11 @@ export async function settleWeekRecord(
   // Sets the Pot's minimum (D-127). Player side only: the Pot side mirrors it.
   let antesCollected = 0;
   for (const e of weekEntries) {
+    // Side-game rows carry this week's week_id but are not this week's play (D-132).
+    // Left in, a re-settlement would see them as weekly gain — and they could decide
+    // the Pot (D-130). Skipped here they sit in both stackPreAnte and stackAtReveal,
+    // so they cancel out of the gain exactly.
+    if (isSideGameKind(e.kind)) continue;
     if (e.player_id) weekDelta.set(e.player_id, (weekDelta.get(e.player_id) ?? 0) + e.amount);
     if (e.player_id && (e.kind === "ante" || e.kind === "ante_refund")) antesCollected -= e.amount;
   }
@@ -142,18 +148,7 @@ export async function settleWeekRecord(
 
   // THE assertion — full ledger plus the would-be entries, before any write. Paged:
   // a truncated read here would either false-halt or, far worse, pass bad state.
-  const allEntries = await fetchAllRows<{ player_id: string | null; kind: string; amount: number; reason: string }>(
-    (from, to) => db.from("ledger_entries").select("player_id, kind, amount, reason").order("id").range(from, to),
-  );
-  const combined: EngineLedgerEntry[] = [
-    ...(allEntries ?? []).map((e) => ({
-      account: e.player_id,
-      kind: e.kind as EngineLedgerEntry["kind"],
-      amount: e.amount,
-      reason: e.reason,
-    })),
-    ...result.entries,
-  ];
+  const combined: EngineLedgerEntry[] = [...(await fullLedgerForEngine(db)), ...result.entries];
   try {
     assertInvariants(combined);
   } catch (e) {

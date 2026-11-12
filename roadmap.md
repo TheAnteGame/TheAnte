@@ -8,6 +8,14 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-12 (seventy-seventh pass):** **Side-game settlement door built (D-132).**
+> Migration 0039 (`ledger_entries.account` for the house and the two pools, kinds
+> `play_entry`/`play_payout`/`play_house`); every Pot reader now excludes side accounts;
+> the settle job's weekly delta skips `play_*`; console **Side games** page (hidden unless
+> `ANTE_PLAY_RESULTS_URL` is set) posts a week in one insert. Torture season covers it,
+> SEASON CLEAN. **Before Week 10's payout: apply 0039 to production, `npm run
+> schema:check`, set `ANTE_PLAY_RESULTS_URL` on Vercel.**
+
 > **2026-11-11 (seventy-sixth pass):** **ANTE Play — side games (D-131).** Gridiron Bingo
 > and Two-Minute Drill, 10 chips each, outside the Pot, built as a separate app
 > (`play.theantegame.com`, own Vercel + Supabase, `~/Projects/ante-play`) that reads Ante

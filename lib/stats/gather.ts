@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chunk, fetchAllRows } from "@/lib/db/fetchAll";
+import { isSideGameKind } from "@/lib/engine/sideGames";
 import { getTeamNames } from "@/lib/teams";
 import {
   biggestClimb,
@@ -135,7 +136,8 @@ export async function gatherLeagueStats(db: SupabaseClient): Promise<LeagueStats
   );
   const gainMap = new Map<string, number>();
   for (const e of ledger) {
-    if (!e.player_id || !e.week_id || e.kind === "pot_award") continue;
+    // Side games (D-132) move a stack, never a week's gain; the climb below keeps them.
+    if (!e.player_id || !e.week_id || e.kind === "pot_award" || isSideGameKind(e.kind)) continue;
     const key = `${e.player_id}:${weekNumber.get(e.week_id)}`;
     gainMap.set(key, (gainMap.get(key) ?? 0) + Number(e.amount));
   }

@@ -3804,10 +3804,13 @@ with two or more entrants in that game.
 **First live week.** Week 10 (entries open at the Week 10 reveal, close Sunday 2026-11-15
 11am MST). Week 9 was skipped: the build wasn't ready in time.
 
-## D-132 — Side-game settlement: how ANTE Play winnings reach the ledger (2026-11-11, DESIGN — not built)
+## D-132 — Side-game settlement: how ANTE Play winnings reach the ledger (2026-11-11, BUILT 2026-11-12)
 
-**Status.** Design for the owner's review. Nothing is built. Must be built, torture-tested
-and migrated before the first side-game payout (Week 10, Monday 2026-11-16 night).
+**Status.** Built as designed below, on 2026-11-12, and torture-tested (SEASON CLEAN).
+Still to do before the first payout (Week 10, Monday 2026-11-16 night): apply migration
+0039 to production, prove it with `npm run schema:check`, and set `ANTE_PLAY_RESULTS_URL`
+on Vercel. Where the build had to decide something the design left open, it is recorded
+under **As built** at the end of this entry.
 
 **The split.** ANTE Play decides *who won*; Ante decides *what moves*. ANTE Play publishes
 each game's final order (entrants, ranked, ties marked) on a read-only results page once
@@ -3860,6 +3863,35 @@ Week 18 sweep. Conservation, the blackout and identical re-settlement must stay 
 
 **Off switch.** Unset `ANTE_PLAY_RESULTS_URL` and the console section disappears. Rows
 already posted stay — the ledger is append-only.
+
+**As built (2026-11-12).**
+- Code: money in `lib/engine/sideGames.ts` (pure, unit-tested in
+  `tests/engine/sideGames.test.ts`); the door in `lib/jobs/sideGames.ts`
+  (`previewSideGames` / `postSideGames`, shared by the console and the torture test);
+  console page `/admin/side-games`, action `postSideGameResults` (snapshot + audit row).
+- Engine: `EngineLedgerEntry.side` carries the side account; `computeBalances` returns
+  `sides` apart from the Pot; `assertInvariants` checks stacks + Pot + house + pools and
+  refuses a pool below 0 (the house may go negative).
+- Keys: each row's idempotency key is `play:<game>:<week>:<role>` (`entry`, `pool-in`,
+  `payout`, `pool-out`, `house`, `pool-to-house`, `sweep-pool`, `sweep-house`), so a
+  repeat post collides on `ledger_idempotency`. "Already posted" is read off those keys.
+- **Eligibility is a stack of 11, not 10.** Rule 9 says an entrant who can't cover the 10
+  is dropped. A stack of exactly 10 that enters and loses sits at 0, which the §9 floor
+  forbids and the conservation check refuses — so the entry must leave at least 1.
+- **Both games post in a fixed order, Bingo then Crunch Time,** each seeing the stacks the
+  other left, so a player in both can't spend the same 10 twice.
+- **One left after drops.** If two or more entered but only one can cover it, there is no
+  contest and no solo target: nothing is taken, nothing paid, the rollover waits. A lone
+  entrant with no `solo_won` from ANTE Play is refused, not guessed.
+- **Gates before anything is written:** ANTE Play `closed` and `final`; Ante's week
+  settled; no week mid-blackout (§6 — the same gate as the Remove button); no later week's
+  side games already posted (rollover runs forward); malformed results (a stranger in the
+  order, a duplicate, nobody ranked) refused. Then the full-ledger conservation check runs
+  with the new rows, the rows go in one insert, and the check runs again for the report.
+- Week 18: a game nobody entered still sweeps its pool to the house.
+- Gain readers skip `play_*` alongside the settle job: the Pot math panel, the settled
+  card's "your week", season awards and the stats highlights. The player profile shows
+  "Side game entry" and "Side game winnings" as their own lines (`player.parts_play_*`).
 
 ## D-133 — Pictures in league emails (2026-11-11)
 

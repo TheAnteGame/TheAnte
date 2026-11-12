@@ -5,6 +5,7 @@ import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
 import { potBreakdown } from "@/lib/stats/potMath";
 import { POT_PAYS_ANTES_FROM_WEEK, SHOVE_RULES_FROM_WEEK } from "@/lib/engine/constants";
+import { isSideGameKind } from "@/lib/engine/sideGames";
 import { PlayerTip } from "../ui/PlayerTip";
 
 // "How did Frank win the week?" (§7/§14). The settled panel named the winner and the
@@ -52,6 +53,7 @@ export async function PotMath({
   for (const e of entries) {
     if (e.player_id === null) continue;
     if (e.kind === "pot_award") continue;
+    if (isSideGameKind(e.kind)) continue; // side games move a stack, not the week's gain (D-132)
     gain.set(e.player_id, (gain.get(e.player_id) ?? 0) + Number(e.amount));
   }
 
