@@ -427,6 +427,7 @@ export const contentDefaults: Record<string, string> = {
   "dash.wager.revealed_title": "The room is open",
   "dash.wager.revealed_body": "Every ticket in the league is live. See who was with you and who faded the room.",
   "dash.wager.revealed_cta": "See the board",
+  "dash.wager.revealed_minigames": "Play minigames to win more",
   "reveal.by_h2h_label": "Head to head",
   "reveal.h2h_record": "weeks played together",
   "reveal.h2h_note": "Who out-gained who, week by week. Bragging rights only \u2014 no chips ride on this.",

@@ -72,10 +72,11 @@ export async function WagerArea({
   if (week.phase === "revealed") {
     // The board is 15 games wide and never fitted this 62% column. The card is the
     // moment; the sequence and the table play full-width on /results (D-022).
-    const [title, body, cta] = await Promise.all([
+    const [title, body, cta, miniGamesCta] = await Promise.all([
       getContent("dash.wager.revealed_title"),
       getContent("dash.wager.revealed_body"),
       getContent("dash.wager.revealed_cta"),
+      getContent("dash.wager.revealed_minigames"),
     ]);
     return (
       <Titled heading={heading} pastWeek={pastWeek} pastLabel={pastLabel}>
@@ -89,12 +90,22 @@ export async function WagerArea({
               door that opens onto another door. The reveal sequence still plays for
               anyone arriving at /results directly — it just no longer gates a click
               that has already asked for the board. */}
-          <Link
-            href={`/results/${week.number}?board=1`}
-            className="chamfer chrome-face mt-1 px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide"
-          >
-            {cta}
-          </Link>
+          <div className="mt-1 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <Link
+              href={`/results/${week.number}?board=1`}
+              className="chamfer chrome-face px-6 py-3 font-[family-name:var(--font-display)] font-semibold uppercase tracking-wide"
+            >
+              {cta}
+            </Link>
+            {/* The board is in and the games haven't started: the one stretch of the
+                week with nothing left to do here, so point at ANTE Play (D-131). */}
+            <a
+              href="https://play.theantegame.com"
+              className="text-sm font-semibold text-[color:var(--color-text-mid)] underline decoration-[color:var(--color-gold)] underline-offset-4 hover:text-[color:var(--color-text-hi)]"
+            >
+              {miniGamesCta}
+            </a>
+          </div>
         </div>
       </Titled>
     );
