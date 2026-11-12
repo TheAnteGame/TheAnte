@@ -3921,3 +3921,15 @@ story. Settled weeks only, so it can never reveal a pick early (the blackout). N
 the section is simply left out. The old "Why I built this" text is gone. The console's
 Preview shows the email without the story; "Send a test to me" shows it filled.
 Tests: `lib/notify/story.test.ts`.
+
+## D-135 — Player names lose their hover tray (2026-11-12)
+
+**Why.** The owner: the hover card on a player name is big and distracting on desktop and
+adds nothing — it repeats the name already on screen, and the profile one click away
+shows the full name and favorite team.
+
+**What.** `PlayerTip` (`components/ui/PlayerTip.tsx`) now renders a plain link to
+`/player/[id]` with the same dotted underline, and no tray. Names without an id render as
+plain text. The `team` prop is still accepted so the 24 call sites are untouched if the
+tray ever comes back. Supersedes the hover half of D-104; the generic `Tip` stays for the
+stakes band and stat labels.
