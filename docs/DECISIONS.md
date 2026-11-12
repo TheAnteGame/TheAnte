@@ -3733,10 +3733,14 @@ your place on the leaderboard. Nothing else.
    so at most 20 chips a week.
 2. **Who:** any active player whose stack is at least one full ante that week, from
    anywhere on the leaderboard. Folded players can enter.
-3. **When:** entries open at the reveal and close at the first Sunday kickoff, so
-   nothing is entered during the blackout.
-4. **Two or more entrants:** the winner takes every entry. With 7 entrants that's 70
-   chips, a 60-chip gain.
+3. **When:** entries open the moment Ante reveals the week (read from Ante's `weeks`
+   table) and close at the first Sunday kickoff at or after 1pm ET (11am MST). An early
+   international game doesn't count and is never on a Bingo card. Nothing is entered
+   during the blackout.
+4. **Two or more entrants:** everyone in a game plays each other, and the winner takes
+   every entry. With 7 entrants that's 70 chips, a 60-chip gain. **Who's in is public**
+   from the moment they enter (owner, 2026-11-11: it's for the banter); results stay
+   hidden until entries close.
 5. **Ties:** the pool is split evenly in whole chips. Any remainder rolls into next
    week's pool for the same game.
 6. **One entrant plays the house.** If they hit the target, they get their 10 back plus
@@ -3744,19 +3748,26 @@ your place on the leaderboard. Nothing else.
    negative. A proper bank and reserve is a 2027 project.
 7. **No entrants:** nothing happens, and any rollover waits.
 8. **Season end:** Week 18 is the last mini-game week. Any rollover left goes to the house.
+9. **Can't cover it:** if a stack can't cover the 10 when the game settles, that entry is
+   cancelled and nothing is taken.
+10. **Unfinished business:** a postponed game's open Bingo squares count as misses at
+    settlement; a Crunch Time game that wasn't finished by close counts where it stopped.
 
-**Two-Minute Drill.** A new drive each week, the same situation for everyone (Week 10:
-Falcons down 31–27 to the Chiefs, 1:58 left, own 25, two timeouts), built from a real
-game on that week's slate. The play menu is in plain language ("Run it", "Quick pass",
-"Sideline pass", "Deep shot", "Spike it", "Timeout", "Field goal"), so you don't need to
-know football. **Everyone gets the same drive but their own dice**: outcomes are seeded
-by the week and the player, so a friend who already played can't hand you the winning
-calls, and the odds are identical for everyone. One attempt, every call final. Results
-stay hidden until entries close. Ranking: points, then clock left for drives that
-scored, then how far the drive got for drives that didn't, then fewest snaps. It settles
-with Bingo after Monday night. Solo target: a touchdown (the score needed to win). Tuned
-by simulation: a sensible caller scores a touchdown about 29% of the time, throwing deep
-every play about 22%, short passes only about 7%, and runs only about 4%.
+**Crunch Time** (was "Two-Minute Drill" for a day; renamed 2026-11-11 because the finish
+changes every week). A new late-game situation each week, from a real game on that
+week's slate, written ahead in `lib/scenarios.ts` (Weeks 10–18). Four kinds:
+**Score a touchdown** (10, 14, 18), **Kick to win** (12, 16), **Hold the lead** (13: burn
+the clock; when you give it back, the computer drives against you with what's left), and
+**Stop them** (11, 15, 17: you call the defense — Blitz, Man, Zone, Prevent, Stop the
+run — and the computer calls their plays). Plain-language calls throughout. Everyone gets
+the same situation but **their own dice** (seeded by week and player), so a friend who
+already played can't hand you the winning calls. One try, every call final; results
+hidden until close; settles with Bingo after Monday night. Ranking: who won the game
+first; then on offense the most points and time left (or how far you got), holding a lead
+the least time handed back, on defense the fewest points allowed. Solo target: win the
+game. Tuned by simulating thousands of games per scenario: touchdown drives 22–29% with
+smart calls (runs only: under 3%); kick to win 46–49%; hold the lead 86% milking the clock,
+72% throwing it; stop them 57–61% with smart calls, no single call above 64%.
 
 **Gridiron Bingo.** Every square is a box-score stat with a fixed threshold ("a QB throws
 for 250+ yards"), never typed in by users. Squares are drawn only from games that kick
