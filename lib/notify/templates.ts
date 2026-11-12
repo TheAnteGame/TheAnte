@@ -1,4 +1,5 @@
 import "server-only";
+import { fillStory, weeklyStory } from "./story";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { contentDefaults } from "@/lib/content/defaults";
 import { send } from "./index";
@@ -203,7 +204,7 @@ export async function emailDoc(
   const logKey = dedupeKey ?? templateKey;
   const email = async () => {
     if (!player.email || (dedupeKey && (await alreadyEmailed(db, player.id, logKey)))) return;
-    const { html, text } = render(doc);
+    const { html, text } = render(fillStory(doc, await weeklyStory(db)));
     const result = await send("email", templateKey, player.email, { subject, body: text, html });
     await logEmail(db, player.id, logKey, text, result);
   };

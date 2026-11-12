@@ -3873,3 +3873,19 @@ picture — `![alt](https://…)`, or `[![alt](https://…)](https://…)` to ma
 Only `https` images; anything else stays text. The plain-text rendering prints
 `[alt] link`, so nobody gets a blank (D-056 parity), and the inbox preview line skips
 image paragraphs. Tests: `lib/notify/image.test.ts`.
+
+## D-134 — "From the table" replaces "Why I built this" in every email (2026-11-12)
+
+**Why.** The owner: the sign-off is outdated; make the end of every email fun — a real
+moment from the season, told as a little story.
+
+**What.** Every league email (the five designed ones, every content template, every
+broadcast) now ends with **From the table · Week N**: one real moment from the latest
+*settled* week, chosen at random among those that exist — the long shot that paid (the
+biggest winning multiplier, 1.5× or more), the Pot winner, or the side most of the room
+backed that lost (three or more players). Built in `lib/notify/story.ts`, filled in at send
+time by `emailDoc`, held for ten minutes so one broadcast tells every player the same
+story. Settled weeks only, so it can never reveal a pick early (the blackout). No moment →
+the section is simply left out. The old "Why I built this" text is gone. The console's
+Preview shows the email without the story; "Send a test to me" shows it filled.
+Tests: `lib/notify/story.test.ts`.

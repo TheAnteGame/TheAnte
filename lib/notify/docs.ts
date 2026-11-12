@@ -8,15 +8,10 @@ import type { Block, EmailDoc } from "./render";
 
 const SITE = "https://theantegame.com";
 
-const WHY = {
-  kind: "signoff" as const,
-  name: "Robert Toler",
-  role: "Commissioner",
-  paras: [
-    "Three reasons, honestly. I wanted to learn to actually build software in an age where AI has changed what one person can make on their own, and Ante is what that turned into. I'm also always looking for new ways to earn as I get older, and this is one of those swings.",
-    "But the real reason is the third one: I wanted something to play with my friends that isn't the same survivor pool everyone is already bored of. This is a beta season, so it will have rough edges. Tell me about them. There's a chat room on the dashboard and I read every word of it.",
-  ],
-};
+// The closing section of every league email. It used to be "Why I built this"; since
+// D-134 it is "From the table" — a real moment from the latest settled week, filled in
+// by the sender (lib/notify/story.ts). Left empty here; an unfilled slot renders nothing.
+const WHY: Block = { kind: "story", title: "", paras: [] };
 
 const HOW_IT_WORKS = [
   "Every week you back at least five games, stacking more chips on the teams you feel strongest about.",

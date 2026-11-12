@@ -42,6 +42,9 @@ export type Block =
    *  the plain-text rendering prints the alt text and the link instead. */
   | { kind: "image"; src: string; alt: string; href?: string }
   | { kind: "signoff"; name: string; role: string; paras: string[] }
+  /** "From the table": a real moment from the latest settled week, told as a short
+   *  story (D-134). An empty one is a slot that the sender fills — or drops. */
+  | { kind: "story"; title: string; paras: string[] }
   | { kind: "rule" };
 
 export interface EmailDoc {
@@ -125,6 +128,14 @@ function htmlBlock(b: Block): string {
             `<p class="t-mid" style="margin:0 0 14px 0;font-family:${SANS};font-size:15px;line-height:1.7;color:${C.mid};">${p}</p>`,
         )
         .join("")}<p class="t-hi" style="margin:4px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.5;color:${C.hi};font-weight:700;">${b.name}<br /><span class="t-low" style="color:${C.low};font-weight:400;font-size:13px;letter-spacing:1px;text-transform:uppercase;">${b.role}</span></p></td></tr>`;
+    case "story":
+      if (!b.paras.length) return "";
+      return `<tr><td bgcolor="${C.well}" class="bg-well px" style="background-color:${C.well};${pad}padding-top:28px;padding-bottom:28px;border-left:3px solid ${C.gold};"><p class="t-gold" style="margin:0 0 14px 0;font-family:${SANS};font-size:12px;letter-spacing:3px;text-transform:uppercase;color:${C.gold};font-weight:700;">${b.title}</p>${b.paras
+        .map(
+          (p) =>
+            `<p class="t-mid" style="margin:0 0 12px 0;font-family:${SANS};font-size:15px;line-height:1.7;color:${C.mid};">${p}</p>`,
+        )
+        .join("")}</td></tr>`;
     case "rule":
       return `<tr><td bgcolor="${C.card}" class="bg-card" style="background-color:${C.card};padding:0 40px;"><div style="height:1px;background-color:#2a2a31;font-size:0;line-height:0;">&nbsp;</div></td></tr>`;
   }
@@ -209,6 +220,8 @@ function textBlock(b: Block): string {
       return b.href ? `[${b.alt}] ${b.href}` : `[${b.alt}]`;
     case "signoff":
       return ["WHY I BUILT THIS", ...b.paras.map(strip), `${b.name} - ${b.role}`].join("\n\n");
+    case "story":
+      return b.paras.length ? [b.title.toUpperCase(), ...b.paras.map(strip)].join("\n\n") : "";
     case "rule":
       return rule;
   }
