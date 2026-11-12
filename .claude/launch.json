@@ -37,6 +37,17 @@
         "33335"
       ],
       "port": 33335
+    },
+    {
+      "name": "ante-play-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/roberttoler/Projects/ante-play",
+        "run",
+        "dev"
+      ],
+      "port": 33336
     }
   ]
 }

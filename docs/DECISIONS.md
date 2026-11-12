@@ -3714,3 +3714,81 @@ commissioner console still shows the account balance and the marker, reworded. C
 removed `potmath.marker`, `settled.pot_marker`. No migration; Week 9 is the first week
 settled under it (Monday 2026-11-09).
 
+## D-131 — Mini games: a 10-chip side game outside the main game (2026-11-07, rules confirmed; ANTE Play live from Week 10)
+
+**Status.** The owner confirmed the rules on 2026-11-07. Nothing is built yet. It gets built and tested
+locally first and ships behind a feature flag.
+
+**Why.** Mid-season, the owner wants more to do on Sundays and another way to climb the
+board, without touching the main game, which has live players. There are two mini games,
+**Two-Minute Drill** and **Gridiron Bingo**. Each costs 10 chips from your own stack, and
+the winner takes the entries. Gameplan is parked as its own future project.
+
+**What it is not.** Mini-game chips never touch the Pot, the weekly Pot award, the payout
+multipliers, the ante or the shove. A win or a loss changes your stack, and through it
+your place on the leaderboard. Nothing else.
+
+**The rules.**
+1. **Entry:** 10 chips from your own stack, per game. Enter one game, both or neither,
+   so at most 20 chips a week.
+2. **Who:** any active player whose stack is at least one full ante that week, from
+   anywhere on the leaderboard. Folded players can enter.
+3. **When:** entries open at the reveal and close at the first Sunday kickoff, so
+   nothing is entered during the blackout.
+4. **Two or more entrants:** the winner takes every entry. With 7 entrants that's 70
+   chips, a 60-chip gain.
+5. **Ties:** the pool is split evenly in whole chips. Any remainder rolls into next
+   week's pool for the same game.
+6. **One entrant plays the house.** If they hit the target, they get their 10 back plus
+   10 from the house. If they miss, their 10 goes to the house. The house can go
+   negative. A proper bank and reserve is a 2027 project.
+7. **No entrants:** nothing happens, and any rollover waits.
+8. **Season end:** Week 18 is the last mini-game week. Any rollover left goes to the house.
+
+**Two-Minute Drill.** A new drive each week, the same situation for everyone (Week 10:
+Falcons down 31–27 to the Chiefs, 1:58 left, own 25, two timeouts), built from a real
+game on that week's slate. The play menu is in plain language ("Run it", "Quick pass",
+"Sideline pass", "Deep shot", "Spike it", "Timeout", "Field goal"), so you don't need to
+know football. **Everyone gets the same drive but their own dice**: outcomes are seeded
+by the week and the player, so a friend who already played can't hand you the winning
+calls, and the odds are identical for everyone. One attempt, every call final. Results
+stay hidden until entries close. Ranking: points, then clock left for drives that
+scored, then how far the drive got for drives that didn't, then fewest snaps. It settles
+with Bingo after Monday night. Solo target: a touchdown (the score needed to win). Tuned
+by simulation: a sensible caller scores a touchdown about 29% of the time, throwing deep
+every play about 22%, short passes only about 7%, and runs only about 4%.
+
+**Gridiron Bingo.** Every square is a box-score stat with a fixed threshold ("a QB throws
+for 250+ yards"), never typed in by users. Squares are drawn only from games that kick
+off after entries close. Each player gets their own card with 3 swaps before lock, plus
+one chosen "lock" square that acts as a tiebreaker. Progress shows live during the
+games. The winner has the most completed lines after Monday night's final; ties break
+on most squares, then the lock square. Solo target: complete at least one line.
+
+**How it's built (revised 2026-11-11, owner: keep it separate and easy to remove).**
+- The games are their own app, **ANTE Play** at `play.theantegame.com`: its own Vercel
+  project (`ante-play`, team toler) and its own Supabase project (`ante-play`,
+  `jfkqyrphzqjnbnljijun`, The ANTE Game Org, $10/month), code in `~/Projects/ante-play`.
+  Turning it off is deleting that project; nothing in Ante depends on it.
+- It reads Ante **read-only, as the signed-in player**: the same Clerk login, and Ante's
+  public anon key through Ante's own RLS (`players`, `standings`) — exactly what a
+  player's browser can already read. It holds no Ante write key.
+- Entries are pledges stored in ANTE Play's database. No chip moves when you enter.
+- **Still to build in Ante, before the first payout:** one settlement door that takes a
+  week's result from ANTE Play and writes it to Ante's ledger in a single transaction,
+  idempotent per game and week, behind a flag. That door needs: new ledger kinds
+  (`minigame_entry`, `minigame_payout`, `minigame_house`); the pools and the house as
+  their own accounts, separate from the Pot (the Pot is the `null` account in
+  `invariants.ts`); conservation widened to stacks + Pot + pools + house = buy-ins; the
+  weekly gain (§14, `settle.ts`) leaving mini-game entries out so a re-settlement can
+  never let them decide the Pot; a migration widening `ledger_entries_kind_check`,
+  applied before the door is used and proven by `npm run schema:check`; and torture-test
+  weeks covering a solo player against the house, a tie with rollover, and players in
+  both games. Payouts land between Monday's settlement and Tuesday's 6am slate open.
+- The rulebook gets a new section when this is adopted.
+
+**Rollover and the house.** A rollover never pays a solo winner. It waits for a week
+with two or more entrants in that game.
+
+**First live week.** Week 10 (entries open at the Week 10 reveal, close Sunday 2026-11-15
+11am MST). Week 9 was skipped: the build wasn't ready in time.

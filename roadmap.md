@@ -8,6 +8,12 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-11 (seventy-sixth pass):** **ANTE Play — side games (D-131).** Gridiron Bingo
+> and Two-Minute Drill, 10 chips each, outside the Pot, built as a separate app
+> (`play.theantegame.com`, own Vercel + Supabase, `~/Projects/ante-play`) that reads Ante
+> read-only. Entries are pledges; **Ante's settlement door is not built yet** and must
+> land (torture-tested, migration applied) before the Week 10 payout on 2026-11-16.
+
 > **2026-11-07 (seventy-fifth pass):** **The Pot is the week's antes (D-130, rulebook
 > v1.8, from Week 9).** Pot = antes + whatever the table kept, never less than the
 > antes; the debt (365 after Week 8) is never repaid and never shown to players — the
