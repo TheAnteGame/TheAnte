@@ -2,6 +2,7 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Json } from "@/lib/db/json";
 import { fetchAllRows } from "@/lib/db/fetchAll";
+import type { EngineLedgerEntry, SideAccount } from "@/lib/engine/types";
 
 // Jobs run with the service role — a permitted use (ANTE-TECH §4.3). The 0002
 // triggers still bind this client: it cannot touch a locked ticket or edit the
@@ -70,8 +71,8 @@ export async function stacksByPlayer(db: SupabaseClient, asOfWeek?: number): Pro
     const { data } = await db.from("weeks").select("id").lte("number", asOfWeek);
     weekIds = (data ?? []).map((w) => w.id);
   }
-  const rows = await fetchAllRows<{ player_id: string | null; amount: number }>((from, to) => {
-    const q = db.from("ledger_entries").select("player_id, amount");
+  const rows = await fetchAllRows<{ player_id: string | null; account: string | null; amount: number }>((from, to) => {
+    const q = db.from("ledger_entries").select("player_id, account, amount");
     // `or` keeps the season-level buy-in rows, which carry no week_id at all.
     return (weekIds === null ? q : q.or(`week_id.is.null,week_id.in.(${weekIds.join(",")})`))
       .order("id")
@@ -80,9 +81,39 @@ export async function stacksByPlayer(db: SupabaseClient, asOfWeek?: number): Pro
   const stacks = new Map<string, number>();
   let pot = 0;
   for (const e of rows) {
+    // A side-game account (D-132) is neither a player nor the Pot. Counting its rows
+    // as Pot would hand side-game chips to the weekly Pot winner — the D-023 leak.
+    if (e.account !== null) continue;
     if (e.player_id === null) pot += e.amount;
     else stacks.set(e.player_id, (stacks.get(e.player_id) ?? 0) + e.amount);
   }
   stacks.set("__pot__", pot);
   return stacks;
+}
+
+/** Side-game account balances (D-132): the house and each game's pool. */
+export async function sideAccountBalances(db: SupabaseClient): Promise<Record<SideAccount, number>> {
+  const rows = await fetchAllRows<{ account: string; amount: number }>((from, to) =>
+    db.from("ledger_entries").select("account, amount").not("account", "is", null).order("id").range(from, to),
+  );
+  const out: Record<SideAccount, number> = { play_house: 0, play_pool_bingo: 0, play_pool_crunch: 0 };
+  for (const r of rows) {
+    if (!(r.account in out)) throw new Error(`unknown side-game account ${r.account}`);
+    out[r.account as SideAccount] += Number(r.amount);
+  }
+  return out;
+}
+
+/** The full ledger in engine shape — what assertInvariants eats. Paged. */
+export async function fullLedgerForEngine(db: SupabaseClient): Promise<EngineLedgerEntry[]> {
+  const rows = await fetchAllRows<{ player_id: string | null; account: string | null; kind: string; amount: number; reason: string }>(
+    (from, to) => db.from("ledger_entries").select("player_id, account, kind, amount, reason").order("id").range(from, to),
+  );
+  return rows.map((e) => ({
+    account: e.player_id,
+    side: (e.account as SideAccount | null) ?? null,
+    kind: e.kind as EngineLedgerEntry["kind"],
+    amount: Number(e.amount),
+    reason: e.reason,
+  }));
 }

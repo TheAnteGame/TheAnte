@@ -13,7 +13,7 @@ describe("weekParts", () => {
       e("bet_payout", 81),
       e("pot_award", 180),
     ]);
-    expect(p).toEqual({ bets: 61, ante: -10, pot: 180, other: 0, total: 231 });
+    expect(p).toEqual({ bets: 61, ante: -10, pot: 180, other: 0, sideEntry: 0, sideWin: 0, total: 231 });
     expect(p.bets + p.ante + p.pot + p.other).toBe(p.total);
   });
 
@@ -36,6 +36,14 @@ describe("weekParts", () => {
   });
 
   it("is all zeros for a week with nothing in it", () => {
-    expect(weekParts([])).toEqual({ bets: 0, ante: 0, pot: 0, other: 0, total: 0 });
+    expect(weekParts([])).toEqual({ bets: 0, ante: 0, pot: 0, other: 0, sideEntry: 0, sideWin: 0, total: 0 });
+  });
+
+  it("shows side games as their own lines, never as bets or adjustments (D-132)", () => {
+    const p = weekParts([e("ante", -10), e("bet_stake", -20), e("play_entry", -10), e("play_entry", -10), e("play_payout", 70)]);
+    expect(p.sideEntry).toBe(-20);
+    expect(p.sideWin).toBe(70);
+    expect(p.other).toBe(0);
+    expect(p.bets + p.ante + p.pot + p.other + p.sideEntry + p.sideWin).toBe(p.total);
   });
 });

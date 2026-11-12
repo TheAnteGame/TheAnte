@@ -21,6 +21,12 @@
  *     games, felt players betting 1-chip slips, the 3-place pot tier (24–31)
  *   - a mid-season RE-SETTLEMENT CASCADE (week 5, run after week 8) with
  *     tickets asserted byte-identical before and after (acceptance 28)
+ *   - SIDE GAMES (D-132), weeks 10–18, through the console's own posting code: a
+ *     contested game, a solo win and a solo loss against the house, a three-way tie
+ *     whose remainder rolls and is paid the next contested week, a dropped entrant
+ *     who was the winner, players in both games, a repeat post refused by the
+ *     ledger, refusals before settlement / not final / mid-blackout, a no-op
+ *     re-settlement of weeks that carry side-game rows, and the Week 18 sweep
  *
  * Usage:  supabase start   (local stack; migrations auto-apply)
  *         npx tsx --conditions=react-server scripts/season-torture.mts
@@ -62,6 +68,11 @@ const { removeSeat } = await import("../lib/jobs/removeSeat");
 const { assertInvariants } = await import("../lib/engine/invariants");
 type EngineRow = Parameters<typeof assertInvariants>[0][number];
 const { leaderFrom } = await import("../lib/ticker/leader");
+const { postSideGames } = await import("../lib/jobs/sideGames");
+const { stacksByPlayer } = await import("../lib/jobs/util");
+const { potBalance } = await import("../lib/stats/pot");
+type PlayResults = Parameters<typeof postSideGames>[1];
+type SideAccount = "play_house" | "play_pool_bingo" | "play_pool_crunch";
 
 const service: SupabaseClient = createClient(API_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
@@ -119,22 +130,26 @@ function check(cond: boolean, label: string): void {
   }
 }
 
-async function balances(): Promise<{ stacks: Map<string, number>; pot: number; total: number }> {
-  const data: Array<{ player_id: string | null; amount: number }> = [];
+async function balances(): Promise<{ stacks: Map<string, number>; pot: number; sides: Record<SideAccount, number>; total: number }> {
+  const data: Array<{ player_id: string | null; account: SideAccount | null; amount: number }> = [];
   for (let from = 0; ; from += 1000) {
-    const { data: page, error } = await service.from("ledger_entries").select("player_id, amount").order("id").range(from, from + 999);
+    const { data: page, error } = await service.from("ledger_entries").select("player_id, account, amount").order("id").range(from, from + 999);
     if (error) throw new Error(error.message);
     data.push(...(page ?? []));
     if (!page || page.length < 1000) break;
   }
   const stacks = new Map<string, number>();
   let pot = 0;
+  // The Pot is no player AND no side account (D-132). The house and the pools are
+  // owner-less too; summing them as Pot is the leak this whole file exists to catch.
+  const sides: Record<SideAccount, number> = { play_house: 0, play_pool_bingo: 0, play_pool_crunch: 0 };
   for (const e of data ?? []) {
-    if (e.player_id === null) pot += e.amount;
+    if (e.account !== null) sides[e.account] += e.amount;
+    else if (e.player_id === null) pot += e.amount;
     else stacks.set(e.player_id, (stacks.get(e.player_id) ?? 0) + e.amount);
   }
-  const total = [...stacks.values()].reduce((a, b) => a + b, 0) + pot;
-  return { stacks, pot, total };
+  const total = [...stacks.values()].reduce((a, b) => a + b, 0) + pot + sides.play_house + sides.play_pool_bingo + sides.play_pool_crunch;
+  return { stacks, pot, sides, total };
 }
 
 /** The whole ledger in engine shape — what assertInvariants is designed to eat. */
@@ -142,11 +157,12 @@ async function fetchAllLedger(): Promise<EngineRow[]> {
   const out: EngineRow[] = [];
   for (let from = 0; ; from += 1000) {
     const { data: page, error } = await service
-      .from("ledger_entries").select("player_id, kind, amount, reason").order("id").range(from, from + 999);
+      .from("ledger_entries").select("player_id, account, kind, amount, reason").order("id").range(from, from + 999);
     if (error) throw new Error(error.message);
     out.push(
       ...(page ?? []).map((e) => ({
         account: e.player_id,
+        side: e.account,
         kind: e.kind as EngineRow["kind"],
         amount: e.amount,
         reason: e.reason,
@@ -273,6 +289,73 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
   let lateDeadweightId: string | null = null;
   let lateTargetId: string | null = null;
 
+  // ── Side games (D-132) ─────────────────────────────────────────────────────────
+  // Their own PRNG: the main season's chaos sequence must not shift because side games
+  // exist, or every downstream week would be a different season.
+  let sideSeed = 20261112;
+  const sideRand = () => {
+    sideSeed = (sideSeed * 1664525 + 1013904223) >>> 0;
+    return sideSeed / 2 ** 32;
+  };
+  const sideStats = { posted: 0, refusedRepeat: 0, refusedUnsettled: 0, refusedNotFinal: 0, refusedBlackout: 0, dropped: 0, resettled: 0, swept: 0 };
+  const results = (week: number, games: Array<{ game: "bingo" | "crunch"; entrants: string[]; order: string[][]; soloWon?: boolean | null }>, final = true): PlayResults => ({
+    season: 2026,
+    week,
+    closed: true,
+    final,
+    games: games.map((g) => ({
+      game: g.game,
+      entrants: g.entrants.map((id) => ({ ante_player_id: id, display_name: `T ${id.slice(0, 4)}` })),
+      order: g.order,
+      solo_won: g.soloWon ?? null,
+    })),
+  });
+  /** Post through the console's own code and check every chip against a hand count. */
+  async function sidePost(
+    week: number,
+    res: PlayResults,
+    expected: { deltas?: Map<string, number>; sides?: Partial<Record<SideAccount, number>> },
+  ) {
+    const b0 = await balances();
+    const out = await postSideGames(service, res);
+    check(out.status === "succeeded", `week ${week} side games posted (${out.status}: ${out.message})`);
+    const b1 = await balances();
+    check(b1.pot === b0.pot, `week ${week} SIDE GAMES MOVED THE POT: ${b0.pot} → ${b1.pot}`);
+    check(b1.total === b0.total, `week ${week} side games CONSERVATION ${b0.total} → ${b1.total}`);
+    // The app's own Pot readers must agree with the ledger's truth. This season's Pot
+    // sits in debt, so a reader that folded the house into the Pot would not change an
+    // award here — it would only show the room the wrong Pot. Assert the readers directly.
+    const jobPot = (await stacksByPlayer(service)).get("__pot__");
+    check(jobPot === b1.pot, `week ${week} stacksByPlayer's Pot ${jobPot} ≠ ledger Pot ${b1.pot} — a side account read as Pot`);
+    const shownPot = await potBalance(service);
+    check(shownPot === b1.pot, `week ${week} potBalance ${shownPot} ≠ ledger Pot ${b1.pot} — a side account read as Pot`);
+    check(b1.sides.play_pool_bingo >= 0 && b1.sides.play_pool_crunch >= 0, `week ${week} a side-game pool went negative ${JSON.stringify(b1.sides)}`);
+    if (expected.deltas) {
+      for (const [id, v] of b0.stacks) {
+        const want = expected.deltas.get(id) ?? 0;
+        const got = (b1.stacks.get(id) ?? 0) - v;
+        check(got === want, `week ${week} side games moved ${id.slice(0, 8)} by ${got}, expected ${want}`);
+      }
+    }
+    for (const [k, v] of Object.entries(expected.sides ?? {})) {
+      check(b1.sides[k as SideAccount] === v, `week ${week} side account ${k} is ${b1.sides[k as SideAccount]}, expected ${v}`);
+    }
+    sideStats.posted++;
+    sideStats.dropped += out.preview.games.reduce((n, g) => n + (g.plan?.dropped.length ?? 0), 0);
+    sideStats.swept += out.preview.games.reduce((n, g) => n + (g.plan?.swept ?? 0), 0);
+    assertInvariants(await fetchAllLedger());
+    return { out, b0, b1 };
+  }
+  /** Healthy live seats, biggest stack first — so a scripted entrant can always cover the 10. */
+  async function healthy(): Promise<string[]> {
+    const bh = await balances();
+    return [...bh.stacks.entries()]
+      .filter(([id, s]) => !removedIds.has(id) && id !== deadweightId && id !== lateDeadweightId && s >= 100)
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id);
+  }
+  const add = (m: Map<string, number>, id: string, d: number) => m.set(id, (m.get(id) ?? 0) + d);
+
   for (let week = 1; week <= 18; week++) {
     const t0 = Date.now();
 
@@ -344,6 +427,18 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
     );
     check(rerun.status === "skipped", `week ${week} double slate-open skipped`);
     check((await balances()).total === before.total, `week ${week} double-open moved no chips`);
+
+    // ── Side games refuse mid-blackout (§6, D-132) ──────────────────────────────
+    // Antes are posted and nothing is revealed: no stack may move. Week 10's games are
+    // already posted, but the blackout gate is checked first and must be the answer.
+    if (week === 11) {
+      const bq = await balances();
+      const early = await postSideGames(service, results(10, [{ game: "bingo", entrants: [], order: [] }]));
+      check(early.status === "failed" && /mid-blackout/.test(early.message), `side games NOT refused mid-blackout (${early.status}: ${early.message})`);
+      const ba = await balances();
+      check(ba.total === bq.total && ba.pot === bq.pot && JSON.stringify(ba.sides) === JSON.stringify(bq.sides), "refused mid-blackout side-game post moved chips");
+      if (early.status === "failed") sideStats.refusedBlackout++;
+    }
 
     // ── The Remove button refuses mid-blackout (§6) — the reason Kegan waits ────
     if (week === 10) {
@@ -697,6 +792,15 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
       check((await balances()).total === b0.total && (await balances()).pot === b0.pot, "D-110 blocked open moved chips");
     }
 
+    // ── Side games wait for Ante's own settlement (D-132) ──────────────────────
+    if (week === 10) {
+      const bq = await balances();
+      const early = await postSideGames(service, results(10, [{ game: "crunch", entrants: [playerIds[0]], order: [[playerIds[0]]], soloWon: true }]));
+      check(early.status === "failed" && /not settled/.test(early.message), `side games NOT refused before settlement (${early.status}: ${early.message})`);
+      check((await balances()).total === bq.total, "refused pre-settlement side-game post moved chips");
+      if (early.status === "failed") sideStats.refusedUnsettled++;
+    }
+
     // ── Scores + settlement (real job; conservation asserts inside) ────────────
     for (const g of slateGames) {
       const r = rand();
@@ -758,6 +862,176 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
         .eq("week_id", wkRow!.id)
         .eq("kind", "fold_penalty");
       check((pen ?? 0) === 0, `week ${week} FOLD PENALTY posted (${pen}) — withdrawn in v1.5`);
+    }
+
+    // ── Side games (D-132): Weeks 10–18, after the week settles ────────────────
+    // Scripted weeks are counted by hand, chip by chip, so the test never borrows the
+    // engine's own arithmetic to check the engine.
+    if (week >= 10) {
+      const H = await healthy();
+      const sb = await balances();
+      let house = sb.sides.play_house;
+      let bingoPool = sb.sides.play_pool_bingo;
+      let crunchPool = sb.sides.play_pool_crunch;
+      const d = new Map<string, number>();
+
+      if (week === 10) {
+        // ANTE Play not finished yet: refuse.
+        const notFinal = await postSideGames(service, results(10, [{ game: "bingo", entrants: H.slice(0, 2), order: [[H[0]], [H[1]]] }], false));
+        check(notFinal.status === "failed" && /final=false/.test(notFinal.message), `side games NOT refused while ANTE Play says final=false (${notFinal.message})`);
+        if (notFinal.status === "failed") sideStats.refusedNotFinal++;
+
+        // Bingo, contested: 7 in, one winner takes 70 (a 60-chip gain).
+        // Crunch Time, one entrant beats the house: 10 back plus 10 from the house.
+        const entrants = H.slice(0, 7);
+        for (const id of entrants) add(d, id, -10);
+        add(d, H[3], 70);
+        add(d, H[7], 10);
+        house -= 10;
+        const res = results(10, [
+          { game: "bingo", entrants, order: [[H[3]], [H[0], H[1]], [H[2], H[4], H[5], H[6]]] },
+          { game: "crunch", entrants: [H[7]], order: [[H[7]]], soloWon: true },
+        ]);
+        const { out } = await sidePost(week, res, { deltas: d, sides: { play_house: house, play_pool_bingo: 0, play_pool_crunch: 0 } });
+
+        // A repeat post: the console sees it is posted, and the ledger itself refuses
+        // the same rows if anything ever got past that.
+        const b0 = await balances();
+        const again = await postSideGames(service, res);
+        check(again.status === "skipped" && again.preview.games.every((g) => g.posted), `repeat side-game post was not recognised as posted (${again.status}: ${again.message})`);
+        const { error: dupErr } = await service.from("ledger_entries").insert(
+          out.preview.rows.map((r) => ({
+            player_id: r.playerId,
+            account: r.account,
+            week_id: weekRow.id,
+            kind: r.kind,
+            amount: r.amount,
+            reason: r.reason,
+            idempotency_key: r.idempotencyKey,
+          })),
+        );
+        check(!!dupErr && /duplicate key/.test(dupErr.message), `a repeated side-game insert was NOT rejected by the idempotency index (${dupErr?.message ?? "accepted"})`);
+        const b1 = await balances();
+        check(b1.total === b0.total && JSON.stringify(b1.sides) === JSON.stringify(b0.sides) && b1.pot === b0.pot, "repeated side-game post moved chips");
+        if (again.status === "skipped" && dupErr) sideStats.refusedRepeat++;
+      } else if (week === 11) {
+        // Bingo, a three-way tie: 50 split 16 each, 2 roll into next week's pool.
+        // Crunch Time, one entrant misses: their 10 goes to the house.
+        const entrants = H.slice(0, 5);
+        for (const id of entrants) add(d, id, -10);
+        for (const id of [H[1], H[2], H[4]]) add(d, id, 16);
+        add(d, H[5], -10);
+        bingoPool += 2;
+        house += 10;
+        await sidePost(
+          week,
+          results(11, [
+            { game: "bingo", entrants, order: [[H[1], H[2], H[4]], [H[0]], [H[3]]] },
+            { game: "crunch", entrants: [H[5]], order: [[H[5]]], soloWon: false },
+          ]),
+          { deltas: d, sides: { play_house: house, play_pool_bingo: bingoPool, play_pool_crunch: crunchPool } },
+        );
+        check(bingoPool === 2, "week 11 three-way tie should leave a 2-chip rollover");
+      } else if (week === 12) {
+        // Bingo, contested: 40 in + the 2 rolled = 42 to the winner.
+        // Crunch Time, contested, and H5 is in BOTH games this week.
+        const bingo = H.slice(5, 9);
+        for (const id of bingo) add(d, id, -10);
+        add(d, H[8], 40 + bingoPool);
+        bingoPool = 0;
+        add(d, H[5], -10);
+        add(d, H[9], -10);
+        add(d, H[5], 20);
+        await sidePost(
+          week,
+          results(12, [
+            { game: "bingo", entrants: bingo, order: [[H[8]], [H[5], H[6], H[7]]] },
+            { game: "crunch", entrants: [H[5], H[9]], order: [[H[5]], [H[9]]] },
+          ]),
+          { deltas: d, sides: { play_house: house, play_pool_bingo: 0, play_pool_crunch: crunchPool } },
+        );
+      } else if (week === 13) {
+        // Bingo: the "winner" is the seat removed in Week 12 — 0 chips, can't cover the
+        // 10. Dropped, nothing taken, and the order closes up: H1 wins 30.
+        // Crunch Time: a three-way tie, 40 split 13 each, 1 rolls.
+        check((sb.stacks.get(deadweightId) ?? -1) === 0, "week 13 the removed seat should hold exactly 0");
+        for (const id of [H[0], H[1], H[2]]) add(d, id, -10);
+        add(d, H[1], 30);
+        for (const id of [H[3], H[4], H[5], H[6]]) add(d, id, -10);
+        for (const id of [H[3], H[4], H[5]]) add(d, id, 13);
+        crunchPool += 1;
+        const { out } = await sidePost(
+          week,
+          results(13, [
+            { game: "bingo", entrants: [deadweightId, H[0], H[1], H[2]], order: [[deadweightId], [H[1]], [H[0], H[2]]] },
+            { game: "crunch", entrants: [H[3], H[4], H[5], H[6]], order: [[H[3], H[4], H[5]], [H[6]]] },
+          ]),
+          { deltas: d, sides: { play_house: house, play_pool_bingo: 0, play_pool_crunch: 1 } },
+        );
+        const bp = out.preview.games.find((g) => g.game === "bingo")?.plan;
+        check(!!bp && bp.dropped.length === 1 && bp.dropped[0] === deadweightId && bp.winners[0] === H[1], `week 13 dropped winner not handled: ${JSON.stringify(bp && { dropped: bp.dropped, winners: bp.winners })}`);
+      } else if (week === 14) {
+        // Solo week in both games, with 1 rolled in the Crunch Time pool: a solo
+        // result never touches the rollover.
+        add(d, H[0], 10);
+        add(d, H[1], -10);
+        house += -10 + 10;
+        await sidePost(
+          week,
+          results(14, [
+            { game: "bingo", entrants: [H[0]], order: [[H[0]]], soloWon: true },
+            { game: "crunch", entrants: [H[1]], order: [[H[1]]], soloWon: false },
+          ]),
+          { deltas: d, sides: { play_house: house, play_pool_bingo: 0, play_pool_crunch: 1 } },
+        );
+
+        // ── Re-settle weeks 13–14, both carrying side-game rows. Nothing changed, so
+        // nothing may move: every stack, the Pot, the house and both pools. The settle
+        // job's weekly delta skips play_* rows; if it didn't, the side-game chips would
+        // count as weekly gain and could hand the Pot to someone else (D-130).
+        const fp = await ticketFingerprint();
+        const r1 = await balances();
+        const { data: awards1 } = await service.from("pot_awards").select("week_id, player_id, place, amount").order("week_id").order("place").order("player_id");
+        const rs = await resettleFromWeek(service, 13, "torture: re-settle weeks with side-game rows");
+        check(rs.status === "succeeded", `re-settle of side-game weeks (${JSON.stringify(rs.detail)})`);
+        const r2 = await balances();
+        const { data: awards2 } = await service.from("pot_awards").select("week_id, player_id, place, amount").order("week_id").order("place").order("player_id");
+        check(r2.pot === r1.pot, `side-game re-settle POT UNCHANGED: ${r1.pot} → ${r2.pot}`);
+        const movedS = [...r1.stacks.entries()].filter(([id, v]) => r2.stacks.get(id) !== v);
+        check(movedS.length === 0, `side-game re-settle STACKS UNCHANGED: ${movedS.length} moved`);
+        check(JSON.stringify(r2.sides) === JSON.stringify(r1.sides), `side-game re-settle moved a side account ${JSON.stringify(r1.sides)} → ${JSON.stringify(r2.sides)}`);
+        check(JSON.stringify(awards1) === JSON.stringify(awards2), "side-game re-settle changed a Pot award");
+        check((await ticketFingerprint()) === fp, "side-game re-settle tickets byte-identical");
+        assertInvariants(await fetchAllLedger());
+        if (rs.status === "succeeded") sideStats.resettled++;
+        console.log(`        ↺ re-settled weeks 13–14 over their side-game rows: pot ${r1.pot} → ${r2.pot}, ${movedS.length} stacks moved, house ${r2.sides.play_house}`);
+      } else if (week >= 15 && week <= 17) {
+        // Unscripted Bingo weeks: anyone from the healthy list, ties on purpose. The
+        // Crunch Time pool sits out so its 1-chip rollover survives to the Week 18 sweep.
+        const n = 1 + Math.floor(sideRand() * 6); // 1–6 entrants (0 posts nothing; rule 7 is unit-tested)
+        const pick = [...H.slice(0, 14)].sort(() => sideRand() - 0.5).slice(0, n);
+        const order: string[][] = [];
+        for (const id of pick) {
+          if (order.length > 0 && sideRand() < 0.35) order[order.length - 1].push(id);
+          else order.push([id]);
+        }
+        await sidePost(week, results(week, [{ game: "bingo", entrants: pick, order, soloWon: n === 1 ? sideRand() < 0.5 : null }]), {});
+      } else if (week === 18) {
+        // The last week: Bingo contested with a three-way tie, then whatever is left in
+        // each pool goes to the house — Crunch Time had nobody in, and still sweeps.
+        const entrants = H.slice(0, 5);
+        const prize = 50 + bingoPool;
+        const each = Math.floor(prize / 3);
+        for (const id of entrants) add(d, id, -10);
+        for (const id of [H[0], H[1], H[2]]) add(d, id, each);
+        house += prize - 3 * each + crunchPool;
+        await sidePost(
+          week,
+          results(18, [{ game: "bingo", entrants, order: [[H[0], H[1], H[2]], [H[3], H[4]]] }]),
+          { deltas: d, sides: { play_house: house, play_pool_bingo: 0, play_pool_crunch: 0 } },
+        );
+        check(crunchPool === 1, `week 18 Crunch Time pool should hold the week-13 rollover of 1, held ${crunchPool}`);
+      }
     }
 
     // ── Weekly conservation, straight SQL truth ────────────────────────────────
@@ -950,6 +1224,14 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
 
   const b = await balances();
   console.log(`\nFinal: total=${b.total} pot=${b.pot} min_stack=${Math.min(...b.stacks.values())} max_stack=${Math.max(...b.stacks.values())}`);
+  // D-132: the season ends with both pools empty, and every scripted probe actually ran.
+  check(b.sides.play_pool_bingo === 0 && b.sides.play_pool_crunch === 0, `side-game pools not swept at season end: ${JSON.stringify(b.sides)}`);
+  check(
+    sideStats.posted === 9 && sideStats.refusedRepeat === 1 && sideStats.refusedUnsettled === 1 && sideStats.refusedNotFinal === 1 &&
+      sideStats.refusedBlackout === 1 && sideStats.dropped >= 1 && sideStats.resettled === 1 && sideStats.swept >= 1,
+    `side-game probes did not all run: ${JSON.stringify(sideStats)}`,
+  );
+  console.log(`Side games: ${sideStats.posted} weeks posted, house ${b.sides.play_house}, pools ${b.sides.play_pool_bingo}/${b.sides.play_pool_crunch}, ${sideStats.dropped} dropped, ${sideStats.swept} swept; refused ${sideStats.refusedRepeat} repeat, ${sideStats.refusedUnsettled} unsettled, ${sideStats.refusedNotFinal} not-final, ${sideStats.refusedBlackout} mid-blackout`);
   // A probe that never ran proves nothing — make silence a failure, not a pass.
   check(shoveProbes.second > 0 && shoveProbes.big > 0, `D-128 probes never ran: ${JSON.stringify(shoveProbes)}`);
   console.log(`D-128 shove probes refused: ${shoveProbes.second} second-shove, ${shoveProbes.big} above-the-line`);

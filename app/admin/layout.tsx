@@ -20,6 +20,7 @@ const NAV = [
   ["/admin/notifications", "Notifications"],
   ["/admin/email", "Email"],
   ["/admin/polls", "Polls"],
+  ["/admin/side-games", "Side games"],
   ["/admin/settings", "Settings"],
   ["/admin/audit", "Audit"],
   ["/admin/backup", "Backups"],
@@ -38,7 +39,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </Link>
         <p className="mb-2 px-2 text-[12px] uppercase tracking-widest text-[color:var(--color-gold)]">Commissioner</p>
         <ul className="space-y-1">
-          {NAV.map(([href, label]) => (
+          {/* Side games appear only while ANTE Play is wired in (D-132 off switch). */}
+          {NAV.filter(([href]) => href !== "/admin/side-games" || !!process.env.ANTE_PLAY_RESULTS_URL?.trim()).map(([href, label]) => (
             <li key={href}>
               <Link
                 href={href}

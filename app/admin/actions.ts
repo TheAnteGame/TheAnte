@@ -26,6 +26,8 @@ import { titleCase } from "@/lib/name";
 export interface ActionResult {
   ok: boolean;
   error?: string;
+  /** Optional report shown beside the tick on success. */
+  message?: string;
 }
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -554,6 +556,43 @@ export async function recomputeWeekSnapshot(fd: FormData): Promise<ActionResult>
     return fail(`Refused — ${d?.reason ?? "see the audit log"}`);
   }
   return outcome.status === "skipped" ? fail("No open week") : { ok: true };
+}
+
+// ── Side games (D-132) ─────────────────────────────────────────────────────────
+// ANTE Play decides who won; Ante decides what moves. The gates, the money and the
+// single insert live in lib/jobs/sideGames.ts, which the season torture test drives
+// directly. This action re-fetches the results (never trusts the page it was pressed
+// on), and adds what needs a signed-in commissioner: the snapshot and the audit row.
+
+export async function postSideGameResults(fd: FormData): Promise<ActionResult> {
+  const ctx = await getCommissioner();
+  if (!ctx) return fail("No seat");
+  const { fetchPlayResults, playResultsUrl, postSideGames } = await import("@/lib/jobs/sideGames");
+  if (!playResultsUrl()) return fail("ANTE_PLAY_RESULTS_URL is not set — side games are switched off.");
+  const week = Number(str(fd, "week"));
+  if (!Number.isInteger(week) || week < 1 || week > 18) return fail("Week 1–18");
+  const { data: season } = await ctx.db.from("seasons").select("year").order("year", { ascending: false }).limit(1).maybeSingle();
+  if (!season) return fail("No season");
+
+  let results;
+  try {
+    results = await fetchPlayResults(season.year, week);
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : String(e));
+  }
+  if (results.week !== week || results.season !== season.year) {
+    return fail(`ANTE Play answered for ${results.season} Week ${results.week}, not ${season.year} Week ${week}.`);
+  }
+
+  await takeSnapshot(ctx.db, `before side-game results, week ${week}`, ctx.playerId);
+  const outcome = await postSideGames(ctx.db, results);
+  await writeAudit(ctx, "sidegames.post", "week", String(week), `Side-game results, Week ${week}: ${outcome.status}`, {
+    after: { status: outcome.status, message: outcome.message, rows: outcome.preview.rows.length, before: outcome.preview.before, accounts: outcome.preview.after } as unknown,
+  });
+  revalidatePath("/admin/side-games");
+  revalidatePath("/dashboard");
+  if (outcome.status === "failed") return fail(outcome.message);
+  return { ok: true, message: outcome.message };
 }
 
 // ── Content (§4.4) ─────────────────────────────────────────────────────────────

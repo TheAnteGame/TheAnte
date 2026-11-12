@@ -28,7 +28,9 @@ interface PotRow {
 
 async function potRows(db: SupabaseClient): Promise<PotRow[]> {
   return fetchAllRows<PotRow>((from, to) =>
-    db.from("ledger_entries").select("kind, amount, week_id").is("player_id", null).order("id").range(from, to),
+    // The Pot is no player AND no side-game account (D-132): the house and the pools
+    // are owner-less too, and must never read as Pot.
+    db.from("ledger_entries").select("kind, amount, week_id").is("player_id", null).is("account", null).order("id").range(from, to),
   );
 }
 

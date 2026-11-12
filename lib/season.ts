@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AwardsInput, FinalStanding } from "@/lib/engine/awards";
 import { fetchAllRows } from "@/lib/db/fetchAll";
+import { isSideGameKind } from "@/lib/engine/sideGames";
 
 // Season-end data assembly (service role, admin/close paths only). Everything is
 // derived from the ledger and the immutable ticket record — nothing here is a
@@ -40,7 +41,8 @@ export async function gatherSeasonData(db: SupabaseClient): Promise<SeasonData> 
   // Weekly gains: net including ante, before the Pot (§14) — pot awards excluded.
   const gains = new Map<string, number>();
   for (const e of ledger ?? []) {
-    if (!e.player_id || !e.week_id || e.kind === "pot_award") continue;
+    // Side games (D-132) move a stack, never a week's gain.
+    if (!e.player_id || !e.week_id || e.kind === "pot_award" || isSideGameKind(e.kind)) continue;
     const k = `${e.player_id}:${weekNumById.get(e.week_id)}`;
     gains.set(k, (gains.get(k) ?? 0) + e.amount);
   }

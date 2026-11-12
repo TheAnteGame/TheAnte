@@ -52,7 +52,7 @@ export function AdminForm({
           — {state.error}
         </p>
       )}
-      {state?.ok && <p className="text-xs text-[color:var(--color-win)]">✓</p>}
+      {state?.ok && <p className="text-xs text-[color:var(--color-win)]">✓{state.message ? ` ${state.message}` : ""}</p>}
     </form>
   );
 }
