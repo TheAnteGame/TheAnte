@@ -54,6 +54,7 @@ export default async function Dashboard() {
     menuAria,
     profileLabel,
     accountAria,
+    miniGamesLabel,
     commissioner,
   ] = await Promise.all([
     getContent("dash.header_rank_label"),
@@ -68,6 +69,7 @@ export default async function Dashboard() {
     getContent("dash.menu_aria"),
     getContent("dash.profile_label"),
     getContent("dash.account_aria"),
+    getContent("dash.minigames_label"),
     getCommissioner(),
   ]);
 
@@ -119,6 +121,7 @@ export default async function Dashboard() {
                 { href: "/faq", label: faqLabel },
               ]}
               commissioner={commissioner ? { href: "/admin", label: commissionerLabel } : null}
+              miniGames={{ href: "https://play.theantegame.com", label: miniGamesLabel }}
               logoutLabel={logoutLabel}
             />
           </div>

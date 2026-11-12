@@ -20,6 +20,8 @@ export interface HeaderMenuProps {
   menuAria: string;
   accountAria: string;
   commissioner: NavLink | null;
+  /** ANTE Play, the side games on play.theantegame.com (D-131). Null hides it. */
+  miniGames: NavLink | null;
   logoutLabel: string;
 }
 
@@ -30,7 +32,7 @@ type Open = "help" | "account" | "sheet" | null;
  *  all of it. Menus close on a tap outside, Escape, or choosing an item; arrow
  *  keys move through the items; focus goes back to the button that opened them. */
 export function HeaderMenu(props: HeaderMenuProps) {
-  const { name, standing, help, helpLabel, profileLabel, menuAria, accountAria, commissioner, logoutLabel } =
+  const { name, standing, help, helpLabel, profileLabel, menuAria, accountAria, commissioner, miniGames, logoutLabel } =
     props;
   const [open, setOpen] = useState<Open>(null);
   // The bar is taller at the top of the page than once scrolled (D-126), so the
@@ -182,6 +184,11 @@ export function HeaderMenu(props: HeaderMenuProps) {
             <Link role="menuitem" href="/profile" className={row}>
               {profileLabel}
             </Link>
+            {miniGames && (
+              <a role="menuitem" href={miniGames.href} className={row}>
+                {miniGames.label}
+              </a>
+            )}
             {commissioner && (
               <Link
                 role="menuitem"
@@ -271,6 +278,12 @@ export function HeaderMenu(props: HeaderMenuProps) {
                 </Link>
               ))}
               <div className="mx-5 my-2 h-px bg-[color:var(--color-border)] opacity-40" />
+              {miniGames && (
+                <a role="menuitem" href={miniGames.href} className={`${row} min-h-12 px-5 text-base`}>
+                  {miniGames.label}
+                  <Chevron />
+                </a>
+              )}
               {commissioner && (
                 <Link
                   role="menuitem"
