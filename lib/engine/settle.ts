@@ -1,4 +1,4 @@
-import { POT_PAYS_ANTES_FROM_WEEK, potMinimumFor, SHOVE_RULES_FROM_WEEK, weeklyPotFor } from "./constants";
+import { POT_PAYS_ANTES_FROM_WEEK, potMinimumFor, weeklyPotFor } from "./constants";
 import { multiplierFor, profitFor } from "./core";
 import type {
   BetSettlement,
@@ -136,17 +136,17 @@ export function settleWeek(input: SettleWeekInput): SettleWeekResult {
   let potBalance = input.potBalance;
   for (const e of entries) if (e.account === null) potBalance += e.amount;
 
-  // §7 — award. Eligibility: submitted a live ticket (folders out, and from Week 9
-  // shovers; a ticket whose games all returned still counts). Distinct gain levels take places in order;
+  // §7 — award. Eligibility: submitted a live ticket (folders out; a shover is in,
+  // D-136; a ticket whose games all returned still counts). Distinct gain levels take places in order;
   // ties split that place's share evenly, floored; every leftover chip rolls.
   // Week 8 paid at least half its antes (D-127). From Week 9 the Pot pays all of them
   // plus whatever the table kept (D-130), whatever the account owes. Either way, when
   // the balance can't cover it the award is still made and the account goes (further)
   // under. Chips stay conserved — the Pot's account simply carries the debt.
-  // From Week 9 a shover is out of that week's Pot (D-128): the Pot already paid the
-  // shove, and a doubled stack is nearly always the week's biggest gain.
-  const shoversOut = weekNumber >= SHOVE_RULES_FROM_WEEK;
-  const eligible = new Set(tickets.filter((t) => !t.isFold && !(shoversOut && t.isShove)).map((t) => t.playerId));
+  // A shover can win the Pot (D-136). D-128 kept them out from Week 9; the owner
+  // reverted that on 2026-11-17 and Week 10 was re-settled under it. Week 9 had no
+  // shove, so every settled week replays exactly as before.
+  const eligible = new Set(tickets.filter((t) => !t.isFold).map((t) => t.playerId));
   const potAwards: SettleWeekResult["potAwards"] = [];
   const minimum = potMinimumFor(weekNumber, antesCollected);
   // A voided shove's ante comes back at settlement (above); it is this week's ante too.

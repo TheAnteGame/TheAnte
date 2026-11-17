@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-17 (seventy-eighth pass):** **A winning shover can take the Pot (D-136,
+> rulebook v1.9).** Reverts D-128's Pot exclusion; trailing-stack and one-a-week rules stay.
+> Week 10 re-settled from the console (Pot 260: Andersen → Marquis) and Week 11's opening
+> figures recomputed (median 550, Bob Toler now shove-eligible). Correction email to league.
+
 > **2026-11-12 (seventy-seventh pass):** **Side-game settlement door built (D-132).**
 > Migration 0039 (`ledger_entries.account` for the house and the two pools, kinds
 > `play_entry`/`play_payout`/`play_house`); every Pot reader now excludes side accounts;

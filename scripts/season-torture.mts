@@ -818,12 +818,23 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
     const settle = await settleCurrentWeek(service);
     check(settle.status === "succeeded", `week ${week} settlement (${JSON.stringify(settle.detail)})`);
     if (week >= SHOVE_RULES_FROM_WEEK) {
-      // D-128: at most one shove, and the Pot never pays it.
+      // D-128: at most one shove. D-136: the shover is eligible for the Pot — if their
+      // gain is the week's best among live tickets, they must be in the first place.
       const { data: wkShoves } = await service.from("tickets").select("player_id").eq("week_id", weekRow.id).eq("is_shove", true);
       check((wkShoves ?? []).length <= 1, `week ${week} D-128: ${(wkShoves ?? []).length} shoves in one week`);
-      const { data: wkAwards } = await service.from("pot_awards").select("player_id").eq("week_id", weekRow.id);
-      const shoverIds = new Set((wkShoves ?? []).map((t) => t.player_id));
-      check(!(wkAwards ?? []).some((a) => shoverIds.has(a.player_id)), `week ${week} D-128: the shover won the Pot`);
+      const { data: wkAwards } = await service.from("pot_awards").select("player_id, place").eq("week_id", weekRow.id);
+      const shover = (wkShoves ?? [])[0]?.player_id;
+      if (shover && (wkAwards ?? []).length > 0) {
+        const { data: wkTickets } = await service.from("tickets").select("player_id, is_fold").eq("week_id", weekRow.id);
+        const live = new Set((wkTickets ?? []).filter((t) => !t.is_fold).map((t) => t.player_id));
+        const { data: wkRows } = await service.from("ledger_entries").select("player_id, kind, amount").eq("week_id", weekRow.id).not("player_id", "is", null);
+        const gainOf = new Map<string, number>();
+        for (const e of wkRows ?? []) if (!e.kind.startsWith("play_") && e.kind !== "pot_award") gainOf.set(e.player_id!, (gainOf.get(e.player_id!) ?? 0) + Number(e.amount));
+        const best = Math.max(...[...live].map((id) => gainOf.get(id) ?? 0));
+        if ((gainOf.get(shover) ?? 0) === best) {
+          check((wkAwards ?? []).some((a) => a.player_id === shover && a.place === 1), `week ${week} D-136: the shover had the best week and missed the Pot`);
+        }
+      }
     }
     if (week === 16 && lateDeadweightId) {
       const bs = await balances();

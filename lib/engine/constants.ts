@@ -84,10 +84,10 @@ export function weeklyPotFor(input: { antes: number; swept: number; balance: num
 }
 
 /** §8 v1.7 (D-128) — from this week on the shove is the trailing player's move: one per
- *  week league-wide, only for a stack at or under 70% of the slate-open median, and a
- *  shover can't win that week's Pot. A winning shove is paid from the Pot, and doubling
- *  is nearly always the week's biggest gain, so without the last rule the same Pot paid
- *  the shover twice. Weeks 1–8 keep the old rules, so a re-settlement replays them. */
+ *  week league-wide, and only for a stack at or under 70% of the slate-open median.
+ *  Weeks 1–8 keep the old rules, so a re-settlement replays them. D-128 also kept the
+ *  shover out of that week's Pot; v1.9 (D-136) reverted that, so a winning shove can
+ *  take the Pot too. */
 export const SHOVE_RULES_FROM_WEEK = 9;
 export const SHOVE_MEDIAN_SHARE = { num: 7, den: 10 };
 

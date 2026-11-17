@@ -315,7 +315,7 @@ describe("unanimous sides and the Pot minimum (§5, §7 v1.6, D-127)", () => {
   });
 });
 
-describe("the shover sits out the Pot from Week 9 (§7 v1.7, D-128)", () => {
+describe("a shover can win the Pot (§7 v1.9, D-136 — reverts D-128's exclusion)", () => {
   const shove: EngineTicket = {
     playerId: "s",
     isFold: false,
@@ -338,18 +338,38 @@ describe("the shover sits out the Pot from Week 9 (§7 v1.7, D-128)", () => {
     expect(at(8).potAwards.map((a) => a.playerId)).toEqual(["s"]);
   });
 
-  it("from Week 9 the Pot goes to the best week among everyone else", () => {
-    const r = at(9);
-    expect(r.potAwards.map((a) => a.playerId)).toEqual(["b"]);
+  it("from Week 9 too, the winning shover's doubled stack takes the Pot", () => {
+    const r = at(10);
+    expect(r.potAwards.map((a) => a.playerId)).toEqual(["s"]);
     // The shove itself is untouched: still doubled, at even money.
     expect(r.bets.find((b) => b.playerId === "s")).toMatchObject({ result: "won", payout: 300 });
     expect(r.entries.reduce((s, e) => s + e.amount, 0)).toBe(0);
   });
 
-  it("a week where only the shover played awards nothing and the Pot rolls", () => {
-    const r = settleWeek(baseInput({ weekNumber: 9, tickets: [shove], games, players: [players[0]], potBalance: 500, antesCollected: 0 }));
-    expect(r.potAwards).toEqual([]);
-    expect(r.potAfter).toBe(500 - 600);
+  it("a losing shover is still eligible but the best week takes it", () => {
+    const lost = settleWeek(baseInput({ weekNumber: 10, tickets, games: [finalGame("g1", "home"), finalGame("g2", "home")], players, potBalance: 2000, antesCollected: 30 }));
+    expect(lost.potAwards.map((a) => a.playerId)).toEqual(["b"]);
+    expect(lost.entries.reduce((s, e) => s + e.amount, 0)).toBe(0);
+  });
+
+  it("Week 10's real shape: a 271 shove wins and takes the 260 Pot over a +33 week", () => {
+    const sh: EngineTicket = { ...shove, playerId: "m", bets: [{ gameId: "g1", side: "away", chips: 271 }], committedStake: 271, pendingRefund: 20 };
+    const r = settleWeek(
+      baseInput({
+        weekNumber: 10,
+        tickets: [sh, ticket("a", [["g2", "home", 30]]), ticket("z", [["g2", "away", 20]])],
+        games,
+        players: [
+          { id: "m", stackPreAnte: 271, stackAtReveal: 0 },
+          { id: "a", stackPreAnte: 1033, stackAtReveal: 983 },
+          { id: "z", stackPreAnte: 500, stackAtReveal: 460 },
+        ],
+        potBalance: -418 + 60 + 271 + 50,
+        antesCollected: 40,
+      }),
+    );
+    expect(r.potAwards).toEqual([expect.objectContaining({ playerId: "m" })]);
+    expect(r.entries.reduce((s, e) => s + e.amount, 0)).toBe(0);
   });
 });
 

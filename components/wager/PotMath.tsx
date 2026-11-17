@@ -4,7 +4,7 @@ import { fetchAllRows } from "@/lib/db/fetchAll";
 import { getContent } from "@/lib/content/getContent";
 import { getTeamNames } from "@/lib/teams";
 import { potBreakdown } from "@/lib/stats/potMath";
-import { POT_PAYS_ANTES_FROM_WEEK, SHOVE_RULES_FROM_WEEK } from "@/lib/engine/constants";
+import { POT_PAYS_ANTES_FROM_WEEK } from "@/lib/engine/constants";
 import { isSideGameKind } from "@/lib/engine/sideGames";
 import { PlayerTip } from "../ui/PlayerTip";
 
@@ -79,15 +79,11 @@ export async function PotMath({
     weekRow?.pot_before != null ? Number(weekRow.pot_before) : marker > 0 ? -marker : null;
 
   const foldedBy = new Map((tickets ?? []).map((t) => [t.player_id, t.is_fold]));
-  // From Week 9 a shover is out of that week's Pot too (D-128).
-  const shovedOut = new Set(
-    week.number >= SHOVE_RULES_FROM_WEEK ? (tickets ?? []).filter((t) => t.is_shove).map((t) => t.player_id) : [],
-  );
   const breakdown = potBreakdown({
     entries: [...gain.entries()].map(([id, g]) => ({
       playerId: id,
       gain: g,
-      eligible: foldedBy.get(id) === false && !shovedOut.has(id),
+      eligible: foldedBy.get(id) === false,
     })),
     pool: pool ?? 0,
     // Settlement uses potSplitForCount(active_count_snapshot) — the head count frozen at
@@ -128,7 +124,7 @@ export async function PotMath({
   const rosterCount = weekRow?.active_count_snapshot ?? (tickets ?? []).length;
 
   const antesBuilt = week.number >= POT_PAYS_ANTES_FROM_WEEK && pool !== null && pool === weekAntes + kept;
-  const [heading, rule, placesLine, poolLine, poolMinimumLine, poolAntesLine, paidLine, rolledLine, rolledAll, gainLabel, tookLabel, foldedLabel, shovedLabel, splitNote, youLabel, roomLabel] =
+  const [heading, rule, placesLine, poolLine, poolMinimumLine, poolAntesLine, paidLine, rolledLine, rolledAll, gainLabel, tookLabel, foldedLabel, splitNote, youLabel, roomLabel] =
     await Promise.all([
       getContent("potmath.heading", { week: week.number }),
       getContent("potmath.rule"),
@@ -156,7 +152,6 @@ export async function PotMath({
       getContent("potmath.gain_label"),
       getContent("potmath.took_label"),
       getContent("potmath.folded_label"),
-      getContent("potmath.shoved_label"),
       getContent("potmath.split_note"),
       getContent("potmath.you"),
       getContent("potmath.room_label"),
@@ -215,7 +210,7 @@ export async function PotMath({
                 </PlayerTip>
                 {isMe && <span className="ml-2 text-[12px] uppercase tracking-wider text-[color:var(--color-gold)]">{youLabel}</span>}
                 {!s.eligible && (
-                  <span className="ml-2 text-[12px] text-[color:var(--color-text-low)]">{shovedOut.has(s.playerId) ? shovedLabel : foldedLabel}</span>
+                  <span className="ml-2 text-[12px] text-[color:var(--color-text-low)]">{foldedLabel}</span>
                 )}
                 {s.sharedBy > 1 && s.award > 0 && (
                   <span className="ml-2 text-[12px] text-[color:var(--color-text-low)]">

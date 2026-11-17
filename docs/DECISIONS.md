@@ -3933,3 +3933,35 @@ shows the full name and favorite team.
 plain text. The `team` prop is still accepted so the 24 call sites are untouched if the
 tray ever comes back. Supersedes the hover half of D-104; the generic `Tip` stays for the
 stakes band and stat labels.
+
+## D-136 — A winning shover can take the Pot again; Week 10 re-settled (2026-11-17, rulebook v1.9)
+
+A third beta-season change by the owner, reverting one of D-128's three rules.
+
+**Why.** Week 10's shove (Marquis, 271 on BUF at NYJ) won and doubled to 542, but under
+D-128 he couldn't win the Pot, so its 260 went to the next-best week — Andersen's +33,
+already the leader, who ended the week 417 clear. The owner: the shove exists so a player
+far behind can jump back up the ranks, and doubling alone doesn't do that. D-128's main
+reason is gone too — since D-130 the weekly Pot pays its antes whatever the shove cost, so a
+winning shove no longer shrinks the Pot anyone else could win; it deepens the background
+account, which is never repaid. The other two D-128 rules stay: only a stack at or under
+70% of the median can shove, and one shove a week.
+
+**The rule.** Eligibility for the Pot is "submitted a live ticket", shovers included, in
+every week (`settleWeek`). There is no week gate: Week 9 had no shove, so every settled week
+replays exactly as it was paid, and Week 10 was re-settled under the new rule. The Pot math
+panel no longer marks a shover "not eligible"; `potmath.shoved_label` is gone.
+
+**Week 10, re-settled 2026-11-17** (rehearsed first on a local copy of production, then run
+with the console's own re-settle and recompute jobs, snapshot and audit row included): the Pot's 260 moves from Andersen to Marquis — Andersen 1,326 → 1,066 (still
+1st), Marquis 542 → 802 (7th → 3rd). The Pot's paid amount and account are unchanged
+(260 paid, 814 under). Week 11 had opened that morning on the old stacks with no tickets in,
+so its figures were recomputed (D-110 tool, no chips moved): median 530 → 550, seven house
+limits 170 → 180, and the shove line 371 → 385, which makes Bob Toler (381) eligible to
+shove in Week 11. The 6am Week 11 email had already named Andersen the Pot winner, so the
+owner sends the league a correction.
+
+Copy: `howto.shove_body`, `guide.pot_body`, `guide.shove_body`, `dash.wager.shove_arm_note`,
+`faq.a4`, `faq.a9`; rulebook §7 and §8. Tests: `settle.test.ts` (shover takes the Pot from
+Week 9 on; Week 10's real shape). The torture season now checks the opposite of D-128: a
+shover with the week's best gain must be in first place.
