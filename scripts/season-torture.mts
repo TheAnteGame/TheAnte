@@ -68,7 +68,8 @@ const { removeSeat } = await import("../lib/jobs/removeSeat");
 const { assertInvariants } = await import("../lib/engine/invariants");
 type EngineRow = Parameters<typeof assertInvariants>[0][number];
 const { leaderFrom } = await import("../lib/ticker/leader");
-const { postSideGames } = await import("../lib/jobs/sideGames");
+const { postSideGames, previewSideGames } = await import("../lib/jobs/sideGames");
+const { autoPostSideGames } = await import("../lib/jobs/sideGamesAuto");
 const { stacksByPlayer } = await import("../lib/jobs/util");
 const { potBalance } = await import("../lib/stats/pot");
 type PlayResults = Parameters<typeof postSideGames>[1];
@@ -315,9 +316,27 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
     week: number,
     res: PlayResults,
     expected: { deltas?: Map<string, number>; sides?: Partial<Record<SideAccount, number>> },
+    via: "console" | "auto" = "console",
   ) {
     const b0 = await balances();
-    const out = await postSideGames(service, res);
+    let out: Awaited<ReturnType<typeof postSideGames>>;
+    if (via === "auto") {
+      // D-139: the unattended path the scores tick runs. It must pick exactly this
+      // week (the oldest settled week after the last one posted) and nothing else.
+      const preview = await previewSideGames(service, res);
+      const asked: number[] = [];
+      const auto = await autoPostSideGames(service, async (_s, w) => {
+        asked.push(w);
+        return res;
+      });
+      check(auto.status === "succeeded", `week ${week} automatic side-game payout (${auto.status}: ${JSON.stringify(auto.detail)})`);
+      check(asked.length === 1 && asked[0] === week, `week ${week} automatic payout asked ANTE Play for weeks ${asked.join(",")}, expected only ${week}`);
+      const again = await autoPostSideGames(service, async () => res);
+      check(again.status === "skipped", `week ${week} automatic payout ran twice (${again.status})`);
+      out = { status: "succeeded", message: "auto", preview };
+    } else {
+      out = await postSideGames(service, res);
+    }
     check(out.status === "succeeded", `week ${week} side games posted (${out.status}: ${out.message})`);
     const b1 = await balances();
     check(b1.pot === b0.pot, `week ${week} SIDE GAMES MOVED THE POT: ${b0.pot} → ${b1.pot}`);
@@ -438,6 +457,11 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
       const ba = await balances();
       check(ba.total === bq.total && ba.pot === bq.pot && JSON.stringify(ba.sides) === JSON.stringify(bq.sides), "refused mid-blackout side-game post moved chips");
       if (early.status === "failed") sideStats.refusedBlackout++;
+      // The automatic payout has nothing it may post mid-blackout, and moves nothing.
+      const auto = await autoPostSideGames(service, async (_s, w) => results(w, [{ game: "bingo", entrants: [], order: [] }]));
+      check(auto.status !== "succeeded", `automatic side-game payout posted mid-blackout (${JSON.stringify(auto.detail)})`);
+      const bz = await balances();
+      check(bz.total === bq.total && bz.pot === bq.pot && JSON.stringify(bz.sides) === JSON.stringify(bq.sides), "automatic side-game payout moved chips mid-blackout");
     }
 
     // ── The Remove button refuses mid-blackout (§6) — the reason Kegan waits ────
@@ -1026,7 +1050,7 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
           if (order.length > 0 && sideRand() < 0.35) order[order.length - 1].push(id);
           else order.push([id]);
         }
-        await sidePost(week, results(week, [{ game: "bingo", entrants: pick, order, soloWon: n === 1 ? sideRand() < 0.5 : null }]), {});
+        await sidePost(week, results(week, [{ game: "bingo", entrants: pick, order, soloWon: n === 1 ? sideRand() < 0.5 : null }]), {}, "auto");
       } else if (week === 18) {
         // The last week: Bingo contested with a three-way tie, then whatever is left in
         // each pool goes to the house — Crunch Time had nobody in, and still sweeps.
@@ -1040,6 +1064,7 @@ const shoveProbes = { second: 0, big: 0 }; // D-128 rejections actually attempte
           week,
           results(18, [{ game: "bingo", entrants, order: [[H[0], H[1], H[2]], [H[3], H[4]]] }]),
           { deltas: d, sides: { play_house: house, play_pool_bingo: 0, play_pool_crunch: 0 } },
+          "auto",
         );
         check(crunchPool === 1, `week 18 Crunch Time pool should hold the week-13 rollover of 1, held ${crunchPool}`);
       }

@@ -15,7 +15,7 @@ import { LEAGUE_TZ } from "@/lib/time";
 // five minutes, and a stuck settlement should not become 288 emails. A mail failure
 // is swallowed — an alert must never turn a failed job into a crashed one.
 
-export type AlertKind = "settlement_failed" | "week_blocked";
+export type AlertKind = "settlement_failed" | "week_blocked" | "side_games_stuck";
 
 export async function alertCommissioner(
   db: SupabaseClient,

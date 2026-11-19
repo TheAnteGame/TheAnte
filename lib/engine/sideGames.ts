@@ -11,6 +11,8 @@ export const SIDE_GAME_NAMES: Record<SideGame, string> = { bingo: "Gridiron Bing
 
 /** D-131 rule 1. */
 export const SIDE_GAME_ENTRY = 10;
+/** D-131: ANTE Play's first live week (Week 9 was skipped). Nothing before it can have entrants. */
+export const SIDE_GAMES_FIRST_WEEK = 10;
 /** D-131 rule 8: the last side-game week; any pool left after it goes to the house. */
 export const SIDE_GAMES_LAST_WEEK = 18;
 /** Rule 9 ("can't cover it") read against the §9 floor: the entry must leave the

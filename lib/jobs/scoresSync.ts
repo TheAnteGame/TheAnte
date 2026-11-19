@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchEspnWeek } from "@/lib/sports/espn";
 import { settleCurrentWeek } from "./settle";
 import { slateOpen } from "./slateOpen";
+import { autoPostSideGames } from "./sideGamesAuto";
 import type { JobOutcome } from "./util";
 
 // scores.sync (ANTE-ADMIN §5): every 5 minutes during game windows. ESPN owns live
@@ -49,6 +50,17 @@ export async function scoresSync(db: SupabaseClient): Promise<JobOutcome> {
   const { count: unpaid } = await db.from("weeks").select("id", { count: "exact", head: true }).eq("phase", "revealed");
   let settlement: JobOutcome | null = null;
   let opened: JobOutcome | null = null;
+  // Side games pay out on the same tick as the week they belong to (D-139), and
+  // before the next week can open on stacks still missing them. Never lets a side-game
+  // problem fail the scores job: it alerts the commissioner itself.
+  let side: JobOutcome | null = null;
+  const runSide = async () => {
+    try {
+      side = await autoPostSideGames(db);
+    } catch (e) {
+      side = { status: "failed", detail: { error: e instanceof Error ? e.message : String(e) } };
+    }
+  };
   if ((unpaid ?? 0) > 0) {
     settlement = await settleCurrentWeek(db);
     // A week held back behind an unpaid one (openWeekCore refuses to open on
@@ -58,6 +70,7 @@ export async function scoresSync(db: SupabaseClient): Promise<JobOutcome> {
     // A feed outage here must not turn a successful settlement into a failed job;
     // Tuesday's own slate.open cron still runs either way.
     if (settlement.status === "succeeded") {
+      await runSide();
       try {
         opened = await slateOpen(db);
       } catch (e) {
@@ -66,8 +79,10 @@ export async function scoresSync(db: SupabaseClient): Promise<JobOutcome> {
     }
   }
 
-  if (!week && !settlement) return { status: "skipped", detail: { reason: "no live week" } };
-  if (updated === 0 && !settlement) return { status: "skipped", detail: { reason: "nothing to update" } };
+  if (side === null) await runSide();
+  const sideStatus = (side as JobOutcome | null)?.status;
+  if (!week && !settlement && sideStatus !== "succeeded") return { status: "skipped", detail: { reason: "no live week" } };
+  if (updated === 0 && !settlement && sideStatus !== "succeeded") return { status: "skipped", detail: { reason: "nothing to update" } };
 
   return {
     status: settlement?.status === "failed" ? "failed" : "succeeded",
@@ -77,6 +92,7 @@ export async function scoresSync(db: SupabaseClient): Promise<JobOutcome> {
       settlement: settlement ? settlement.status : "not attempted",
       ...(settlement?.status === "failed" ? { settlementDetail: settlement.detail ?? null } : {}),
       ...(opened ? { slateOpen: opened.status } : {}),
+      ...(sideStatus && sideStatus !== "skipped" ? { sideGames: side } : {}),
     },
   };
 }

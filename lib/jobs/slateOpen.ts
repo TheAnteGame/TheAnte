@@ -13,6 +13,7 @@ import { LEAGUE_TZ } from "@/lib/time";
 import { stacksByPlayer, type JobOutcome } from "./util";
 import { settleCurrentWeek } from "./settle";
 import { alertCommissioner } from "./alert";
+import { autoPostSideGames } from "./sideGamesAuto";
 
 // slate.open (ANTE-ADMIN §5): freeze spreads, snapshot the median BEFORE antes,
 // snapshot the places tier and active count, evaluate felt pre-ante, create the week,
@@ -118,6 +119,15 @@ export async function openWeekCore(
     const reason = `week ${unpaid.number} is ${unpaid.phase}, not settled — week ${weekNumber} cannot open on its stacks`;
     await alertCommissioner(db, "week_blocked", weekNumber, reason);
     return { status: "skipped", detail: { reason, blocked: true } };
+  }
+
+  // The last week's side games belong in the stacks this week opens on (D-139). The
+  // scores tick normally posted them already; this is the last chance before the
+  // antes. A failure here never holds the week: the job alerts the commissioner.
+  try {
+    await autoPostSideGames(db);
+  } catch {
+    // reported by the next scores tick
   }
 
   const stacks = await stacksByPlayer(db);

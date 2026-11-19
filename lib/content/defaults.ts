@@ -294,6 +294,7 @@ export const contentDefaults: Record<string, string> = {
   "mail.backup_reminder.subject": "ANTE: Your League Backup Is Due",
   "mail.settlement_failed.subject": "ANTE: Week {week} Did Not Settle",
   "mail.week_blocked.subject": "ANTE: Week {week} Did Not Open",
+  "mail.side_games_stuck.subject": "ANTE: Week {week} Side Games Not Paid",
   "notify.reminder": "Week {week}: {hours_left} hours to the wall, and your name is on the waiting list.",
   "notify.final_call": "Final call for Week {week}. Submit by noon MST or you're folded — and you still owe the ante.",
   // Phones only, Thursday 11am (D-121) — there is no email for this one.
@@ -591,6 +592,7 @@ export const contentDefaults: Record<string, string> = {
   "notify.reactions": "{count} people reacted to your message in Table Talk ({reactions}):\n\n{message}",
   "notify.backup_reminder": "It has been {days} days since you last saved a copy of the league.\n\nOpen the Commissioner console, go to Backups, press \"Download current data\", then press \"I've got the file\" so this stops nagging you.\n\nThis is the only copy that survives losing the database, so it is worth the thirty seconds.",
   "notify.settlement_failed": "Week {week} did not settle.\n\nWhat it said: {detail}\n\nIt retries every five minutes on its own, and retrying is safe: settlement checks that every chip balances before it writes, and never writes the same entry twice. Until it succeeds, the board shows a projection rather than settled stacks, and the next week will not open. The job history is on the Ops page of the Commissioner console.",
+  "notify.side_games_stuck": "Week {week}'s side games (Gridiron Bingo and Crunch Time) were decided but have not been paid into anyone's stack yet.\n\nWhat it said: {detail}\n\nIt tries again every five minutes on its own. If the next week is already open, it waits for that week's reveal and then pays out by itself. You can also post them by hand from the Side games page of the Commissioner console.",
   "notify.week_blocked": "Week {week} was due to open but did not, because an earlier week has not settled. A week cannot open on stacks that are still missing their stakes.\n\nWhat it said: {detail}\n\nIt opens by itself within five minutes of that settlement succeeding. The Thursday deadline does not move.",
   "notify.support_new": "{player} sent a message from the dashboard:\n\n{message}\n\nAnswer it in the console under Support.",
   "notify.support_reply": "You wrote:\n\n{original}\n\nThe Commissioner replied:\n\n{reply}",

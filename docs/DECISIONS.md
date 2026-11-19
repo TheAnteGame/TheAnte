@@ -3965,3 +3965,34 @@ Copy: `howto.shove_body`, `guide.pot_body`, `guide.shove_body`, `dash.wager.shov
 `faq.a4`, `faq.a9`; rulebook §7 and §8. Tests: `settle.test.ts` (shover takes the Pot from
 Week 9 on; Week 10's real shape). The torture season now checks the opposite of D-128: a
 shover with the week's best gain must be in first place.
+
+## D-139 — Side games pay out automatically, with the main game (2026-11-19)
+
+**Why.** Week 10's Gridiron Bingo (Casey, 6 in) and Crunch Time (Deb, 3 in) were decided
+correctly by ANTE Play but never reached anyone's stack: D-132 posts them only when the
+commissioner presses **Post side-game results**, and the only safe window is the night
+between Monday's settlement and Tuesday's 6am slate open. Nobody pressed it, and from
+Tuesday the Week 11 blackout refused it. The owner: side games are paid at the end of
+every week, at the same time as the main game, and count toward the stack and the
+leaderboard.
+
+**What.** `autoPostSideGames` (`lib/jobs/sideGamesAuto.ts`) runs on every scores-sync tick
+(every five minutes — the tick that settles a week, and it runs before that tick can open
+the next week) and once more inside slate.open, just before the antes. It goes through the
+console's own door (`postSideGames`), so every D-132 gate, the conservation check and the
+single insert are unchanged; it only decides when. It looks at the settled weeks after the
+last one with side-game rows, oldest first, from `SIDE_GAMES_FIRST_WEEK` (10). ANTE Play
+not closed or not final yet (Bingo waits on Monday night's last final) is a silent wait.
+Anything else — the next week already mid-blackout, malformed results, a failed check —
+emails the commissioner (new alert `side_games_stuck`, once a day per week) and stops; once
+the blackout lifts at the reveal, the next tick posts by itself. Each automatic post takes a
+league snapshot and writes a `sidegames.post` audit row with no actor. Off switch unchanged:
+unset `ANTE_PLAY_RESULTS_URL`. The console button still works by hand.
+
+**Week 10.** Posted after the Week 11 reveal on 2026-11-19: Casey +40 (Bingo +50, Crunch
+−10), Deb +10 (Bingo −10, Crunch +20), Zack −20, Melissa, Bob and Steve L. −10 each. Week 11
+had opened on stacks without them; its limits were left as they were (tickets were in).
+
+Tests: the torture season's unscripted side-game weeks and Week 18's sweep now post through
+the automatic path (it must ask for exactly that week, and a second run must do nothing),
+and the mid-blackout probe checks the automatic path moves nothing. SEASON CLEAN.

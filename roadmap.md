@@ -8,6 +8,11 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-19 (seventy-ninth pass):** **Side games pay out automatically (D-139).** The
+> scores tick posts each settled week's Bingo and Crunch Time results right after settlement,
+> before the next week opens; stuck → commissioner alert. Week 10's (never posted) paid after
+> the Week 11 reveal: Casey +40, Deb +10.
+
 > **2026-11-17 (seventy-eighth pass):** **A winning shover can take the Pot (D-136,
 > rulebook v1.9).** Reverts D-128's Pot exclusion; trailing-stack and one-a-week rules stay.
 > Week 10 re-settled from the console (Pot 260: Andersen → Marquis) and Week 11's opening

@@ -59,6 +59,7 @@ export const MAIL_KINDS: MailKind[] = [
   { keyPrefix: "backup-reminder", label: "Backup due (commissioner only)", trigger: "backup.reminder job, daily, until the file is confirmed", bodySource: "template", subjectKey: "mail.backup_reminder.subject", bodyKey: "notify.backup_reminder" },
   { keyPrefix: "alert-settlement_failed", label: "Settlement failed (commissioner only)", trigger: "A settlement run fails; at most once a day per week", bodySource: "template", subjectKey: "mail.settlement_failed.subject", bodyKey: "notify.settlement_failed" },
   { keyPrefix: "alert-week_blocked", label: "Week did not open (commissioner only)", trigger: "slate.open finds an earlier week unsettled; at most once a day", bodySource: "template", subjectKey: "mail.week_blocked.subject", bodyKey: "notify.week_blocked" },
+  { keyPrefix: "alert-side_games_stuck", label: "Side games not paid (commissioner only)", trigger: "The automatic side-game payout is refused (e.g. the next week is already mid-blackout); at most once a day per week", bodySource: "template", subjectKey: "mail.side_games_stuck.subject", bodyKey: "notify.side_games_stuck" },
 ];
 
 /** Content keys the console lists as editable templates but which reach NO email —
