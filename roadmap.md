@@ -8,6 +8,10 @@ checkboxes every time meaningful work lands. Keep entries terse; detail lives in
 
 ## Current Status
 
+> **2026-11-24 (eightieth pass):** **The ticker crawls on every phone (D-140).** With Reduce
+> Motion on, the rail swapped one item in every few seconds instead of crawling; the owner
+> wanted it to scroll like the computer. The fallback is gone; nothing else changed.
+
 > **2026-11-19 (seventy-ninth pass):** **Side games pay out automatically (D-139).** The
 > scores tick posts each settled week's Bingo and Crunch Time results right after settlement,
 > before the next week opens; stuck → commissioner alert. Week 10's (never posted) paid after

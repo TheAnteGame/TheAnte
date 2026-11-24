@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { lapSeconds } from "@/lib/ticker/lap";
 
-// The broadcast crawl (art §7). Pauses on hover; prefers-reduced-motion falls back
-// to a static rotating item (ANTE-PLAYER §4).
+// The broadcast crawl (art §7). It crawls for everyone, reduced motion included
+// (D-140): the old reduced-motion fallback swapped one item in every few seconds,
+// which on a phone with Reduce Motion on read as a flashing sign, not a ticker —
+// and a hard swap is no gentler than a slow, steady crawl.
 
 export interface TickerItem {
   id: string;
@@ -24,32 +26,15 @@ export function TickerMarquee({
   accentCss: string;
   textCss: string;
 }) {
-  const [reduced, setReduced] = useState(false);
-  const [staticIndex, setStaticIndex] = useState(0);
   const [copies, setCopies] = useState(2);
   // Seconds for ONE LAP, which is not the setting — see lib/ticker/lap.ts (D-101).
   const [lap, setLapSeconds] = useState(speedSeconds);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const copyRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  useEffect(() => {
-    if (!reduced) return;
-    const t = setInterval(() => setStaticIndex((i) => (i + 1) % items.length), 8000);
-    return () => clearInterval(t);
-  }, [reduced, items.length]);
-
   // How many copies it takes to cover the rail, plus the one that gets shifted away.
   // Re-measured on resize: a narrowed window needs fewer, a widened one needs more.
   useEffect(() => {
-    if (reduced) return;
     const measure = () => {
       const copyW = copyRef.current?.scrollWidth ?? 0;
       const railW = trackRef.current?.parentElement?.clientWidth ?? 0;
@@ -63,7 +48,7 @@ export function TickerMarquee({
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [reduced, items.length, speedSeconds]);
+  }, [items.length, speedSeconds]);
 
   const render = (item: TickerItem, key: string) => {
     const body = (
@@ -100,14 +85,6 @@ export function TickerMarquee({
       </span>
     );
   };
-
-  if (reduced) {
-    return (
-      <div className="ticker-rail px-4 py-2 text-sm">
-        {render(items[staticIndex], items[staticIndex].id)}
-      </div>
-    );
-  }
 
   return (
     <div

@@ -3996,3 +3996,17 @@ had opened on stacks without them; its limits were left as they were (tickets we
 Tests: the torture season's unscripted side-game weeks and Week 18's sweep now post through
 the automatic path (it must ask for exactly that week, and a second run must do nothing),
 and the mid-blackout probe checks the automatic path moves nothing. SEASON CLEAN.
+
+## D-140 — The ticker crawls on every phone, Reduce Motion included (2026-11-24)
+
+**Why.** The owner, on their phone: the ticker "doesn't scroll… every four seconds it
+flashes in new information… I want it to scroll like the main site." Their phone has the
+system Reduce Motion setting on, and `TickerMarquee` honoured `prefers-reduced-motion`
+(ANTE-PLAYER §4) by swapping the crawl for one static item that changed every 8 seconds.
+That is what they saw: a sign that flips, not a ticker. The same is true for any player with
+Reduce Motion on (iPhone: Settings → Accessibility → Motion; Android: Remove animations).
+
+**What.** The fallback is gone: the rail crawls for everyone at the same speed (D-126).
+A slow linear crawl with no flashing is gentler than a hard swap, so nothing is lost for a
+player who asked for less motion. Every other reduced-motion rule (reveal, bands, dock,
+menus) is unchanged. ANTE-PLAYER §4 and its accessibility line now point here.

@@ -140,7 +140,7 @@ Left column ~62%, right ~38%. Below 900px: single column, order — header, tick
 
 **Ticker:** horizontal marquee reading from a single `ticker_items` table that blends three sources — automated NFL headlines (`feed`), commissioner-written items (`manual`), and app-generated league facts (`system`: deadline countdown, waiting-on count, current Pot, marker, leader). The player app does not know or care which is which beyond optional styling; it renders the ordered list the query returns. Ordering, scheduling, and source rules live in `ANTE-ADMIN.md` §4.5.
 
-Items with a `url` are click-through; items without are plain text. Pauses on hover, respects `prefers-reduced-motion` by falling back to a static rotating item, and the rail does not render at all when `ticker.enabled` is off or the eligible list is empty.
+Items with a `url` are click-through; items without are plain text. It crawls for every player, `prefers-reduced-motion` included (D-140 withdrew the static rotating fallback), and the rail does not render at all when `ticker.enabled` is off or the eligible list is empty.
 
 **The `waiting_on` system item is inside the blackout.** It carries names only — never picks, never counts of picks — and stops emitting the moment the reveal fires (§6). It reads from the same narrow view as the wager area's waiting-on list, not from `tickets`.
 
@@ -545,7 +545,7 @@ ticker_items       defined in ANTE-ADMIN.md §3. Player app reads only:
 
 - **Timezone:** all logic in `America/New_York`; display in the player's local zone with an ET label on every deadline. DST is handled by the tz database, never by offset arithmetic.
 - **Polling:** `week.phase` every 15s; chat every 5s; ticker and news on their cache TTL. Back off to 60s when the tab is hidden.
-- **Accessibility:** keyboard-operable bet slip, focus management on the confirm modal, `prefers-reduced-motion` honoured by ticker and news fade, contrast on the chip steppers.
+- **Accessibility:** keyboard-operable bet slip, focus management on the confirm modal, `prefers-reduced-motion` honoured by the news fade (the ticker crawls regardless, D-140), contrast on the chip steppers.
 - **Mobile:** the bet slip must be genuinely usable one-handed on a phone — that is where most tickets will actually be submitted, on a Wednesday night, badly.
 - **No cash, ever.** Chips have no cash value (§1, Fine Print). No payment surface, no purchase, no cash-out. Keep it that way; it is what keeps this a pool and not a sportsbook.
 - **The rulebook ships with the code.** `ANTE-RULEBOOK.md` lives in the repo, renders at `/rules` with its version string, and is not reachable from the content editor. Changing it requires a deploy. §13 forbids mid-season rule changes, and the only way to make that structurally true is to put the rules somewhere the commissioner cannot reach at 11pm in Week 12.
